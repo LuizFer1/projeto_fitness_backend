@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\NutritionDaily;
 use App\Models\UserOnboarding;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,14 +18,14 @@ class OnboardingController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        if ($this->UserHasOnboarding($request)) {
+        if ($this->userHasOnboarding($request)) {
             return response()->json([
                 'message' => 'Onboarding already exists for this user.',
             ], 400);
         }
 
         $data = $request->validate([
-            'gender'            => 'nullable|string|in:M,F',
+            'gender'            => 'nullable|string|in:M,F,other,prefer_not_to_say',
             'age'               => 'nullable|integer|min:10|max:120',
             'height_cm'         => 'nullable|integer|min:100|max:250',
             'weight_kg'         => 'nullable|numeric|min:30|max:300',
@@ -35,9 +34,18 @@ class OnboardingController extends Controller
             'work_style'        => 'nullable|string|in:white_collar,blue_collar,sedentary,moderate,active',
         ]);
 
-        $userUuid = $request->user()->uuid;
+        $userId = $request->user()->id;
 
+        // Map front-end strings to database enums
+        $mappedGender = 'prefer_not_to_say';
+        if (($data['gender'] ?? '') === 'M') $mappedGender = 'male';
+        elseif (($data['gender'] ?? '') === 'F') $mappedGender = 'female';
+        elseif (isset($data['gender'])) $mappedGender = $data['gender'];
 
+        $mappedWorkStyle = 'sedentary';
+        if (($data['work_style'] ?? '') === 'white_collar') $mappedWorkStyle = 'light';
+        elseif (($data['work_style'] ?? '') === 'blue_collar') $mappedWorkStyle = 'active';
+        elseif (isset($data['work_style'])) $mappedWorkStyle = $data['work_style'];
 
         $bmr = null;
         if (!empty($data['gender']) && !empty($data['age']) && !empty($data['weight_kg']) && !empty($data['height_cm'])) {
@@ -45,7 +53,7 @@ class OnboardingController extends Controller
             $h = (int) $data['height_cm'];
             $a = (int) $data['age'];
             
-            if ($data['gender'] === 'M') {
+            if ($mappedGender === 'male') {
                 $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) + 5;
             } else {
                 $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) - 161;
@@ -65,28 +73,29 @@ class OnboardingController extends Controller
                 $activityMultiplier = 1.375;
             }
 
-            if (($data['work_style'] ?? '') === 'active' || ($data['work_style'] ?? '') === 'blue_collar') {
+            if ($mappedWorkStyle === 'active' || $mappedWorkStyle === 'very_active') {
                 $activityMultiplier += 0.15;
             }
 
             $tdee = (int) round($bmr * $activityMultiplier);
         }
 
-        $onboarding = DB::transaction(function () use ($userUuid, $data, $bmr, $tdee) {
+        $onboarding = DB::transaction(function () use ($userId, $data, $bmr, $tdee, $mappedGender, $mappedWorkStyle) {
             $onb = UserOnboarding::updateOrCreate(
-                ['user_uuid' => $userUuid],
-                array_merge($data, [
-                    'completed' => true,
-                    'bmr'       => $bmr ? (int) round($bmr) : null,
-                ])
+                ['user_id' => $userId],
+                [
+                    'gender' => $mappedGender,
+                    'age' => $data['age'] ?? 0,
+                    'height_cm' => $data['height_cm'] ?? 0,
+                    'weight_kg' => $data['weight_kg'] ?? 0,
+                    'body_fat_pct' => $data['body_fat_percent'] ?? null,
+                    'exercise_frequency' => $data['workouts_per_week'] ?? 0,
+                    'work_style' => $mappedWorkStyle,
+                    'bmr' => $bmr ? round($bmr, 2) : null,
+                ]
             );
 
-            if ($tdee) {
-                NutritionDaily::firstOrCreate(
-                    ['user_uuid' => $userUuid, 'day' => now()->toDateString()],
-                    ['calories_goal' => $tdee]
-                )->update(['calories_goal' => $tdee]);
-            }
+            // Omit NutritionDaily update for now since the model doesn't exist yet
 
             return $onb;
         });
@@ -94,8 +103,8 @@ class OnboardingController extends Controller
         return response()->json($onboarding, 201);
     }
 
-    private function UserHasOnboarding(Request $request): bool
+    private function userHasOnboarding(Request $request): bool
     {
-        return UserOnboarding::where('user_uuid', $request->user()->uuid)->exists();
+        return UserOnboarding::where('user_id', $request->user()->id)->exists();
     }
 }

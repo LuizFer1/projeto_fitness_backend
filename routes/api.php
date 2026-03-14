@@ -16,6 +16,12 @@ Route::group([], function () {
         Route::get('onboarding',  [OnboardingController::class, 'show']);
         Route::post('onboarding', [OnboardingController::class, 'store']);
 
+        Route::get('leaderboard/{period}', [\App\Http\Controllers\LeaderboardController::class, 'index']);
+        Route::get('users/{userId}/profile', [\App\Http\Controllers\ProfileController::class, 'show']);
+
+        Route::get('goals', [\App\Http\Controllers\GoalController::class, 'index']);
+        Route::put('goals/exercise', [\App\Http\Controllers\GoalController::class, 'updateExercise']);
+        Route::put('goals/alimentation', [\App\Http\Controllers\GoalController::class, 'updateAlimentation']);
     });
 });
 

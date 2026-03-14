@@ -11,13 +11,11 @@ class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, HasUuids;
 
-    public function uniqueIds(): array
-    {
-        return ['uuid'];
-    }
+    // removed uniqueIds to default to primary key 'id'
 
     protected $fillable = [
         'name', 'last_name', 'email', 'cpf', 'password_hash', 'avatar_url',
+        'nickname', 'bio',
     ];
 
     protected $hidden = ['password_hash'];
@@ -31,6 +29,16 @@ class User extends Authenticatable
 
     public function onboarding()
     {
-        return $this->hasOne(UserOnboarding::class, 'user_uuid', 'uuid');
+        return $this->hasOne(UserOnboarding::class, 'user_id', 'id');
+    }
+
+    public function gamification()
+    {
+        return $this->hasOne(UserGamification::class, 'user_id', 'id');
+    }
+
+    public function goal()
+    {
+        return $this->hasOne(UserGoal::class, 'user_id', 'id')->where('is_active', true);
     }
 }

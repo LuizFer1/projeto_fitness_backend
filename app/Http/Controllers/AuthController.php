@@ -31,7 +31,7 @@ class AuthController extends Controller
 
         $user->refresh();
 
-        UserGamification::create(['user_uuid' => $user->uuid]);
+        UserGamification::create(['user_id' => $user->id]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
