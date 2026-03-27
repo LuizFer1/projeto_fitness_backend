@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Models\UserGamification;
+use App\Services\GamificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -41,7 +42,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(Request $request, GamificationService $gamification): JsonResponse
     {
         $data = $request->validate([
             'email'    => 'required|email',
@@ -55,6 +56,9 @@ class AuthController extends Controller
                 'email' => ['Credenciais inválidas.'],
             ]);
         }
+
+        // RF-01: Grant daily login XP
+        $gamification->grantDailyLoginXp($user);
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
@@ -71,8 +75,13 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout realizado com sucesso.']);
     }
 
-    public function me(Request $request): JsonResponse
+    public function me(Request $request, GamificationService $gamification): JsonResponse
     {
-        return response()->json($request->user()->load(['onboarding', 'gamification']));
+        $user = $request->user();
+
+        // RF-01: Grant daily login XP on profile access
+        $gamification->grantDailyLoginXp($user);
+
+        return response()->json($user->load(['onboarding', 'gamification']));
     }
 }

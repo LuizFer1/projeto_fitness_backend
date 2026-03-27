@@ -26,6 +26,8 @@ class UserGamification extends Model
         'current_month_xp',
         'total_workouts',
         'total_water_days',
+        'last_week_safety_day_used',
+        'last_processed_date',
     ];
 
     protected $casts = [
