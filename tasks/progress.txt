@@ -13,6 +13,8 @@
 - throttle:api rate limiter is NOT defined — don't use it in route middleware
 - For 404 with custom JSON shape, use response()->json([...], 404) not abort(404)
 - Route parameter {username} resolves to User via Route::bind in api.php — controller receives User $username
+- Goal model uses user_uuid FK; GoalFactory has public(), friends(), private(), completed(), archived() state methods
+- Goals table has visibility (public/friends/private) and status (active/completed/archived/expired) columns
 
 ## 2026-04-06 - US-001
 - Verified existing implementation from commit 8ce08e2
@@ -54,4 +56,33 @@
   - AchievementFactory and UserAchievementFactory now exist for test data
   - UserAchievement model now has HasFactory trait
   - User->achievements() returns UserAchievement (not Achievement) — eager load ->with('achievement') to get achievement data
+---
+
+## 2026-04-06 - US-004
+- Implemented GET /api/v1/users/{username}/goals endpoint
+- Created Goal model, migration (goals table with visibility/status fields), and updated GoalFactory
+- Created GetPublicGoalsUseCase: block check + visibility filtering (public always, friends only if areFriends)
+- Created PublicGoalResource (summary data only, no checkins)
+- Added goals() method to PublicProfileController and route in api.php
+- Added goals() relationship to User model
+- 16 feature tests covering: visibility matrix (public/private/friends × stranger/friend/pending), archived exclusion, mixed visibility, block/inactive/nonexistent 404, unauthenticated 401, response structure, empty results
+- All 165 project tests pass
+- Files: Goal.php, create_goals_table migration, GoalFactory.php, User.php, PublicGoalResource.php, GetPublicGoalsUseCase.php, PublicProfileController.php, api.php, GoalsVisibilityTest.php
+- **Learnings for future iterations:**
+  - Goal model uses user_uuid FK (consistent with other models), not user_id
+  - GoalFactory has public(), friends(), private(), completed(), archived() state methods for easy test setup
+  - Goals table didn't exist on this branch — had to create migration + model from scratch
+  - Visibility filtering: use closure with where('visibility', 'public') + conditional orWhere('visibility', 'friends')
+---
+
+## 2026-04-06 - US-005
+- Added 3 owner test cases to GoalsVisibilityTest: public×owner, friends×owner, private×owner
+- Completes the 9-case visibility matrix: (private/friends/public) × (owner/friend/stranger)
+- ShowProfileTest already covered: success, inactive 404, mutual block 404, PII hidden (email, birth_date, weight_kg)
+- AchievementsTest already covered: unlocked listing, block 404
+- All 41 PublicProfile tests pass, 168 total project tests pass
+- Files: GoalsVisibilityTest.php (modified)
+- **Learnings for future iterations:**
+  - Owner viewing own public profile via /users/{username}/goals sees only public goals (areFriends(self, self) is false)
+  - Previous stories (US-001 through US-004) already had solid test coverage — US-005 was mostly gap-filling
 ---

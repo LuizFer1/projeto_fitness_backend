@@ -66,8 +66,8 @@
         "Tests pass"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in commit bab188e. 16 feature tests passing."
     },
     {
       "id": "US-005",
@@ -81,8 +81,8 @@
         "Tests pass"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Implemented in commit 2ef28c9. Added 3 owner test cases to GoalsVisibilityTest. All 41 PublicProfile tests passing (168 total)."
     }
   ]
 }
