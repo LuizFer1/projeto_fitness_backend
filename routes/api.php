@@ -63,6 +63,7 @@ Route::group([], function () {
 
         // Privacy / LGPD
         Route::get('v1/privacy/my-data', [PrivacyController::class, 'exportData']);
+        Route::delete('v1/privacy/delete-account', [PrivacyController::class, 'deleteAccount']);
 
         Route::prefix('v1/gamification')->group(function () {
             Route::middleware('throttle:leaderboard')->group(function () {

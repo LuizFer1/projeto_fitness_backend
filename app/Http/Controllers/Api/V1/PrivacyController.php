@@ -10,6 +10,8 @@ use App\Models\WorkoutLog;
 use App\Models\XpTransaction;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 
 class PrivacyController extends Controller
 {
@@ -49,6 +51,73 @@ class PrivacyController extends Controller
             'achievements' => $achievements,
             'gamification' => $gamification,
             'exported_at' => now()->toIso8601String(),
+        ]);
+    }
+
+    public function deleteAccount(Request $request): JsonResponse
+    {
+        $request->validate([
+            'password' => 'required|string',
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($request->password, $user->getAuthPassword())) {
+            return response()->json([
+                'error' => [
+                    'code' => 'INVALID_PASSWORD',
+                    'message' => 'The provided password is incorrect.',
+                    'fields' => [],
+                ],
+            ], 422);
+        }
+
+        DB::transaction(function () use ($user) {
+            $userId = $user->id;
+
+            // Delete related data from all tables with user_id
+            DB::table('post_comments')->where('user_id', $userId)->delete();
+            DB::table('post_likes')->where('user_id', $userId)->delete();
+            DB::table('posts')->where('user_id', $userId)->delete();
+
+            // Delete workout exercise logs via workout logs
+            $workoutLogIds = WorkoutLog::where('user_id', $userId)->pluck('id');
+            if ($workoutLogIds->isNotEmpty()) {
+                DB::table('workout_exercise_logs')->whereIn('workout_log_id', $workoutLogIds)->delete();
+            }
+            DB::table('workout_logs')->where('user_id', $userId)->delete();
+
+            DB::table('meal_logs')->where('user_id', $userId)->delete();
+            DB::table('xp_transactions')->where('user_id', $userId)->delete();
+            DB::table('user_achievements')->where('user_id', $userId)->delete();
+            DB::table('user_gamification')->where('user_id', $userId)->delete();
+            DB::table('user_goals')->where('user_id', $userId)->delete();
+            DB::table('onboarding')->where('user_id', $userId)->delete();
+            DB::table('daily_activity_limits')->where('user_id', $userId)->delete();
+            DB::table('streak_history')->where('user_id', $userId)->delete();
+            DB::table('user_quests')->where('user_id', $userId)->delete();
+            DB::table('ranking_snapshots')->where('user_id', $userId)->delete();
+            DB::table('ai_feedback_triggers')->where('user_id', $userId)->delete();
+            DB::table('ai_plans')->where('user_id', $userId)->delete();
+            DB::table('user_restrictions')->where('user_id', $userId)->delete();
+            DB::table('body_measurements')->where('user_id', $userId)->delete();
+            DB::table('water_logs')->where('user_id', $userId)->delete();
+
+            // Friendships (uses requester_id / addressee_id)
+            DB::table('friendships')
+                ->where('requester_id', $userId)
+                ->orWhere('addressee_id', $userId)
+                ->delete();
+
+            // Revoke all Sanctum tokens
+            $user->tokens()->delete();
+
+            // Delete the user
+            $user->delete();
+        });
+
+        return response()->json([
+            'message' => 'Account and all associated data have been permanently deleted.',
         ]);
     }
 }
