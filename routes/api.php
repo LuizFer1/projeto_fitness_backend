@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
+use App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use App\Models\User;
@@ -25,6 +26,10 @@ Route::group([], function () {
 
         Route::get('onboarding',  [OnboardingController::class, 'show']);
         Route::post('onboarding', [OnboardingController::class, 'store']);
+
+        Route::prefix('v1')->group(function () {
+            Route::get('users/{username}', [PublicProfileController::class, 'show']);
+        });
 
         Route::prefix('v1/gamification')->group(function () {
             Route::middleware('throttle:leaderboard')->group(function () {
