@@ -1,16 +1,19 @@
 <?php
 
+use App\Http\Controllers\Api\HealthCheckController;
 use App\Http\Controllers\Api\V1\FriendController;
-use App\Http\Controllers\Api\V1\PostController;
-use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
+use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController;
+use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use App\Models\User;
 use Illuminate\Support\Facades\Route;
+
+Route::get('health', HealthCheckController::class);
 
 Route::bind('username', function (string $value) {
     return User::where('username', $value)
@@ -20,14 +23,14 @@ Route::bind('username', function (string $value) {
 
 Route::group([], function () {
     Route::post('register', [AuthController::class, 'register']);
-    Route::post('login',    [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login']);
 
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('logout', [AuthController::class, 'logout']);
-        Route::get('me',      [AuthController::class, 'me']);
+        Route::get('me', [AuthController::class, 'me']);
 
-        Route::get('onboarding',  [OnboardingController::class, 'show']);
+        Route::get('onboarding', [OnboardingController::class, 'show']);
         Route::post('onboarding', [OnboardingController::class, 'store']);
 
         Route::prefix('v1')->group(function () {
@@ -59,7 +62,7 @@ Route::group([], function () {
 
         Route::prefix('v1/gamification')->group(function () {
             Route::middleware('throttle:leaderboard')->group(function () {
-                Route::get('leaderboard/weekly',  [LeaderboardController::class, 'weekly']);
+                Route::get('leaderboard/weekly', [LeaderboardController::class, 'weekly']);
                 Route::get('leaderboard/monthly', [LeaderboardController::class, 'monthly']);
                 Route::get('leaderboard/alltime', [LeaderboardController::class, 'alltime']);
                 Route::get('leaderboard/friends', [LeaderboardController::class, 'friends']);
@@ -71,4 +74,3 @@ Route::group([], function () {
 
     });
 });
-
