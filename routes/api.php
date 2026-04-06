@@ -30,6 +30,7 @@ Route::group([], function () {
         Route::prefix('v1')->group(function () {
             Route::get('users/{username}', [PublicProfileController::class, 'show']);
             Route::get('users/{username}/achievements', [PublicProfileController::class, 'achievements']);
+            Route::get('users/{username}/goals', [PublicProfileController::class, 'goals']);
         });
 
         Route::prefix('v1/gamification')->group(function () {

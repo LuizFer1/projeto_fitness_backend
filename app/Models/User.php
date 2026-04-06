@@ -53,4 +53,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserAchievement::class, 'user_uuid', 'uuid');
     }
+
+    public function goals()
+    {
+        return $this->hasMany(Goal::class, 'user_uuid', 'uuid');
+    }
 }
