@@ -33,4 +33,9 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserOnboarding::class, 'user_uuid', 'uuid');
     }
+
+    public function xpTransactions()
+    {
+        return $this->hasMany(XpTransaction::class, 'user_uuid', 'uuid');
+    }
 }

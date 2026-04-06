@@ -1,10 +1,13 @@
 ## Codebase Patterns
 - Use `/tmp/php` or `export PATH="/tmp:$PATH"` to run PHP in this environment
 - Tests use SQLite in-memory (phpunit.xml: DB_CONNECTION=sqlite, DB_DATABASE=:memory:) since MySQL is not available in CI
+- phpunit.xml env vars need `force="true"` to override .env values (DB_CONNECTION, DB_DATABASE)
 - Feature tests use `RefreshDatabase` trait and `User::factory()->create()` + `actingAs()` for auth
 - User model uses HasUuids on `uuid` column — always use `$user->uuid` when creating related records
 - Use PHPUnit 11 attributes (#[DataProvider(...)]) instead of doc-comment annotations to avoid deprecation warnings
 - Main branch only has Init Project commit — gamification branch builds from scratch
+- Foreign keys on users reference `uuid` column, not `id` — use `foreignUuid('user_uuid')->references('uuid')->on('users')`
+- For timezone-dependent queries, do conversion in PHP/Carbon (SQLite doesn't support CONVERT_TZ)
 ---
 
 ## 2026-04-06 - US-001
@@ -16,4 +19,26 @@
   - PHPUnit 11 uses #[DataProvider('providerName')] attribute instead of @dataProvider annotation
   - LevelCalculator is a pure static class with no dependencies — can be used anywhere
   - Level thresholds: 1(0), 2(500), 3(1500), 4(3500), 5(7500), 6(15000)
+---
+
+## 2026-04-06 - US-002
+- Implemented StreakCalculator service with currentStreak and bonusFor methods
+- Created xp_transactions migration, XpTransaction model, and factory
+- Added xpTransactions relationship to User model
+- Fixed phpunit.xml to force SQLite for tests (force="true" needed to override .env)
+- Files created:
+  - app/Services/Gamification/StreakCalculator.php (currentStreak, bonusFor static methods)
+  - app/Models/XpTransaction.php (model with user relationship)
+  - database/migrations/2026_04_06_000001_create_xp_transactions_table.php
+  - database/factories/XpTransactionFactory.php
+  - tests/Unit/Services/Gamification/StreakCalculatorTest.php (15 tests)
+- Files modified:
+  - app/Models/User.php (added xpTransactions relationship)
+  - phpunit.xml (added force="true" to DB env vars)
+- **Learnings for future iterations:**
+  - phpunit.xml env vars need force="true" to override .env values
+  - SQLite doesn't support CONVERT_TZ — use Carbon timezone conversion in PHP instead
+  - StreakCalculator uses America/Sao_Paulo timezone via Carbon, not SQL functions
+  - XpTransaction has unique index on (user_uuid, reason, reference_id) for idempotency
+  - Streak counts mixed eligible reasons (login_daily, workout_done, goal_checkin) on same day
 ---
