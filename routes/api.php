@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -7,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::group([], function () {
     Route::post('register', [AuthController::class, 'register']);
     Route::post('login',    [AuthController::class, 'login']);
-    
+
     Route::middleware('auth:sanctum')->group(function () {
 
         Route::post('logout', [AuthController::class, 'logout']);
@@ -15,6 +16,14 @@ Route::group([], function () {
 
         Route::get('onboarding',  [OnboardingController::class, 'show']);
         Route::post('onboarding', [OnboardingController::class, 'store']);
+
+        Route::prefix('v1/gamification')->group(function () {
+            Route::middleware('throttle:leaderboard')->group(function () {
+                Route::get('leaderboard/weekly',  [LeaderboardController::class, 'weekly']);
+                Route::get('leaderboard/monthly', [LeaderboardController::class, 'monthly']);
+                Route::get('leaderboard/alltime', [LeaderboardController::class, 'alltime']);
+            });
+        });
 
     });
 });
