@@ -17,10 +17,18 @@ class UserFactory extends Factory
         return [
             'name'          => fake()->firstName(),
             'last_name'     => fake()->lastName(),
+            'username'      => fake()->unique()->userName(),
             'email'         => fake()->unique()->safeEmail(),
             'cpf'           => fake()->unique()->numerify('###.###.###-##'),
             'password_hash' => static::$password ??= Hash::make('password'),
             'avatar_url'    => fake()->optional()->imageUrl(200, 200, 'people'),
+            'bio'           => fake()->optional()->sentence(),
+            'is_active'     => true,
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn () => ['is_active' => false]);
     }
 }

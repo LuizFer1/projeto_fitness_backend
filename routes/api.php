@@ -5,7 +5,14 @@ use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
+use App\Models\User;
 use Illuminate\Support\Facades\Route;
+
+Route::bind('username', function (string $value) {
+    return User::where('username', $value)
+        ->where('is_active', true)
+        ->firstOrFail();
+});
 
 Route::group([], function () {
     Route::post('register', [AuthController::class, 'register']);
