@@ -52,6 +52,9 @@ Route::group([], function () {
             Route::get('feed', [PostController::class, 'feed']);
             Route::get('posts/{id}', [PostController::class, 'show']);
             Route::delete('posts/{id}', [PostController::class, 'destroy']);
+            Route::post('posts/{id}/like', [PostController::class, 'like']);
+            Route::post('posts/{id}/comments', [PostController::class, 'storeComment']);
+            Route::delete('posts/{id}/comments/{commentId}', [PostController::class, 'destroyComment']);
         });
 
         Route::prefix('v1/gamification')->group(function () {

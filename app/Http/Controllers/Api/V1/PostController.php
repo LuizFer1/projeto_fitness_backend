@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Friendship;
 use App\Models\Post;
+use App\Models\PostComment;
+use App\Models\PostLike;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -113,6 +115,86 @@ class PostController extends Controller
         $post->delete();
 
         return response()->json(['message' => 'Post deleted.']);
+    }
+
+    /**
+     * POST /v1/posts/{id}/like — toggle like.
+     */
+    public function like(string $id): JsonResponse
+    {
+        $post = Post::findOrFail($id);
+        $user = request()->user();
+
+        $existing = PostLike::where('post_id', $post->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+        } else {
+            PostLike::create([
+                'post_id' => $post->id,
+                'user_id' => $user->id,
+            ]);
+        }
+
+        $likeCount = $post->likes()->count();
+
+        return response()->json([
+            'data' => [
+                'liked' => ! $existing,
+                'like_count' => $likeCount,
+            ],
+        ]);
+    }
+
+    /**
+     * POST /v1/posts/{id}/comments — create comment.
+     */
+    public function storeComment(Request $request, string $id): JsonResponse
+    {
+        $post = Post::findOrFail($id);
+
+        $data = $request->validate([
+            'content' => 'required|string|max:500',
+        ]);
+
+        $comment = PostComment::create([
+            'post_id' => $post->id,
+            'user_id' => $request->user()->id,
+            'content' => $data['content'],
+        ]);
+
+        $comment->load('user:id,name,last_name,username,avatar_url');
+
+        return response()->json([
+            'data' => [
+                'id' => $comment->id,
+                'user' => $comment->user,
+                'content' => $comment->content,
+                'created_at' => $comment->created_at,
+            ],
+        ], 201);
+    }
+
+    /**
+     * DELETE /v1/posts/{id}/comments/{commentId} — soft delete own comment.
+     */
+    public function destroyComment(string $id, string $commentId): JsonResponse
+    {
+        $comment = PostComment::where('post_id', $id)
+            ->where('id', $commentId)
+            ->firstOrFail();
+
+        $user = request()->user();
+
+        if ($comment->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized.'], 403);
+        }
+
+        $comment->delete();
+
+        return response()->json(['message' => 'Comment deleted.']);
     }
 
     /**
