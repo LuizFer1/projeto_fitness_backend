@@ -6,11 +6,15 @@ use App\Events\AchievementUnlocked;
 use App\Events\FriendshipAccepted;
 use App\Events\GoalCheckinCreated;
 use App\Events\GoalCompleted;
+use App\Events\GoalCreated;
 use App\Events\MealFollowed;
+use App\Events\PlanGenerated;
 use App\Events\PostLiked;
+use App\Events\RefinePlanCompleted;
 use App\Events\UserLoggedIn;
 use App\Events\WorkoutDayCompleted;
 use App\Listeners\AwardXpForEventListener;
+use App\Listeners\UnlockAchievementListener;
 use App\Models\PersonalAccessToken;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
@@ -46,6 +50,20 @@ class AppServiceProvider extends ServiceProvider
 
         foreach ($xpEvents as $event) {
             Event::listen($event, AwardXpForEventListener::class);
+        }
+
+        $achievementEvents = [
+            GoalCreated::class,
+            GoalCheckinCreated::class,
+            GoalCompleted::class,
+            WorkoutDayCompleted::class,
+            FriendshipAccepted::class,
+            PlanGenerated::class,
+            RefinePlanCompleted::class,
+        ];
+
+        foreach ($achievementEvents as $event) {
+            Event::listen($event, UnlockAchievementListener::class);
         }
     }
 }
