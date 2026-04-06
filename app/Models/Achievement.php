@@ -2,25 +2,25 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Achievement extends Model
 {
-    use HasFactory;
+    use HasUuids;
+
+    protected $table = 'achievements';
+
+    public $timestamps = false;
 
     protected $fillable = [
-        'key',
-        'title',
-        'description',
-        'icon',
-        'category',
-        'xp_reward',
+        'slug', 'name', 'description', 'icon', 'category',
+        'xp_reward', 'condition_type', 'condition_value',
+        'is_hidden', 'is_active',
     ];
 
-    public function userAchievements(): HasMany
-    {
-        return $this->hasMany(UserAchievement::class);
-    }
+    protected $casts = [
+        'is_hidden' => 'boolean',
+        'is_active' => 'boolean',
+    ];
 }

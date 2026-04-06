@@ -1,35 +1,41 @@
 {
     "project": "FitHub Backend",
-    "branchName": "ralph/public-profile",
-    "description": "PRD 08: Perfil Público — exposição limitada de um usuário via username, mostrando dados básicos, conquistas e metas públicas. DEPENDE de PRD 00, 01, 02, 03, 05, 07. Sempre autenticado. 404 genérico para bloqueados, inativos, soft-deleted — não vaza existência. NÃO expõe PII (email, birth_date, weight, height, health_profile). Todas as rotas /api/v1/users/{username} com auth:sanctum + throttle:api. Binding customizado por username em routes/api.php.",
+    "branchName": "ralph/infrastructure-foundation",
+    "description": "PRD 00: Infraestrutura & Fundação — prepara o esqueleto do FitHub (Laravel 12 + MySQL 8): limpa legado, instala Horizon/Telescope/Predis, migrations de todas as tabelas de domínio com UUIDs, error handler JSON padronizado pt-BR, rate limiting, Sanctum device-aware, logs estruturados, AiService stub, FCM channel stub, API versioning consolidado e schedules. Base obrigatória para todos os domínios subsequentes. Arquitetura Clean (Domain/Application/Infrastructure) já adotada — manter. Error shape mantido como { error: { code, message, details } } por compatibilidade com ARCH-002.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Route binding por username + PublicProfileResource + 404 genérico",
-            "description": "Como desenvolvedor, preciso configurar binding custom e resource público sem PII.",
+            "title": "Limpar código legado (controllers, models, migrations de domínio)",
+            "description": "Como arquiteto, quero remover controllers, models e migrations antigas do FitAI para começar a implementação do FitHub sem conflitos.",
             "acceptanceCriteria": [
-                "app/Models/User.php implementa getRouteKeyName(): string retornando 'username' — OU registra binding explícito em routes/api.php Route::bind('username', ...)",
-                "Binding filtra automaticamente users onde is_active=false ou soft-deleted retornando null → 404",
-                "app/Http/Resources/PublicProfileResource.php expõe APENAS: username, name, avatar, bio, level, level_name, xp_points, achievements_count, goals_completed_count, friendship_status (calculado via FriendshipRepository::statusBetween(auth.user, target))",
-                "NÃO inclui: email, email_verified_at, birth_date, weight_kg, height_cm, gender, health_profile, primary_goal, fitness_level",
-                "Unit test PublicProfileResourceTest: serializa user e verifica presence/absence dos campos",
+                "Controllers removidos de app/Http/Controllers/: AuthController, GoalController, LeaderboardController, OnboardingController, ProfileController",
+                "Controllers removidos de app/Http/Controllers/Api/V1/: AiMealPlanController, AiPlanController, MealLogController, RankingController, WorkoutLogController",
+                "Rotas de domínio removidas de routes/api.php — resta apenas Route::prefix('v1')->group vazio",
+                "Models removidos de app/Models/: Achievement, AiPlan, DailyActivityLimit, Exercise, MealLog, PlanMeal, PlanWorkout, PlanWorkoutExercise, UserAchievement, UserGamification, UserGoal, UserOnboarding, WorkoutExerciseLog, WorkoutLog, XpTransaction (mantém User, PersonalAccessToken)",
+                "Migrations removidas: 2026_03_06_200851_a até f, 2026_03_06_200852_z_create_fitai_views, 2026_03_09_201607_add_profile_fields_to_users_table, 2026_03_15_195725_add_ai_fields_to_tracking_logs_table, 2026_03_20_165207_update_gamification_tables_for_new_rules, 2026_03_23_154815_add_updated_at_to_tracking_tables",
+                "Factories, Seeders, Resources, Requests, UseCases, Repositories e DTOs dos domínios removidos também são apagados",
+                "app/Services/GeminiService.php removido (será substituído por AiService stub)",
+                "app/Http/Controllers/Controller.php base mantido",
+                "composer dump-autoload executa sem warnings",
+                "php artisan route:list executa sem erro",
                 "Tests pass"
             ],
             "priority": 1,
-            "passes": true,
+            "passes": false,
             "notes": ""
         },
         {
             "id": "US-002",
-            "title": "GET /users/{username} — perfil público com checagem de bloqueio",
-            "description": "Como visitante logado, quero ver o perfil público de outro usuário.",
+            "title": "Instalar dependências (Horizon, Telescope, Predis)",
+            "description": "Como desenvolvedor, quero instalar Horizon, Telescope e Predis para habilitar filas, debugging e conexão Redis.",
             "acceptanceCriteria": [
-                "Controller app/Http/Controllers/Api/V1/PublicProfile/PublicProfileController.php método show",
-                "app/Application/UseCases/PublicProfile/GetPublicProfileUseCase.php: recebe User target + User authUser; verifica se existe friendship blocked em qualquer direção → se sim retorna null (404 no controller); senão retorna target com counts carregados (loadCount achievements, goals where status=completed)",
-                "Controller: se useCase retorna null ou target não encontrado, abort(404) com shape padronizado { error: { code: 'NOT_FOUND', message: 'Usuário não encontrado', details: {} } }",
-                "Em sucesso retorna PublicProfileResource 200",
-                "Rota GET /api/v1/users/{username} sob auth:sanctum + throttle:api",
-                "Feature test: autenticado vê perfil de outro user ativo; user com is_active=false retorna 404; user que bloqueou auth retorna 404; user que auth bloqueou retorna 404; user inexistente retorna 404",
+                "composer require laravel/horizon predis/predis executa com sucesso",
+                "composer require --dev laravel/telescope executa com sucesso",
+                "php artisan horizon:install e telescope:install publicam assets e configs",
+                "Sanctum permanece em ^4.3 (já instalado — não reinstalar)",
+                ".env.example inclui QUEUE_CONNECTION=redis, CACHE_STORE=redis, SESSION_DRIVER=redis, BROADCAST_CONNECTION=log, REDIS_HOST=127.0.0.1, REDIS_PASSWORD=null, REDIS_PORT=6379",
+                "config/hashing.php tem bcrypt rounds 12",
+                "php artisan config:clear executa sem erro",
                 "Tests pass"
             ],
             "priority": 2,
@@ -38,15 +44,13 @@
         },
         {
             "id": "US-003",
-            "title": "GET /users/{username}/achievements — conquistas públicas",
-            "description": "Como visitante, quero ver as conquistas desbloqueadas de um usuário.",
+            "title": "Criar estrutura de camadas, Enums e BaseDTO",
+            "description": "Como desenvolvedor, quero validar a estrutura Clean Architecture e criar classes base para DTOs, Repositories e a pasta app/Enums.",
             "acceptanceCriteria": [
-                "Controller método achievements",
-                "app/Application/UseCases/PublicProfile/GetPublicAchievementsUseCase.php: aplica mesma checagem de bloqueio do US-002; lista UserAchievement do target com Achievement eager-loaded, ordenação unlocked_at desc, paginado 30/página",
-                "Retorna AchievementResource::collection (sem is_unlocked — todas são desbloqueadas por definição, incluir apenas unlocked_at)",
-                "404 nas mesmas condições do US-002",
-                "Rota GET /api/v1/users/{username}/achievements sob auth:sanctum",
-                "Feature test: retorna conquistas desbloqueadas; bloqueio retorna 404",
+                "Diretórios existem: app/Application/UseCases/, app/Domain/, app/Infrastructure/Repositories/, app/DTOs/, app/Services/, app/Enums/",
+                "app/DTOs/BaseDTO.php é classe abstrata com método estático fromArray(array $data): static usando late static binding",
+                "app/Infrastructure/Repositories/BaseRepository.php é classe abstrata recebendo Illuminate\\Database\\Eloquent\\Model no construtor, expondo findOrFail(string $id), create(array $data), update(Model $model, array $data), delete(Model $model)",
+                "Namespace PSR-4 App\\Enums\\ funciona (composer dump-autoload sem warnings)",
                 "Tests pass"
             ],
             "priority": 3,
@@ -55,14 +59,15 @@
         },
         {
             "id": "US-004",
-            "title": "GET /users/{username}/goals — metas públicas respeitando visibility",
-            "description": "Como visitante, quero ver metas públicas ou de amigos de um usuário.",
+            "title": "Migration: users (recriar com campos FitHub completos)",
+            "description": "Como desenvolvedor, preciso recriar users incluindo todos os campos do briefing FitHub (username, avatar, bio, gender, weight_kg, height_cm, primary_goal, fitness_level, xp_points, level, fcm_token, last_login_at).",
             "acceptanceCriteria": [
-                "Controller método goals",
-                "app/Application/UseCases/PublicProfile/GetPublicGoalsUseCase.php: aplica checagem de bloqueio; filtra goals por (visibility=public) OU (visibility=friends AND FriendshipRepository::areFriends(auth, target)); status != archived; paginado 15/página",
-                "Retorna GoalResource::collection (sem checkins históricos — apenas dados resumidos)",
-                "Feature test: meta private do target NUNCA aparece; meta friends aparece apenas para amigo; meta public aparece para qualquer autenticado; bloqueio retorna 404",
-                "Rota GET /api/v1/users/{username}/goals sob auth:sanctum",
+                "Migration 0001_01_01_000000_create_users_table.php recriada",
+                "Campos: id uuid PK, name string, email string unique, email_verified_at timestamp nullable, password string, username string unique, avatar string nullable, bio text nullable, birth_date date nullable, gender enum male/female/other nullable, weight_kg decimal(5,2) nullable, height_cm decimal(5,2) nullable, primary_goal enum lose_weight/gain_muscle/improve_endurance/general_health nullable, fitness_level enum beginner/intermediate/advanced nullable, xp_points integer default 0, level integer default 1, fcm_token string nullable, is_active boolean default true, last_login_at timestamp nullable, remember_token, timestamps, softDeletes",
+                "Índice único em email e username",
+                "Model User mantém HasUuids, fillable ajustado, casts (birth_date, last_login_at, weight_kg, height_cm, xp_points, level, is_active)",
+                "Factory UserFactory atualizada",
+                "php artisan migrate:fresh executa sem erro",
                 "Tests pass"
             ],
             "priority": 4,
@@ -71,16 +76,335 @@
         },
         {
             "id": "US-005",
-            "title": "Feature tests end-to-end do perfil público",
-            "description": "Como QA, quero cobertura completa incluindo privacidade e bloqueios.",
+            "title": "Migration: password_reset_tokens + personal_access_tokens com tokenable uuid",
+            "description": "Como desenvolvedor, preciso tabelas de reset de senha e tokens Sanctum com tokenable_id uuid compatível com PK UUID de users.",
             "acceptanceCriteria": [
-                "tests/Feature/PublicProfile/ShowProfileTest.php cobre sucesso + 404 para inativo + 404 para bloqueio mútuo + PII nunca exposta (assertJsonMissing email, birth_date, weight_kg)",
-                "tests/Feature/PublicProfile/AchievementsTest.php cobre listagem de desbloqueadas e 404 para bloqueio",
-                "tests/Feature/PublicProfile/GoalsVisibilityTest.php cobre matriz: (private/friends/public) × (owner/friend/stranger) = 9 casos, verificando quais aparecem",
-                "php artisan test --filter=PublicProfile passa 100%",
+                "Migration create_password_reset_tokens_table criada (email PK string, token string, created_at timestamp nullable)",
+                "Migration personal_access_tokens recriada: id bigint auto-increment, tokenable_type varchar, tokenable_id CHAR(36), name string, token string unique, abilities text nullable, last_used_at timestamp nullable, expires_at timestamp nullable, timestamps; índice composto (tokenable_type, tokenable_id)",
+                "php artisan migrate:fresh executa sem erro",
+                "Login stub emite token que resolve $request->user() corretamente",
                 "Tests pass"
             ],
             "priority": 5,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-006",
+            "title": "Migration: user_health_profiles",
+            "description": "Como desenvolvedor, preciso criar user_health_profiles com dados de saúde (alergias, preferências, lesões, equipamentos).",
+            "acceptanceCriteria": [
+                "Migration create_user_health_profiles_table: id uuid PK, user_id foreignUuid unique references users cascadeOnDelete, allergies json nullable, food_preferences json nullable, food_restrictions json nullable, injuries json nullable, available_equipment json nullable, workout_days_per_week integer default 3, workout_duration_minutes integer default 60, timestamps",
+                "Índice em user_id",
+                "Model UserHealthProfile em app/Models/ com HasUuids, fillable, casts para todos json como array, belongsTo User",
+                "User model recebe hasOne(UserHealthProfile::class)",
+                "Factory UserHealthProfileFactory",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 6,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-007",
+            "title": "Migration: goals + goal_checkins (modelo genérico)",
+            "description": "Como desenvolvedor, preciso criar o modelo genérico de metas com checkins para substituir o modelo fixo antigo.",
+            "acceptanceCriteria": [
+                "Migration create_goals_table: id uuid PK, user_id foreignUuid cascadeOnDelete, title string, type enum (weight_loss/muscle_gain/distance/calories/workout_frequency/custom), target_value decimal(10,2), current_value decimal(10,2) default 0, initial_value decimal(10,2) nullable, unit string, deadline date nullable, visibility enum(public/friends/private) default private, status enum(active/completed/archived/expired) default active, completed_at timestamp nullable, timestamps, softDeletes",
+                "Índice composto (user_id, status)",
+                "Migration create_goal_checkins_table: id uuid PK, goal_id foreignUuid cascadeOnDelete, user_id foreignUuid cascadeOnDelete, value decimal(10,2), note text nullable, recorded_at timestamp, timestamps",
+                "Models Goal e GoalCheckin criados com HasUuids, fillable, casts, relationships",
+                "Enums GoalStatus, GoalType, GoalVisibility em app/Enums/ (PHP backed enums string)",
+                "Factories para Goal e GoalCheckin",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 7,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-008",
+            "title": "Migration: fitness_plans + plan_days + plan_items + plan_comments (modelo unificado)",
+            "description": "Como desenvolvedor, preciso criar o modelo unificado de planos (workout e nutrition) com dias, items e comentários.",
+            "acceptanceCriteria": [
+                "Migration create_fitness_plans_table: id uuid PK, user_id foreignUuid cascadeOnDelete, type enum(workout/nutrition), title string, status enum(generating/active/archived/failed) default generating, version integer default 1, generated_at timestamp nullable, job_id string nullable, raw_prompt text nullable, raw_response longText nullable, timestamps, softDeletes; índice (user_id, status, type)",
+                "Migration create_plan_days_table: id uuid PK, fitness_plan_id foreignUuid cascadeOnDelete, day_of_week enum monday..sunday, title string nullable, notes text nullable, order integer, timestamps",
+                "Migration create_plan_items_table: id uuid PK, plan_day_id foreignUuid cascadeOnDelete, name string, description text nullable, type enum(exercise/meal/supplement), sets integer nullable, reps integer nullable, duration_seconds integer nullable, rest_seconds integer nullable, weight_kg decimal(5,2) nullable, calories integer nullable, protein_g decimal(6,2) nullable, carbs_g decimal(6,2) nullable, fat_g decimal(6,2) nullable, order integer, is_completed boolean default false, completed_at timestamp nullable, timestamps",
+                "Migration create_plan_comments_table: id uuid PK, fitness_plan_id foreignUuid cascadeOnDelete, user_id foreignUuid cascadeOnDelete, target_type enum(plan/day/item), target_id uuid nullable, comment text, is_processed boolean default false, processed_at timestamp nullable, timestamps",
+                "Models FitnessPlan, PlanDay, PlanItem, PlanComment com HasUuids, fillable, casts, relationships",
+                "Enums PlanType, PlanStatus, DayOfWeek, PlanItemType, PlanCommentTarget em app/Enums/",
+                "Factories para os 4 models",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 8,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-009",
+            "title": "Migration: friendships",
+            "description": "Como desenvolvedor, preciso criar friendships para o domínio social.",
+            "acceptanceCriteria": [
+                "Migration create_friendships_table: id uuid PK, requester_id foreignUuid references users cascadeOnDelete, addressee_id foreignUuid references users cascadeOnDelete, status enum(pending/accepted/declined/blocked) default pending, responded_at timestamp nullable, timestamps",
+                "Índice único composto (requester_id, addressee_id)",
+                "Índice em status",
+                "Model Friendship com HasUuids, fillable, casts, relationships belongsTo requester/addressee",
+                "Enum FriendshipStatus em app/Enums/",
+                "Factory FriendshipFactory",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 9,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-010",
+            "title": "Migration: achievements + user_achievements",
+            "description": "Como desenvolvedor, preciso criar as tabelas do sistema de conquistas.",
+            "acceptanceCriteria": [
+                "Migration create_achievements_table: id uuid PK, key string unique, title string, description text, icon string, category enum(goals/streak/social/leaderboard/milestone), xp_reward integer default 0, timestamps",
+                "Migration create_user_achievements_table: id uuid PK, user_id foreignUuid cascadeOnDelete, achievement_id foreignUuid cascadeOnDelete, unlocked_at timestamp",
+                "Índice único composto (user_id, achievement_id)",
+                "Models Achievement e UserAchievement com HasUuids, fillable, casts, relationships",
+                "Enum AchievementCategory em app/Enums/",
+                "Factories para ambos",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 10,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-011",
+            "title": "Migration: posts + post_likes + post_comments",
+            "description": "Como desenvolvedor, preciso criar as tabelas do feed social.",
+            "acceptanceCriteria": [
+                "Migration create_posts_table: id uuid PK, user_id foreignUuid cascadeOnDelete, content text, type enum(achievement/goal_completed/manual), visibility enum(public/friends/private) default public, meta json nullable, likes_count integer default 0, comments_count integer default 0, timestamps, softDeletes",
+                "Índice composto (user_id, visibility)",
+                "Migration create_post_likes_table: id uuid PK, post_id foreignUuid cascadeOnDelete, user_id foreignUuid cascadeOnDelete, timestamps; índice único (post_id, user_id)",
+                "Migration create_post_comments_table: id uuid PK, post_id foreignUuid cascadeOnDelete, user_id foreignUuid cascadeOnDelete, content text, timestamps, softDeletes",
+                "Models Post, PostLike, PostComment com HasUuids, fillable, casts, relationships",
+                "Enums PostType, PostVisibility em app/Enums/",
+                "Factories para os 3 models",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 11,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-012",
+            "title": "Migration: leaderboard_snapshots + xp_transactions (idempotência por unique)",
+            "description": "Como desenvolvedor, preciso criar snapshots do leaderboard e xp_transactions com unique index para idempotência diária.",
+            "acceptanceCriteria": [
+                "Migration create_leaderboard_snapshots_table: id uuid PK, user_id foreignUuid cascadeOnDelete, period enum(weekly/monthly/alltime), period_key string, rank integer, xp_points integer, calculated_at timestamp",
+                "Índice único composto (user_id, period, period_key) em leaderboard_snapshots",
+                "Índice (period, period_key) para queries de ranking",
+                "Migration create_xp_transactions_table: id uuid PK, user_id foreignUuid cascadeOnDelete, amount integer, reason enum(goal_checkin/goal_completed/workout_done/meal_followed/achievement_unlocked/friend_added/post_liked/login_daily), reference_type varchar nullable, reference_id CHAR(36) nullable, timestamps",
+                "Índice único composto (user_id, reason, reference_id) em xp_transactions (idempotência: login_daily usa YYYY-MM-DD como reference_id)",
+                "Índice (reference_type, reference_id) para queries polimórficas",
+                "Models LeaderboardSnapshot e XpTransaction com HasUuids, fillable, casts, relationships",
+                "Enums LeaderboardPeriod e XpReason em app/Enums/",
+                "Factories para ambos",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 12,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-013",
+            "title": "Migration: notifications (canal database)",
+            "description": "Como desenvolvedor, preciso criar a tabela notifications para o canal database do Laravel Notifications com notifiable_id uuid.",
+            "acceptanceCriteria": [
+                "php artisan notifications:table gera migration base",
+                "Migration ajustada para notifiable_id CHAR(36) (uuid) compatível com User",
+                "Índice composto (notifiable_type, notifiable_id) presente",
+                "php artisan migrate:fresh executa sem erro",
+                "Tests pass"
+            ],
+            "priority": 13,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-014",
+            "title": "Error handler centralizado pt-BR com shape { error: { code, message, details } }",
+            "description": "Como desenvolvedor, quero consolidar os handlers de erro em bootstrap/app.php mantendo o shape já adotado no ARCH-002 e traduzindo mensagens para pt-BR.",
+            "acceptanceCriteria": [
+                "bootstrap/app.php withExceptions handlers para: ValidationException 422 code VALIDATION_ERROR details=campos, ModelNotFoundException 404 RESOURCE_NOT_FOUND 'Recurso não encontrado', AuthenticationException 401 UNAUTHENTICATED 'Não autenticado', AuthorizationException 403 FORBIDDEN 'Ação não autorizada', ThrottleRequestsException 429 TOO_MANY_REQUESTS 'Muitas requisições', NotFoundHttpException 404 NOT_FOUND 'Endpoint não encontrado', BadRequestHttpException 400 BAD_REQUEST, Throwable 500 SERVER_ERROR",
+                "Mensagens default em pt-BR",
+                "Shape uniforme: { error: { code: string, message: string, details: object } } — NUNCA { message, errors }",
+                "Handler só dispara para rotas api/* ou $request->expectsJson()",
+                "Feature test tests/Feature/ErrorHandlerTest.php valida shapes 404, 401, 403, 422, 429",
+                "Tests pass"
+            ],
+            "priority": 14,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-015",
+            "title": "Rate limiters nomeados (auth, api, ai-plans, leaderboard)",
+            "description": "Como desenvolvedor, quero definir rate limiters para proteger endpoints críticos.",
+            "acceptanceCriteria": [
+                "RateLimiter::for('auth', fn ($r) => Limit::perMinute(5)->by($r->ip()))",
+                "RateLimiter::for('api', fn ($r) => Limit::perMinute(60)->by($r->user()?->id ?: $r->ip()))",
+                "RateLimiter::for('ai-plans', fn ($r) => Limit::perHour(3)->by($r->user()?->id ?: $r->ip()))",
+                "RateLimiter::for('leaderboard', fn ($r) => Limit::perMinute(30)->by($r->user()?->id ?: $r->ip()))",
+                "Limiters registrados em AppServiceProvider::boot()",
+                "Feature test valida que throttle:auth bloqueia após 5 requests",
+                "Tests pass"
+            ],
+            "priority": 15,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-016",
+            "title": "Sanctum device-aware token expiration (mobile 7d, web 1d)",
+            "description": "Como desenvolvedor, quero que o LoginUserUseCase emita tokens com expiração distinta por device.",
+            "acceptanceCriteria": [
+                "config/sanctum.php com 'expiration' => 60 * 24",
+                "LoginUserUseCase aceita parâmetro string $device (mobile|web)",
+                "device=mobile cria token com expires_at = now()->addDays(7)",
+                "device=web cria token com expires_at = now()->addDay()",
+                "LoginRequest valida device com in:mobile,web nullable (default web)",
+                "Unit test em tests/Unit/Application/UseCases/Auth/LoginUserUseCaseTest.php valida ambos os caminhos",
+                "Tests pass"
+            ],
+            "priority": 16,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-017",
+            "title": "Horizon configurado com supervisores nomeados",
+            "description": "Como desenvolvedor, quero configurar supervisores Horizon para ai-plans, notifications e default.",
+            "acceptanceCriteria": [
+                "config/horizon.php environments local e production com 3 supervisores: ai-plans (queue ai-plans, minProcesses 2 maxProcesses 5), notifications (queue notifications, minProcesses 2 maxProcesses 4), default (queue default, minProcesses 1 maxProcesses 3)",
+                "app/Providers/HorizonServiceProvider.php gate() retorna true em local ou para admins placeholder",
+                "php artisan horizon:status não retorna exception fatal",
+                "php artisan config:clear sem erro",
+                "Tests pass"
+            ],
+            "priority": 17,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-018",
+            "title": "Telescope restrito ao ambiente local",
+            "description": "Como desenvolvedor, quero que o Telescope rode apenas em local.",
+            "acceptanceCriteria": [
+                "TelescopeServiceProvider::gate() retorna app()->environment('local')",
+                "config/telescope.php com 'enabled' => env('TELESCOPE_ENABLED', false)",
+                ".env.example com TELESCOPE_ENABLED=true",
+                "AppServiceProvider::register() registra TelescopeServiceProvider apenas em local",
+                "Migrations do Telescope executam em php artisan migrate:fresh",
+                "Tests pass"
+            ],
+            "priority": 18,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-019",
+            "title": "Canal de log estruturado (JSON daily)",
+            "description": "Como desenvolvedor, quero um canal de log que escreva JSON estruturado para auditoria.",
+            "acceptanceCriteria": [
+                "config/logging.php define channel structured: driver daily, days 14, level debug, formatter Monolog JsonFormatter",
+                "stack default inclui ['single', 'structured']",
+                "Log::channel('structured')->info('test', ['user_id' => 'x']) grava linha JSON válida em storage/logs/structured-*.log",
+                "Unit test valida que linha escrita é JSON parseável com keys esperadas (message, context.user_id)",
+                "Tests pass"
+            ],
+            "priority": 19,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-020",
+            "title": "SecurityHeadersMiddleware no grupo api",
+            "description": "Como desenvolvedor, quero adicionar headers de segurança em todas as respostas da API.",
+            "acceptanceCriteria": [
+                "app/Http/Middleware/SecurityHeadersMiddleware.php criado",
+                "Headers adicionados: X-Content-Type-Options: nosniff, Referrer-Policy: no-referrer, X-Frame-Options: DENY, Strict-Transport-Security: max-age=31536000; includeSubDomains apenas se $request->isSecure()",
+                "Registrado no grupo api em bootstrap/app.php via ->withMiddleware(fn($m) => $m->api(append: [SecurityHeadersMiddleware::class]))",
+                "Feature test valida presença dos 3 headers non-HSTS em response de endpoint de teste",
+                "Tests pass"
+            ],
+            "priority": 20,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-021",
+            "title": "AiService interface + FakeAiService stub",
+            "description": "Como desenvolvedor, quero uma interface AiServiceInterface e implementação Fake determinística para substituir chamadas reais ao Gemini.",
+            "acceptanceCriteria": [
+                "app/Services/Ai/AiServiceInterface.php declara generate(string $prompt): string",
+                "app/Services/Ai/FakeAiService.php implementa retornando JSON válido determinístico",
+                "JSON tem estrutura { plan_title: string, days: [ { day_of_week: string, items: [ { name, type, sets, reps, ... } ] } ] } com ≥1 day e ≥1 item",
+                "AppServiceProvider::register() faz $this->app->bind(AiServiceInterface::class, FakeAiService::class)",
+                "Unit test tests/Unit/Services/Ai/FakeAiServiceTest.php valida json_decode retornando array com key days não-vazia e cada day com items não-vazio",
+                "Tests pass"
+            ],
+            "priority": 21,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-022",
+            "title": "FcmChannel stub + Notifications base",
+            "description": "Como desenvolvedor, quero um canal FCM que logue payloads (stub) para permitir uso de Notifications sem integração Firebase real.",
+            "acceptanceCriteria": [
+                "app/Notifications/Channels/FcmChannel.php com send($notifiable, Notification $notification): void que chama $notification->toFcm($notifiable) e loga via Log::channel('structured')->info('fcm_notification', [...])",
+                "app/Notifications/Concerns/RoutesFcm.php trait com routeNotificationForFcm() retornando $this->fcm_token",
+                "User model usa trait RoutesFcm",
+                "Notification de teste resolve canal 'fcm' via array ['fcm' => FcmChannel::class] no NotificationServiceProvider",
+                "Unit test: Notification com via()=['fcm'] enviada para user com fcm_token gera entrada no log structured com payload",
+                "Tests pass"
+            ],
+            "priority": 22,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-023",
+            "title": "API versioning v1 consolidado",
+            "description": "Como desenvolvedor, quero routes/api.php estruturado com prefixo v1 e nome api.v1.",
+            "acceptanceCriteria": [
+                "routes/api.php tem Route::prefix('v1')->name('api.v1.')->group",
+                "Sub-grupo middleware auth:sanctum para rotas protegidas",
+                "Namespace dos futuros controllers será App\\Http\\Controllers\\Api\\V1\\",
+                "php artisan route:list mostra rotas com prefixo api/v1/ ou lista vazia limpa",
+                "Tests pass"
+            ],
+            "priority": 23,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-024",
+            "title": "Schedules: RecalculateLeaderboardJob hourly + leaderboard:purge-old semanal",
+            "description": "Como desenvolvedor, quero agendar recálculo do leaderboard e limpeza de snapshots antigos.",
+            "acceptanceCriteria": [
+                "app/Jobs/RecalculateLeaderboardJob.php stub (queue default) que apenas loga — lógica real vem em GAM-03",
+                "app/Console/Commands/LeaderboardPurgeOldCommand.php signature 'leaderboard:purge-old' deleta leaderboard_snapshots where calculated_at < now()->subMonths(3) e loga count",
+                "routes/console.php: Schedule::job(new RecalculateLeaderboardJob)->hourly()",
+                "routes/console.php: Schedule::command('leaderboard:purge-old')->weeklyOn(0, '03:00')",
+                "php artisan schedule:list mostra ambos",
+                "Tests pass"
+            ],
+            "priority": 24,
             "passes": false,
             "notes": ""
         }

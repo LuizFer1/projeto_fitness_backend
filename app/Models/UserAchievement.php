@@ -2,32 +2,32 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class UserAchievement extends Model
 {
-    use HasFactory;
+    use HasUuids;
+
+    protected $table = 'user_achievements';
+
+    public $timestamps = false;
+
     protected $fillable = [
-        'user_uuid',
-        'achievement_id',
-        'unlocked_at',
+        'user_id', 'achievement_id', 'unlocked_at', 'xp_received', 'is_notified',
     ];
 
-    protected function casts(): array
+    protected $casts = [
+        'unlocked_at' => 'datetime',
+        'is_notified' => 'boolean',
+    ];
+
+    public function user()
     {
-        return [
-            'unlocked_at' => 'datetime',
-        ];
+        return $this->belongsTo(User::class);
     }
 
-    public function user(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'user_uuid', 'uuid');
-    }
-
-    public function achievement(): BelongsTo
+    public function achievement()
     {
         return $this->belongsTo(Achievement::class);
     }

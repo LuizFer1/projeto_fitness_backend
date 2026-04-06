@@ -2,32 +2,29 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class XpTransaction extends Model
 {
-    use HasFactory;
+    use HasUuids;
+
+    protected $table = 'xp_transactions';
+
+    public $timestamps = false;
 
     protected $fillable = [
-        'user_uuid',
-        'amount',
-        'reason',
-        'reference_type',
-        'reference_id',
-        'meta',
+        'user_id', 'type', 'xp_gained', 'description',
+        'ref_id', 'ref_table', 'date', 'xp_total_snapshot',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'meta' => 'array',
-        ];
-    }
+    protected $casts = [
+        'date' => 'date',
+        'created_at' => 'datetime',
+    ];
 
-    public function user(): BelongsTo
+    public function user()
     {
-        return $this->belongsTo(User::class, 'user_uuid', 'uuid');
+        return $this->belongsTo(User::class);
     }
 }
