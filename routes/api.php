@@ -22,6 +22,7 @@ Route::group([], function () {
                 Route::get('leaderboard/weekly',  [LeaderboardController::class, 'weekly']);
                 Route::get('leaderboard/monthly', [LeaderboardController::class, 'monthly']);
                 Route::get('leaderboard/alltime', [LeaderboardController::class, 'alltime']);
+                Route::get('leaderboard/friends', [LeaderboardController::class, 'friends']);
             });
         });
 

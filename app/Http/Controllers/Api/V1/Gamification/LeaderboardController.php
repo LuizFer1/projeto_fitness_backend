@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1\Gamification;
 
+use App\Application\UseCases\Gamification\GetFriendsLeaderboardUseCase;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Gamification\LeaderboardResource;
 use App\Models\LeaderboardSnapshot;
@@ -28,6 +29,20 @@ class LeaderboardController extends Controller
     public function alltime(Request $request)
     {
         return $this->respondForPeriod($request, 'alltime', 'global', 21600);
+    }
+
+    public function friends(Request $request, GetFriendsLeaderboardUseCase $useCase)
+    {
+        $user = $request->user();
+        $data = $useCase->execute($user);
+
+        return LeaderboardResource::collection($data)
+            ->additional([
+                'meta' => [
+                    'period' => 'friends',
+                    'period_key' => $user->uuid,
+                ],
+            ]);
     }
 
     private function respondForPeriod(Request $request, string $period, string $periodKey, int $ttl)
