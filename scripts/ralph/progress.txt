@@ -10,6 +10,14 @@
 - For timezone-dependent queries, do conversion in PHP/Carbon (SQLite doesn't support CONVERT_TZ)
 - AddXpUseCase is the single entry point for awarding XP — always use it (or ProcessXpTransactionJob) rather than creating XpTransaction directly
 - SQLite unique constraint errors say "UNIQUE constraint failed", MySQL uses SQLSTATE 23000 — handle both in catch blocks
+- Laravel 12 auto-discovery doesn't work for listeners with `handle(object $event)` — register explicitly via Event::listen in AppServiceProvider
+- AwardXpForEventListener is the single listener for all XP-awarding events — uses match(true) to dispatch by event type
+- FriendshipAccepted awards XP to BOTH users — always pass both User models in the event
+- UnlockAchievementListener is the single listener for all achievement checks — uses match(true) like AwardXpForEventListener
+- Achievement unlock chains: event → UnlockAchievementListener → AchievementUnlocked → AwardXpForEventListener (XP reward)
+- LeaderboardSnapshot model uses updateOrCreate on (user_uuid, period, period_key) for upserts
+- Cache keys follow pattern: leaderboard:{period}:{period_key} — TTLs: weekly/monthly 3600, alltime 21600
+- Weekly period_key uses ISO format: Carbon->format('o-\\WW') e.g. "2026-W15"
 ---
 
 ## 2026-04-06 - US-001
@@ -64,4 +72,88 @@
   - SQLite unique constraint violation message contains "UNIQUE constraint failed" (not SQLSTATE 23000 like MySQL) — check for both in catch
   - AddXpUseCase stores meta JSON with base_amount, streak_bonus, streak_day for breakdown in XP history
   - User model needs xp_points and level in fillable for increment/update to work
+---
+
+## 2026-04-06 - US-004
+- Implemented AwardXpForEventListener consuming 8 domain events and routing to AddXpUseCase
+- Created 8 event classes: UserLoggedIn, GoalCheckinCreated, GoalCompleted, WorkoutDayCompleted, MealFollowed, FriendshipAccepted, PostLiked, AchievementUnlocked
+- Registered all events in AppServiceProvider via Event::listen
+- Files created:
+  - app/Events/UserLoggedIn.php, GoalCheckinCreated.php, GoalCompleted.php, WorkoutDayCompleted.php, MealFollowed.php, FriendshipAccepted.php, PostLiked.php, AchievementUnlocked.php
+  - app/Listeners/AwardXpForEventListener.php
+  - tests/Feature/Gamification/AwardXpForEventListenerTest.php (10 tests)
+- Files modified:
+  - app/Providers/AppServiceProvider.php (registered listener for 8 events)
+  - scripts/ralph/pdr.json (marked US-003, US-004 as passes:true)
+- **Learnings for future iterations:**
+  - Laravel 12 event auto-discovery needs typed handle() — for a single listener handling multiple event types via match, register explicitly with Event::listen
+  - FriendshipAccepted event carries both user and friend — listener awards XP to both
+  - PostLiked event carries the author (not the liker) — XP goes to post author
+  - AchievementUnlocked event carries xpReward directly to avoid needing Achievement model lookup in listener
+  - Events dispatch synchronously in tests (no queue) — can assert DB state immediately after dispatch
+---
+
+## 2026-04-06 - US-005
+- Implemented AchievementSeeder with 14 mandatory achievements (updateOrCreate for idempotency)
+- Created Achievement model, UserAchievement model, and their migrations
+- Added AchievementSeeder to DatabaseSeeder call chain
+- Files created:
+  - app/Models/Achievement.php (key, title, description, icon, category, xp_reward)
+  - app/Models/UserAchievement.php (user_uuid, achievement_id, unlocked_at)
+  - database/migrations/2026_04_06_000003_create_achievements_table.php
+  - database/migrations/2026_04_06_000004_create_user_achievements_table.php
+  - database/seeders/AchievementSeeder.php (14 achievements with updateOrCreate)
+  - tests/Feature/Gamification/AchievementSeederTest.php (7 tests)
+- Files modified:
+  - database/seeders/DatabaseSeeder.php (added AchievementSeeder::class)
+  - scripts/ralph/pdr.json (marked US-005 as passes:true)
+- **Learnings for future iterations:**
+  - Achievement model uses auto-increment id (not UUID) — foreign keys use achievement_id
+  - UserAchievement unique constraint on (user_uuid, achievement_id) prevents duplicate unlocks
+  - AchievementSeeder uses updateOrCreate keyed on 'key' column for idempotency
+  - user_achievements table references users.uuid via foreignUuid, same pattern as xp_transactions
+---
+
+## 2026-04-06 - US-006
+- Implemented UnlockAchievementListener with pre-condition checks for all 14 achievements
+- Created 3 missing events: GoalCreated, PlanGenerated, RefinePlanCompleted
+- Registered UnlockAchievementListener in AppServiceProvider for 7 events
+- Files created:
+  - app/Listeners/UnlockAchievementListener.php (handles 7 events, checks preconditions, unlocks achievements)
+  - app/Events/GoalCreated.php (user, goalId)
+  - app/Events/PlanGenerated.php (user, planId)
+  - app/Events/RefinePlanCompleted.php (user, planId)
+  - tests/Feature/Gamification/UnlockAchievementListenerTest.php (10 tests)
+- Files modified:
+  - app/Providers/AppServiceProvider.php (registered UnlockAchievementListener for 7 events)
+  - scripts/ralph/pdr.json (marked US-006 as passes:true)
+- **Learnings for future iterations:**
+  - UnlockAchievementListener uses tryUnlock() with exists() check + try/catch for race condition safety
+  - GoalCompleted checks xp_transactions count with reason=goal_completed to determine how many goals completed
+  - FriendshipAccepted checks achievements for BOTH users (user and friend)
+  - checkStreaks() uses StreakCalculator::currentStreak to determine streak-based achievements
+  - AchievementUnlocked event is dispatched after unlock, which chains to AwardXpForEventListener for XP reward
+---
+
+## 2026-04-06 - US-007
+- Implemented RecalculateLeaderboardJob computing weekly/monthly/alltime rankings
+- Created LeaderboardSnapshot model/migration with unique constraint on (user_uuid, period, period_key)
+- Created LeaderboardPositionChanged event dispatched for users entering top 10
+- Job caches top 100 per period to Cache (Redis) with appropriate TTLs
+- Scheduled hourly in routes/console.php
+- Files created:
+  - app/Jobs/RecalculateLeaderboardJob.php
+  - app/Models/LeaderboardSnapshot.php
+  - app/Events/LeaderboardPositionChanged.php
+  - database/migrations/2026_04_06_000005_create_leaderboard_snapshots_table.php
+  - tests/Feature/Gamification/RecalculateLeaderboardJobTest.php (8 tests)
+- Files modified:
+  - routes/console.php (added Schedule::job hourly)
+  - scripts/ralph/pdr.json (marked US-007 as passes:true)
+- **Learnings for future iterations:**
+  - Weekly period uses Carbon->startOfWeek(Carbon::MONDAY) for ISO week boundaries
+  - period_key format: weekly='o-\\WW' (e.g. 2026-W15), monthly='Y-m', alltime='global'
+  - LeaderboardPositionChanged only dispatches for users newly entering top 10 (oldRank was null or > 10)
+  - alltime ranking reads from users.xp_points directly; weekly/monthly SUM xp_transactions.amount in period
+  - Job removes stale snapshots (users who dropped out of top 100) via whereNotIn
 ---
