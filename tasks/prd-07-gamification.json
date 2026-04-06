@@ -1,0 +1,211 @@
+{
+  "project": "FitHub Backend",
+  "branchName": "ralph/gamification",
+  "description": "PRD 07: Gamificação — motor de XP/níveis/leaderboard/conquistas. Consome eventos de todos os outros domínios. Leaderboard é SEMPRE servido do Redis — nunca computado on-demand. DEPENDE de PRD 00, 01, 03, 04, 05, 06. XP idempotente via unique index em xp_transactions. 6 níveis. 14 conquistas obrigatórias seedadas. Streak bonus progressivo aplicado a login_daily/workout_done/goal_checkin via fórmula min(streakDay-1, 10) × 5. Todas rotas /api/v1/gamification com auth:sanctum + throttle:leaderboard para leaderboard.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "LevelCalculator com 6 níveis e Unit tests",
+      "description": "Como sistema, preciso calcular o nível a partir do XP com 6 faixas definidas.",
+      "acceptanceCriteria": [
+        "app/Services/Gamification/LevelCalculator.php: método forXp(int $xp): int retorna 1 (0-499), 2 (500-1499), 3 (1500-3499), 4 (3500-7499), 5 (7500-14999), 6 (15000+)",
+        "Método nameFor(int $level): string retorna 'Iniciante', 'Dedicado', 'Consistente', 'Atleta', 'Elite', 'Campeão'",
+        "Método nextLevelXp(int $currentXp): ?int retorna XP necessário para subir nível, null se nível 6",
+        "Unit test tests/Unit/Services/Gamification/LevelCalculatorTest.php: casos de borda 0, 499, 500, 1499, 1500, 7499, 7500, 14999, 15000, 99999",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "StreakCalculator com fuso America/Sao_Paulo e Unit tests",
+      "description": "Como sistema, preciso calcular sequências consecutivas de atividade para bônus de XP.",
+      "acceptanceCriteria": [
+        "app/Services/Gamification/StreakCalculator.php",
+        "Método currentStreak(User $user, ?Carbon $at = null): int — conta dias consecutivos em fuso America/Sao_Paulo contendo ao menos um xp_transaction com reason IN (login_daily, workout_done, goal_checkin)",
+        "Método bonusFor(User $user, string $reason, Carbon $at): int — retorna min(streakDay - 1, 10) × 5 clampado 0..50; retorna 0 se reason não elegível",
+        "Query agrupa xp_transactions por DATE(CONVERT_TZ(created_at, '+00:00', '-03:00')) e conta dias consecutivos voltando do dia atual",
+        "Um único evento elegível por dia mantém sequência",
+        "Unit test tests/Unit/Services/Gamification/StreakCalculatorTest.php cobre: dia 1 bônus 0; dia 3 bônus 10; dia 11 bônus 50 (cap); lacuna de 1 dia quebra sequência; múltiplos eventos no mesmo dia não aumentam streakDay",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "AddXpUseCase + ProcessXpTransactionJob (idempotente)",
+      "description": "Como sistema, preciso de uma action central que aplica XP com bônus de streak, idempotência e recálculo de nível.",
+      "acceptanceCriteria": [
+        "app/Application/UseCases/Xp/AddXpUseCase.php método execute(User $user, int $baseAmount, string $reason, ?string $referenceType = null, ?string $referenceId = null, ?Carbon $occurredAt = null): ?XpTransaction",
+        "Lógica: calcula streakBonus = StreakCalculator::bonusFor(user, reason, occurredAt ?? now()) se reason in [login_daily, workout_done, goal_checkin]; senão 0. total = baseAmount + streakBonus.",
+        "Cria XpTransaction em try/catch — captura QueryException com SQLSTATE 23000 (unique violation) e retorna null silenciosamente",
+        "Em sucesso: $user->increment('xp_points', $total); oldLevel = $user->level; newLevel = LevelCalculator::forXp($user->xp_points); se newLevel != oldLevel, $user->update(['level' => newLevel]) e dispatch LevelChanged($user, $oldLevel, $newLevel)",
+        "app/Jobs/ProcessXpTransactionJob.php onQueue('default') wraps AddXpUseCase para execução assíncrona",
+        "app/Events/LevelChanged.php criado",
+        "Feature test: chamar AddXpUseCase 2x com mesma (user, reason, reference_id) cria apenas 1 XpTransaction; xp_points e level atualizados; LevelChanged dispatched ao cruzar faixa",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Listeners universais de XP consumindo eventos dos outros domínios",
+      "description": "Como sistema, preciso conectar os eventos dos outros PRDs ao AddXpUseCase.",
+      "acceptanceCriteria": [
+        "app/Listeners/AwardXpForEventListener.php implements ShouldQueue onQueue('default') — único listener registrado em múltiplos eventos via EventServiceProvider",
+        "Mapeamento de eventos para (reason, baseAmount, referenceExtractor): UserLoggedIn → (login_daily, 10, date-ISO), GoalCheckinCreated → (goal_checkin, 10, checkin_id), GoalCompleted → (goal_completed, 100, goal_id), WorkoutDayCompleted → (workout_done, 40, plan_day_id), MealFollowed → (meal_followed, 15, plan_day_id), FriendshipAccepted → (friend_added, 20, friendship_id) AMBOS users, PostLiked → (post_liked, 5, post_id) para o AUTOR do post, AchievementUnlocked → (achievement_unlocked, achievement.xp_reward, user_achievement_id)",
+        "EventServiceProvider registra AwardXpForEventListener em cada um dos 8 eventos acima",
+        "Feature test: disparar GoalCompleted cria XpTransaction com amount=100 + streak bonus + user.xp_points atualizado",
+        "Feature test: FriendshipAccepted cria 2 XpTransactions (uma para cada user envolvido)",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "AchievementSeeder com 14 conquistas obrigatórias",
+      "description": "Como produto, preciso das 14 conquistas base populadas no DB.",
+      "acceptanceCriteria": [
+        "database/seeders/AchievementSeeder.php insere: first_goal_created (10xp, goals), first_checkin (10xp, goals), goal_completed_1 (50xp, goals), goal_completed_5 (150xp, goals), first_workout_done (25xp, milestone), streak_3_days (30xp, streak), streak_7_days (75xp, streak), streak_30_days (300xp, streak), first_friend (20xp, social), social_butterfly (100xp, social), first_plan_generated (30xp, milestone), plan_refined (50xp, milestone), leaderboard_top_10 (100xp, leaderboard), leaderboard_top_1 (500xp, leaderboard)",
+        "Cada registro tem key, title (pt-BR), description (pt-BR), icon (caminho/emoji placeholder), category, xp_reward",
+        "Seeder usa updateOrCreate por key (idempotente)",
+        "DatabaseSeeder chama AchievementSeeder",
+        "php artisan migrate:fresh --seed executa sem erro e cria 14 rows em achievements",
+        "Feature test: contagem de achievements == 14 após seed; keys únicas",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "UnlockAchievementListener com checagem de pré-condições",
+      "description": "Como sistema, preciso desbloquear achievements automaticamente baseado em eventos.",
+      "acceptanceCriteria": [
+        "app/Listeners/UnlockAchievementListener.php implements ShouldQueue onQueue('default')",
+        "Mapeamento: GoalCreated → checar first_goal_created (count goals user >= 1 && !hasUnlocked); GoalCheckinCreated → first_checkin; GoalCompleted → goal_completed_1 (>=1), goal_completed_5 (>=5); WorkoutDayCompleted → first_workout_done, depois checkStreaks(3/7/30); FriendshipAccepted → first_friend (>=1), social_butterfly (>=10); PlanGenerated → first_plan_generated; RefinePlanCompleted → plan_refined",
+        "Para cada verificação positiva e ainda-não-desbloqueada: cria UserAchievement(user_id, achievement_id, unlocked_at=now()) dentro de try/catch com unique constraint silenciosa; dispatch AchievementUnlocked($userAchievement, $achievement)",
+        "app/Events/AchievementUnlocked.php criado — consumido por AwardXpForEventListener (xp_reward) e CreateAchievementUnlockedPostListener (PRD 06)",
+        "Método privado checkStreaks usa StreakCalculator::currentStreak",
+        "Feature test: completar 1 goal desbloqueia goal_completed_1; 5 goals desbloqueia goal_completed_5; re-disparar evento não duplica",
+        "Tests pass"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "RecalculateLeaderboardJob (real, substitui stub)",
+      "description": "Como sistema, preciso popular leaderboard_snapshots e Redis periodicamente.",
+      "acceptanceCriteria": [
+        "app/Jobs/RecalculateLeaderboardJob.php (substitui stub do PRD 00) onQueue('default')",
+        "Handle: para cada período (weekly atual, monthly atual, alltime): calcula ranking. Weekly: SUM xp_transactions.amount WHERE created_at BETWEEN start_week AND end_week agrupado por user_id, ORDER BY total DESC, LIMIT 100. Monthly idem com BETWEEN mês. Alltime: users.xp_points DESC LIMIT 100",
+        "Para cada resultado faz upsert em leaderboard_snapshots (user_id, period, period_key, rank, xp_points, calculated_at)",
+        "period_key: weekly = 'YYYY-Www' (ISO week), monthly = 'YYYY-MM', alltime = 'global'",
+        "Serializa top 100 como array e Cache::put('leaderboard:weekly:' . period_key, $payload, 3600); monthly 3600; alltime 21600",
+        "Após cálculo, compara rank novo vs anterior para top 10; dispatch LeaderboardPositionChanged($user, $oldRank, $newRank) apenas para quem entrou no top 10",
+        "Agendado hourly em routes/console.php (já feito no PRD 00 como stub — atualizar para classe real)",
+        "Feature test: cria 50 users com xp_transactions variados, roda job, verifica leaderboard_snapshots populado e Cache::has('leaderboard:weekly:...')",
+        "Tests pass"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "GET /gamification/leaderboard/weekly|monthly|alltime servindo Redis",
+      "description": "Como app, quero consultar leaderboards servidos do Redis.",
+      "acceptanceCriteria": [
+        "app/Http/Controllers/Api/V1/Gamification/LeaderboardController.php métodos weekly, monthly, alltime",
+        "Cada método calcula period_key e chama Cache::remember('leaderboard:{period}:{period_key}', {TTL}, fn() => LeaderboardSnapshot::where(...)->orderBy('rank')->take(100)->with('user')->get()->toArray())",
+        "TTL: weekly/monthly 3600, alltime 21600",
+        "Retorna LeaderboardResource::collection + meta = { current_user_rank: int|null, period, period_key }",
+        "current_user_rank: se auth.user está no top 100, null; senão query leaderboard_snapshots para achar rank do user",
+        "Rotas sob auth:sanctum + throttle:leaderboard",
+        "Feature test: mocka Cache e popula; endpoint retorna top 100 + meta correta",
+        "Tests pass"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "GET /gamification/leaderboard/friends",
+      "description": "Como usuário, quero ver ranking entre eu e meus amigos.",
+      "acceptanceCriteria": [
+        "LeaderboardController método friends",
+        "app/Application/UseCases/Gamification/GetFriendsLeaderboardUseCase.php: Cache::remember('leaderboard:friends:' . user.id, 300, fn() => query users WHERE id in (friend_ids + auth.id) ORDER BY xp_points DESC)",
+        "friend_ids obtido via FriendshipRepository::listFriends",
+        "Sem limite de 100 — todos os amigos + auth",
+        "Retorna LeaderboardResource::collection com rank calculado em PHP",
+        "Rota GET /api/v1/gamification/leaderboard/friends sob auth:sanctum + throttle:leaderboard",
+        "Feature test: seeds 5 amigos com xp variado; endpoint retorna ordenado incluindo próprio user",
+        "Tests pass"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "GET /gamification/achievements com is_unlocked por user",
+      "description": "Como app, quero ver todas as achievements com estado do user autenticado.",
+      "acceptanceCriteria": [
+        "app/Application/UseCases/Gamification/ListAchievementsUseCase.php: query achievements LEFT JOIN user_achievements ON achievement_id=id AND user_id=auth.id; SELECT achievement.*, user_achievements.unlocked_at",
+        "Retorna AchievementResource::collection onde cada item inclui is_unlocked (bool) e unlocked_at (nullable ISO)",
+        "Ordenação: desbloqueadas primeiro (unlocked_at DESC), depois bloqueadas por category",
+        "Rota GET /api/v1/gamification/achievements sob auth:sanctum",
+        "Feature test: lista as 14 achievements; seed UserAchievement para 3 delas; endpoint retorna as 3 com is_unlocked=true",
+        "Tests pass"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "GET /gamification/xp-history com breakdown de streak",
+      "description": "Como app, quero o histórico de XP com detalhes de bônus.",
+      "acceptanceCriteria": [
+        "Controller método xpHistory retorna XpTransactionResource::collection paginado 30/página, ordenação created_at desc, filtrado por user_id=auth.id",
+        "XpTransactionResource expõe: id, amount (total), base_amount, streak_bonus, streak_day, reason, reason_label (tradução pt-BR via translator), reference_type, created_at",
+        "Para extrair base_amount/streak_bonus/streak_day: XpTransaction tem coluna meta (json nullable) populada pelo AddXpUseCase — adicionar coluna via migration de ajuste OU computar do total via tabela auxiliar",
+        "Se coluna meta não existir, adicionar via migration add_meta_to_xp_transactions (json nullable)",
+        "Rota GET /api/v1/gamification/xp-history sob auth:sanctum",
+        "Feature test: lista XpTransactions do user ordenadas, resource mostra breakdown",
+        "Tests pass"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Feature tests end-to-end do motor de gamificação",
+      "description": "Como QA, quero cobertura integrada do motor completo.",
+      "acceptanceCriteria": [
+        "tests/Feature/Gamification/XpFlowTest.php: disparar GoalCompleted cria XpTransaction, atualiza user.xp_points e user.level, desbloqueia goal_completed_1 achievement",
+        "tests/Feature/Gamification/StreakBonusTest.php: simular 3 dias consecutivos de login_daily e verificar bônus progressivo 0, 5, 10",
+        "tests/Feature/Gamification/LeaderboardTest.php: seeds users + xp_transactions, roda RecalculateLeaderboardJob, endpoint weekly retorna top 100 corretamente",
+        "tests/Feature/Gamification/IdempotencyTest.php: chamar AddXpUseCase 2x com mesma reference_id não duplica",
+        "php artisan test --filter=Gamification passa 100%",
+        "Tests pass"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

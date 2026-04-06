@@ -8,6 +8,8 @@
 - Main branch only has Init Project commit — gamification branch builds from scratch
 - Foreign keys on users reference `uuid` column, not `id` — use `foreignUuid('user_uuid')->references('uuid')->on('users')`
 - For timezone-dependent queries, do conversion in PHP/Carbon (SQLite doesn't support CONVERT_TZ)
+- AddXpUseCase is the single entry point for awarding XP — always use it (or ProcessXpTransactionJob) rather than creating XpTransaction directly
+- SQLite unique constraint errors say "UNIQUE constraint failed", MySQL uses SQLSTATE 23000 — handle both in catch blocks
 ---
 
 ## 2026-04-06 - US-001
@@ -41,4 +43,25 @@
   - StreakCalculator uses America/Sao_Paulo timezone via Carbon, not SQL functions
   - XpTransaction has unique index on (user_uuid, reason, reference_id) for idempotency
   - Streak counts mixed eligible reasons (login_daily, workout_done, goal_checkin) on same day
+---
+
+## 2026-04-06 - US-003
+- Implemented AddXpUseCase with streak bonus calculation, idempotent XP creation, and automatic level recalculation
+- Created LevelChanged event dispatched when user crosses level threshold
+- Created ProcessXpTransactionJob wrapping AddXpUseCase for async execution
+- Added migration for xp_points and level columns on users table
+- Files created:
+  - app/Application/UseCases/Xp/AddXpUseCase.php
+  - app/Events/LevelChanged.php
+  - app/Jobs/ProcessXpTransactionJob.php
+  - database/migrations/2026_04_06_000002_add_xp_and_level_to_users_table.php
+  - tests/Feature/Gamification/AddXpUseCaseTest.php (6 tests)
+- Files modified:
+  - app/Models/User.php (added xp_points, level to fillable)
+  - tasks/prd-07-gamification.json (marked US-001, US-002, US-003 as passes:true)
+- **Learnings for future iterations:**
+  - StreakCalculator::bonusFor calculates streak from EXISTING transactions only — the new transaction hasn't been created yet when bonus is computed, so streak test needs >=2 prior days of history to see a bonus
+  - SQLite unique constraint violation message contains "UNIQUE constraint failed" (not SQLSTATE 23000 like MySQL) — check for both in catch
+  - AddXpUseCase stores meta JSON with base_amount, streak_bonus, streak_day for breakdown in XP history
+  - User model needs xp_points and level in fillable for increment/update to work
 ---
