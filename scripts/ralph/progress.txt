@@ -18,6 +18,9 @@
 - LeaderboardSnapshot model uses updateOrCreate on (user_uuid, period, period_key) for upserts
 - Cache keys follow pattern: leaderboard:{period}:{period_key} — TTLs: weekly/monthly 3600, alltime 21600
 - Weekly period_key uses ISO format: Carbon->format('o-\\WW') e.g. "2026-W15"
+- Leaderboard endpoints use Cache::remember as fallback — if cache exists (from RecalculateLeaderboardJob), it serves that; otherwise queries LeaderboardSnapshot
+- LeaderboardResource wraps plain array data (not Eloquent models) — use $this->resource['key'] not $this->key
+- Rate limiter 'leaderboard' registered in AppServiceProvider via RateLimiter::for()
 ---
 
 ## 2026-04-06 - US-001
@@ -156,4 +159,25 @@
   - LeaderboardPositionChanged only dispatches for users newly entering top 10 (oldRank was null or > 10)
   - alltime ranking reads from users.xp_points directly; weekly/monthly SUM xp_transactions.amount in period
   - Job removes stale snapshots (users who dropped out of top 100) via whereNotIn
+---
+
+## 2026-04-06 - US-008
+- Implemented GET /api/v1/gamification/leaderboard/{weekly,monthly,alltime} endpoints
+- Created LeaderboardController serving data from Cache::remember with DB fallback
+- Created LeaderboardResource for response formatting
+- Added throttle:leaderboard rate limiter (30/min) in AppServiceProvider
+- Routes under auth:sanctum + throttle:leaderboard
+- Files created:
+  - app/Http/Controllers/Api/V1/Gamification/LeaderboardController.php
+  - app/Http/Resources/Gamification/LeaderboardResource.php
+  - tests/Feature/Gamification/LeaderboardEndpointTest.php (7 tests)
+- Files modified:
+  - app/Providers/AppServiceProvider.php (added RateLimiter for 'leaderboard')
+  - routes/api.php (added gamification leaderboard routes)
+  - tasks/prd-07-gamification.json (marked US-004 through US-008 as passes:true)
+- **Learnings for future iterations:**
+  - LeaderboardResource wraps plain arrays (from Cache), not Eloquent models — use $this->resource['key']
+  - Cache::remember in controller acts as fallback if RecalculateLeaderboardJob hasn't run yet
+  - Rate limiter registered via RateLimiter::for() in AppServiceProvider boot()
+  - current_user_rank checks both cache payload and DB snapshot for user not in top 100
 ---
