@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
 use App\Http\Controllers\Api\V1\PostController;
+use App\Http\Controllers\Api\V1\PrivacyController;
 use App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController;
 use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\AuthController;
@@ -59,6 +60,9 @@ Route::group([], function () {
             Route::post('posts/{id}/comments', [PostController::class, 'storeComment']);
             Route::delete('posts/{id}/comments/{commentId}', [PostController::class, 'destroyComment']);
         });
+
+        // Privacy / LGPD
+        Route::get('v1/privacy/my-data', [PrivacyController::class, 'exportData']);
 
         Route::prefix('v1/gamification')->group(function () {
             Route::middleware('throttle:leaderboard')->group(function () {
