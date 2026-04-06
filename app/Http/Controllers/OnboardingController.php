@@ -2,71 +2,46 @@
 
 namespace App\Http\Controllers;
 
-use App\Application\UseCases\Onboarding\GetOnboardingAction;
 use App\Application\UseCases\Onboarding\SubmitOnboardingUseCase;
-use App\DTOs\Onboarding\OnboardingDTO;
-use App\Http\Requests\Onboarding\StoreOnboardingRequest;
-use App\Http\Resources\OnboardingResource;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class OnboardingController extends Controller
 {
-    public function __construct(
-        private GetOnboardingAction $getOnboardingAction,
-        private SubmitOnboardingUseCase $submitOnboardingUseCase,
-    ) {}
+    private SubmitOnboardingUseCase $submitOnboardingUseCase;
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/onboarding",
-     *     summary="Get the current user's onboarding data",
-     *     tags={"Onboarding"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(response=200, description="Onboarding record"),
-     *     @OA\Response(response=401, description="Unauthenticated")
-     * )
-     */
-    public function show(Request $request): OnboardingResource|JsonResponse
+    public function __construct(SubmitOnboardingUseCase $submitOnboardingUseCase)
     {
-        $onboarding = $this->getOnboardingAction->execute($request->user());
-
-        if (!$onboarding) {
-            return response()->json(['data' => null]);
-        }
-
-        return new OnboardingResource($onboarding);
+        $this->submitOnboardingUseCase = $submitOnboardingUseCase;
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/onboarding",
-     *     summary="Submit or update onboarding data",
-     *     tags={"Onboarding"},
-     *     security={{"sanctum":{}}},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             @OA\Property(property="gender", type="string", enum={"M","F","other","prefer_not_to_say"}),
-     *             @OA\Property(property="age", type="integer", example=28),
-     *             @OA\Property(property="height_cm", type="integer", example=178),
-     *             @OA\Property(property="weight_kg", type="number", format="float", example=75.5),
-     *             @OA\Property(property="body_fat_percent", type="number", format="float", example=18.2),
-     *             @OA\Property(property="workouts_per_week", type="integer", example=4),
-     *             @OA\Property(property="work_style", type="string", enum={"white_collar","blue_collar","sedentary","moderate","active"})
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Onboarding saved"),
-     *     @OA\Response(response=400, description="Validation error")
-     * )
-     */
-    public function store(StoreOnboardingRequest $request): JsonResponse
+    public function show(Request $request): JsonResponse
     {
-        $dto = OnboardingDTO::fromArray($request->validated());
-        $onboarding = $this->submitOnboardingUseCase->execute($request->user()->uuid, $dto);
+        $onboarding = $request->user()->onboarding;
 
-        return (new OnboardingResource($onboarding))
-            ->response()
-            ->setStatusCode(201);
+        return response()->json($onboarding);
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'gender'            => 'nullable|string|in:M,F,other,prefer_not_to_say',
+            'age'               => 'nullable|integer|min:10|max:120',
+            'height_cm'         => 'nullable|integer|min:100|max:250',
+            'weight_kg'         => 'nullable|numeric|min:30|max:300',
+            'body_fat_percent'  => 'nullable|numeric|min:3|max:60',
+            'workouts_per_week' => 'nullable|integer|min:0|max:7',
+            'work_style'        => 'nullable|string|in:white_collar,blue_collar,sedentary,moderate,active',
+        ]);
+
+        try {
+            $onboarding = $this->submitOnboardingUseCase->execute($request->user()->uuid, $data);
+            return response()->json($onboarding, 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->validator->errors()->first(),
+            ], 400);
+        }
     }
 }

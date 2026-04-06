@@ -3,114 +3,64 @@
 namespace App\Http\Controllers;
 
 use App\Application\UseCases\Auth\LoginUserUseCase;
-use App\Application\UseCases\Auth\LogoutAction;
 use App\Application\UseCases\Auth\RegisterUserUseCase;
-use App\DTOs\Auth\LoginDTO;
-use App\DTOs\Auth\RegisterDTO;
-use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
-use App\Http\Resources\AuthTokenResource;
-use App\Http\Resources\AuthUserResource;
-use App\Services\GamificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
+    private RegisterUserUseCase $registerUseCase;
+    private LoginUserUseCase $loginUseCase;
+
     public function __construct(
-        private RegisterUserUseCase $registerUseCase,
-        private LoginUserUseCase $loginUseCase,
-        private LogoutAction $logoutAction,
-    ) {}
-
-    /**
-     * @OA\Post(
-     *     path="/api/v1/register",
-     *     summary="Register a new user",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"name","last_name","email","cpf","password","password_confirmation"},
-     *             @OA\Property(property="name", type="string", example="John"),
-     *             @OA\Property(property="last_name", type="string", example="Doe"),
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="cpf", type="string", example="123.456.789-00"),
-     *             @OA\Property(property="password", type="string", format="password", example="secret123"),
-     *             @OA\Property(property="password_confirmation", type="string", format="password", example="secret123")
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="User created successfully"),
-     *     @OA\Response(response=422, description="Validation error")
-     * )
-     */
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        $dto = RegisterDTO::fromArray($request->validated());
-        $result = $this->registerUseCase->execute($dto);
-
-        return (new AuthTokenResource($result))
-            ->response()
-            ->setStatusCode(201);
+        RegisterUserUseCase $registerUseCase,
+        LoginUserUseCase $loginUseCase
+    ) {
+        $this->registerUseCase = $registerUseCase;
+        $this->loginUseCase = $loginUseCase;
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/login",
-     *     summary="Authenticate a user and return an access token",
-     *     tags={"Auth"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             required={"email","password"},
-     *             @OA\Property(property="email", type="string", format="email", example="john@example.com"),
-     *             @OA\Property(property="password", type="string", format="password", example="secret123")
-     *         )
-     *     ),
-     *     @OA\Response(response=200, description="Authenticated successfully"),
-     *     @OA\Response(response=401, description="Invalid credentials")
-     * )
-     */
-    public function login(LoginRequest $request): JsonResponse
+    public function register(Request $request): JsonResponse
     {
-        $dto = LoginDTO::fromArray($request->validated());
-        $result = $this->loginUseCase->execute($dto);
+        $data = $request->validate([
+            'name'      => 'required|string|max:80',
+            'last_name' => 'required|string|max:120',
+            'email'     => 'required|email|max:180|unique:users,email',
+            'cpf'       => 'required|string|max:14|unique:users,cpf',
+            'password'  => 'required|string|min:8|confirmed',
+        ]);
 
-        return (new AuthTokenResource($result))->response();
+        $result = $this->registerUseCase->execute($data);
+
+        return response()->json($result, 201);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/logout",
-     *     summary="Revoke the current access token",
-     *     tags={"Auth"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(response=200, description="Logout successful"),
-     *     @OA\Response(response=401, description="Unauthenticated")
-     * )
-     */
+    public function login(Request $request, GamificationService $gamification): JsonResponse
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|string',
+        ]);
+
+        $result = $this->loginUseCase->execute($credentials);
+
+        return response()->json($result);
+    }
+
     public function logout(Request $request): JsonResponse
     {
-        $this->logoutAction->execute($request->user());
+        $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Logout realizado com sucesso.']);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/me",
-     *     summary="Get the authenticated user profile",
-     *     tags={"Auth"},
-     *     security={{"sanctum":{}}},
-     *     @OA\Response(response=200, description="Authenticated user data"),
-     *     @OA\Response(response=401, description="Unauthenticated")
-     * )
-     */
     public function me(Request $request, GamificationService $gamification): JsonResponse
     {
         $user = $request->user();
+
+        // RF-01: Grant daily login XP on profile access
         $gamification->grantDailyLoginXp($user);
 
-        return (new AuthUserResource($user->load(['onboarding', 'gamification'])))->response();
+        return response()->json($user->load(['onboarding', 'gamification']));
     }
 }
