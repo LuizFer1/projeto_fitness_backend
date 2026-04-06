@@ -41,4 +41,19 @@ class User extends Authenticatable
     {
         return $this->hasOne(UserGoal::class, 'user_id', 'id')->where('is_active', true);
     }
+
+    public function sentFriendRequests()
+    {
+        return $this->hasMany(Friendship::class, 'requester_id');
+    }
+
+    public function receivedFriendRequests()
+    {
+        return $this->hasMany(Friendship::class, 'addressee_id');
+    }
+
+    public function posts()
+    {
+        return $this->hasMany(Post::class);
+    }
 }
