@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\FriendController;
+use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
@@ -29,6 +30,9 @@ Route::group([], function () {
         Route::post('onboarding', [OnboardingController::class, 'store']);
 
         Route::prefix('v1')->group(function () {
+            // User search
+            Route::get('users/search', UserSearchController::class);
+
             Route::get('users/{username}', [PublicProfileController::class, 'show']);
             Route::get('users/{username}/achievements', [PublicProfileController::class, 'achievements']);
             Route::get('users/{username}/goals', [PublicProfileController::class, 'goals']);
