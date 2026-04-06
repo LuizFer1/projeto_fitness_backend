@@ -24,6 +24,11 @@
 - Rate limiter 'leaderboard' registered in AppServiceProvider via RateLimiter::for()
 - Friendship model created in gamification branch — minimal schema (user_uuid, friend_uuid, status) for friend lookups
 - Friends leaderboard cache: leaderboard:friends:{user_uuid} with 300s TTL
+- Route::bind('username', ...) filters inactive/soft-deleted users at route binding level — returns 404 automatically
+- User model has SoftDeletes — all queries exclude soft-deleted; use withTrashed() to include
+- FriendshipRepository::statusBetween checks both directions; returns 'none', 'accepted', 'pending', or 'blocked'
+- PublicProfileResource uses withFriendshipStatus() fluent setter — not computed inside resource
+- UserFactory::inactive() state helper creates users with is_active=false
 ---
 
 ## 2026-04-06 - US-001
@@ -258,4 +263,30 @@
   - For streak bonus tests, pre-seed historical transactions via factory with explicit created_at, then call AddXpUseCase only for the "current" day being tested
   - StreakCalculator::bonusFor counts streak from EXISTING transactions only (before the new tx is created), so day 2 with only day 1 history → streak=1, bonus=0
   - Achievement unlock chain is synchronous in tests: GoalCompleted → UnlockAchievementListener → AchievementUnlocked → AwardXpForEventListener — all in one dispatch call
+---
+
+## 2026-04-06 - US-001 (PRD-08 Public Profile)
+- Implemented route binding for {username} filtering out inactive/soft-deleted users
+- Created PublicProfileResource exposing only: username, name, avatar, bio, level, level_name, xp_points, achievements_count, goals_completed_count, friendship_status
+- Created FriendshipRepository with statusBetween, areFriends, isBlocked methods
+- Added migration for username, bio, is_active, soft deletes on users table
+- Updated User model with SoftDeletes trait, new fillable fields, achievements relationship
+- Updated UserFactory with username, bio, is_active fields + inactive() state
+- Created PublicProfileResourceTest with 5 tests verifying field presence/absence and PII exclusion
+- Files created:
+  - database/migrations/2026_04_06_000007_add_username_bio_is_active_soft_deletes_to_users_table.php
+  - app/Http/Resources/PublicProfile/PublicProfileResource.php
+  - app/Repositories/FriendshipRepository.php
+  - tests/Unit/Resources/PublicProfileResourceTest.php
+- Files modified:
+  - app/Models/User.php (SoftDeletes, username/bio/is_active fillable, achievements relationship)
+  - database/factories/UserFactory.php (username, bio, is_active, inactive() state)
+  - routes/api.php (Route::bind for {username})
+- **Learnings for future iterations:**
+  - Route::bind('username', ...) in routes/api.php filters inactive users at binding level — returns 404 automatically
+  - User model now has SoftDeletes — queries automatically exclude soft-deleted users
+  - PublicProfileResource uses withFriendshipStatus() fluent method to inject computed friendship_status
+  - FriendshipRepository::statusBetween checks both directions of the friendship
+  - UserFactory::inactive() state helper for creating inactive users in tests
+  - xp_points and level columns have DB defaults (0 and 1) — don't set null in factory/tests
 ---
