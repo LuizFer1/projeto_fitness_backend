@@ -1,0 +1,19 @@
+## Codebase Patterns
+- Use `/tmp/php` or `export PATH="/tmp:$PATH"` to run PHP in this environment
+- Tests use SQLite in-memory (phpunit.xml: DB_CONNECTION=sqlite, DB_DATABASE=:memory:) since MySQL is not available in CI
+- Feature tests use `RefreshDatabase` trait and `User::factory()->create()` + `actingAs()` for auth
+- User model uses HasUuids on `uuid` column — always use `$user->uuid` when creating related records
+- Use PHPUnit 11 attributes (#[DataProvider(...)]) instead of doc-comment annotations to avoid deprecation warnings
+- Main branch only has Init Project commit — gamification branch builds from scratch
+---
+
+## 2026-04-06 - US-001
+- Implemented LevelCalculator service with 6 XP level thresholds
+- Files created:
+  - app/Services/Gamification/LevelCalculator.php (forXp, nameFor, nextLevelXp static methods)
+  - tests/Unit/Services/Gamification/LevelCalculatorTest.php (27 tests with DataProvider for edge cases)
+- **Learnings for future iterations:**
+  - PHPUnit 11 uses #[DataProvider('providerName')] attribute instead of @dataProvider annotation
+  - LevelCalculator is a pure static class with no dependencies — can be used anywhere
+  - Level thresholds: 1(0), 2(500), 3(1500), 4(3500), 5(7500), 6(15000)
+---
