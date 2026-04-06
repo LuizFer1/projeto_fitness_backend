@@ -20,6 +20,7 @@
 - Weekly period_key uses ISO format: Carbon->format('o-\\WW') e.g. "2026-W15"
 - Leaderboard endpoints use Cache::remember as fallback — if cache exists (from RecalculateLeaderboardJob), it serves that; otherwise queries LeaderboardSnapshot
 - LeaderboardResource wraps plain array data (not Eloquent models) — use $this->resource['key'] not $this->key
+- AddXpUseCase does NOT set created_at — $occurredAt only affects streak bonus calc. For tests needing specific dates, pre-seed via factory
 - Rate limiter 'leaderboard' registered in AppServiceProvider via RateLimiter::for()
 - Friendship model created in gamification branch — minimal schema (user_uuid, friend_uuid, status) for friend lookups
 - Friends leaderboard cache: leaderboard:friends:{user_uuid} with 300s TTL
@@ -223,4 +224,38 @@
   - LEFT JOIN with user_achievements brings unlocked_at as raw string, not Carbon — don't call ->toIso8601String() on it
   - Ordering: unlocked first (IS NULL ASC), then by unlocked_at DESC, then by category for locked ones
   - Achievement endpoint does NOT need throttle:leaderboard — it's a regular auth:sanctum route
+---
+
+## 2026-04-06 - US-011
+- Implemented GET /api/v1/gamification/xp-history endpoint with XP breakdown
+- Created XpTransactionResource exposing amount, base_amount, streak_bonus, streak_day, reason, reason_label (pt-BR), reference_type, created_at
+- Created XpHistoryController with paginated query (30/page, created_at desc)
+- Added route under auth:sanctum (no throttle:leaderboard needed)
+- Files created:
+  - app/Http/Resources/Gamification/XpTransactionResource.php
+  - app/Http/Controllers/Api/V1/Gamification/XpHistoryController.php
+  - tests/Feature/Gamification/XpHistoryEndpointTest.php (7 tests)
+- Files modified:
+  - routes/api.php (added xp-history route)
+  - tasks/prd-07-gamification.json (marked US-010, US-011 as passes:true)
+- **Learnings for future iterations:**
+  - XpTransaction already has `meta` JSON column with base_amount/streak_bonus/streak_day from AddXpUseCase — no migration needed
+  - XpTransactionResource uses fallback defaults when meta is null (base_amount=amount, streak_bonus=0, streak_day=0)
+  - Reason labels are hardcoded in pt-BR in the Resource — matches the 8 known reasons from FR-06
+  - XP history is a regular auth:sanctum route, not throttle:leaderboard
+---
+
+## 2026-04-06 - US-012
+- Implemented 4 end-to-end feature test files for full gamification motor coverage
+- Files created:
+  - tests/Feature/Gamification/XpFlowTest.php (4 tests: GoalCompleted → XP + achievement unlock + level up + chain)
+  - tests/Feature/Gamification/StreakBonusTest.php (4 tests: 3-day progressive bonus, gap breaks streak, cap at 50, non-eligible reason)
+  - tests/Feature/Gamification/LeaderboardTest.php (3 tests: full flow with job + endpoint, alltime ranking, 100-entry cap)
+  - tests/Feature/Gamification/IdempotencyTest.php (4 tests: duplicate reference_id, duplicate event dispatch, different refs, xp total preservation)
+- All 125 gamification tests pass (544 assertions)
+- **Learnings for future iterations:**
+  - AddXpUseCase does NOT set created_at on XpTransaction — it always uses Eloquent's auto now(). The $occurredAt parameter only affects StreakCalculator bonus computation, not the stored timestamp
+  - For streak bonus tests, pre-seed historical transactions via factory with explicit created_at, then call AddXpUseCase only for the "current" day being tested
+  - StreakCalculator::bonusFor counts streak from EXISTING transactions only (before the new tx is created), so day 2 with only day 1 history → streak=1, bonus=0
+  - Achievement unlock chain is synchronous in tests: GoalCompleted → UnlockAchievementListener → AchievementUnlocked → AwardXpForEventListener — all in one dispatch call
 ---
