@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\FriendController;
+use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
@@ -45,6 +46,12 @@ Route::group([], function () {
             Route::post('friends/{id}/reject', [FriendController::class, 'reject']);
             Route::delete('friends/{id}', [FriendController::class, 'destroy']);
             Route::post('friends/{id}/block', [FriendController::class, 'block']);
+
+            // Posts & Feed
+            Route::post('posts', [PostController::class, 'store']);
+            Route::get('feed', [PostController::class, 'feed']);
+            Route::get('posts/{id}', [PostController::class, 'show']);
+            Route::delete('posts/{id}', [PostController::class, 'destroy']);
         });
 
         Route::prefix('v1/gamification')->group(function () {
