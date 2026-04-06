@@ -204,3 +204,23 @@
   - Rank is calculated in PHP (sequential numbering) not from DB snapshots
   - Cache key: leaderboard:friends:{user_uuid} with 300s TTL
 ---
+
+## 2026-04-06 - US-010
+- Implemented GET /api/v1/gamification/achievements endpoint with per-user is_unlocked status
+- Created ListAchievementsUseCase with LEFT JOIN to user_achievements for unlock state
+- Created AchievementResource exposing is_unlocked bool and unlocked_at
+- Created AchievementController delegating to use case
+- Added route under auth:sanctum
+- Files created:
+  - app/Application/UseCases/Gamification/ListAchievementsUseCase.php
+  - app/Http/Resources/Gamification/AchievementResource.php
+  - app/Http/Controllers/Api/V1/Gamification/AchievementController.php
+  - tests/Feature/Gamification/AchievementsEndpointTest.php (7 tests)
+- Files modified:
+  - routes/api.php (added achievements route)
+  - scripts/ralph/pdr.json (marked US-008, US-009, US-010 as passes:true)
+- **Learnings for future iterations:**
+  - LEFT JOIN with user_achievements brings unlocked_at as raw string, not Carbon — don't call ->toIso8601String() on it
+  - Ordering: unlocked first (IS NULL ASC), then by unlocked_at DESC, then by category for locked ones
+  - Achievement endpoint does NOT need throttle:leaderboard — it's a regular auth:sanctum route
+---
