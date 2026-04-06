@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\FriendController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
@@ -31,6 +32,15 @@ Route::group([], function () {
             Route::get('users/{username}', [PublicProfileController::class, 'show']);
             Route::get('users/{username}/achievements', [PublicProfileController::class, 'achievements']);
             Route::get('users/{username}/goals', [PublicProfileController::class, 'goals']);
+
+            // Friends
+            Route::get('friends', [FriendController::class, 'index']);
+            Route::get('friends/requests', [FriendController::class, 'requests']);
+            Route::post('friends/request', [FriendController::class, 'sendRequest']);
+            Route::post('friends/{id}/accept', [FriendController::class, 'accept']);
+            Route::post('friends/{id}/reject', [FriendController::class, 'reject']);
+            Route::delete('friends/{id}', [FriendController::class, 'destroy']);
+            Route::post('friends/{id}/block', [FriendController::class, 'block']);
         });
 
         Route::prefix('v1/gamification')->group(function () {
