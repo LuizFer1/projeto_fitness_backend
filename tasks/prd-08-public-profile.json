@@ -1,0 +1,88 @@
+{
+  "project": "FitHub Backend",
+  "branchName": "ralph/public-profile",
+  "description": "PRD 08: Perfil Público — exposição limitada de um usuário via username, mostrando dados básicos, conquistas e metas públicas. DEPENDE de PRD 00, 01, 02, 03, 05, 07. Sempre autenticado. 404 genérico para bloqueados, inativos, soft-deleted — não vaza existência. NÃO expõe PII (email, birth_date, weight, height, health_profile). Todas as rotas /api/v1/users/{username} com auth:sanctum + throttle:api. Binding customizado por username em routes/api.php.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Route binding por username + PublicProfileResource + 404 genérico",
+      "description": "Como desenvolvedor, preciso configurar binding custom e resource público sem PII.",
+      "acceptanceCriteria": [
+        "app/Models/User.php implementa getRouteKeyName(): string retornando 'username' — OU registra binding explícito em routes/api.php Route::bind('username', ...)",
+        "Binding filtra automaticamente users onde is_active=false ou soft-deleted retornando null → 404",
+        "app/Http/Resources/PublicProfileResource.php expõe APENAS: username, name, avatar, bio, level, level_name, xp_points, achievements_count, goals_completed_count, friendship_status (calculado via FriendshipRepository::statusBetween(auth.user, target))",
+        "NÃO inclui: email, email_verified_at, birth_date, weight_kg, height_cm, gender, health_profile, primary_goal, fitness_level",
+        "Unit test PublicProfileResourceTest: serializa user e verifica presence/absence dos campos",
+        "Tests pass"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Implemented in commit 8ce08e2. All 5 unit tests passing."
+    },
+    {
+      "id": "US-002",
+      "title": "GET /users/{username} — perfil público com checagem de bloqueio",
+      "description": "Como visitante logado, quero ver o perfil público de outro usuário.",
+      "acceptanceCriteria": [
+        "Controller app/Http/Controllers/Api/V1/PublicProfile/PublicProfileController.php método show",
+        "app/Application/UseCases/PublicProfile/GetPublicProfileUseCase.php: recebe User target + User authUser; verifica se existe friendship blocked em qualquer direção → se sim retorna null (404 no controller); senão retorna target com counts carregados (loadCount achievements, goals where status=completed)",
+        "Controller: se useCase retorna null ou target não encontrado, abort(404) com shape padronizado { error: { code: 'NOT_FOUND', message: 'Usuário não encontrado', details: {} } }",
+        "Em sucesso retorna PublicProfileResource 200",
+        "Rota GET /api/v1/users/{username} sob auth:sanctum + throttle:api",
+        "Feature test: autenticado vê perfil de outro user ativo; user com is_active=false retorna 404; user que bloqueou auth retorna 404; user que auth bloqueou retorna 404; user inexistente retorna 404",
+        "Tests pass"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Implemented in commit 7a66d39. 9 feature tests passing."
+    },
+    {
+      "id": "US-003",
+      "title": "GET /users/{username}/achievements — conquistas públicas",
+      "description": "Como visitante, quero ver as conquistas desbloqueadas de um usuário.",
+      "acceptanceCriteria": [
+        "Controller método achievements",
+        "app/Application/UseCases/PublicProfile/GetPublicAchievementsUseCase.php: aplica mesma checagem de bloqueio do US-002; lista UserAchievement do target com Achievement eager-loaded, ordenação unlocked_at desc, paginado 30/página",
+        "Retorna AchievementResource::collection (sem is_unlocked — todas são desbloqueadas por definição, incluir apenas unlocked_at)",
+        "404 nas mesmas condições do US-002",
+        "Rota GET /api/v1/users/{username}/achievements sob auth:sanctum",
+        "Feature test: retorna conquistas desbloqueadas; bloqueio retorna 404",
+        "Tests pass"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Implemented in commit d0f610f. 8 feature tests passing."
+    },
+    {
+      "id": "US-004",
+      "title": "GET /users/{username}/goals — metas públicas respeitando visibility",
+      "description": "Como visitante, quero ver metas públicas ou de amigos de um usuário.",
+      "acceptanceCriteria": [
+        "Controller método goals",
+        "app/Application/UseCases/PublicProfile/GetPublicGoalsUseCase.php: aplica checagem de bloqueio; filtra goals por (visibility=public) OU (visibility=friends AND FriendshipRepository::areFriends(auth, target)); status != archived; paginado 15/página",
+        "Retorna GoalResource::collection (sem checkins históricos — apenas dados resumidos)",
+        "Feature test: meta private do target NUNCA aparece; meta friends aparece apenas para amigo; meta public aparece para qualquer autenticado; bloqueio retorna 404",
+        "Rota GET /api/v1/users/{username}/goals sob auth:sanctum",
+        "Tests pass"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Feature tests end-to-end do perfil público",
+      "description": "Como QA, quero cobertura completa incluindo privacidade e bloqueios.",
+      "acceptanceCriteria": [
+        "tests/Feature/PublicProfile/ShowProfileTest.php cobre sucesso + 404 para inativo + 404 para bloqueio mútuo + PII nunca exposta (assertJsonMissing email, birth_date, weight_kg)",
+        "tests/Feature/PublicProfile/AchievementsTest.php cobre listagem de desbloqueadas e 404 para bloqueio",
+        "tests/Feature/PublicProfile/GoalsVisibilityTest.php cobre matriz: (private/friends/public) × (owner/friend/stranger) = 9 casos, verificando quais aparecem",
+        "php artisan test --filter=PublicProfile passa 100%",
+        "Tests pass"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
