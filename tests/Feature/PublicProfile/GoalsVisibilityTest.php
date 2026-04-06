@@ -134,6 +134,51 @@ class GoalsVisibilityTest extends TestCase
         $response->assertJsonCount(0, 'data');
     }
 
+    // ── Owner viewing own public profile ──
+
+    public function test_public_goal_visible_to_owner(): void
+    {
+        Goal::factory()->public()->create([
+            'user_uuid' => $this->authUser->uuid,
+            'title' => 'My Public Goal',
+        ]);
+
+        $response = $this->actingAs($this->authUser)
+            ->getJson('/api/v1/users/' . $this->authUser->username . '/goals');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data');
+        $response->assertJsonPath('data.0.title', 'My Public Goal');
+    }
+
+    public function test_friends_goal_not_visible_to_owner(): void
+    {
+        Goal::factory()->friends()->create([
+            'user_uuid' => $this->authUser->uuid,
+            'title' => 'My Friends Goal',
+        ]);
+
+        $response = $this->actingAs($this->authUser)
+            ->getJson('/api/v1/users/' . $this->authUser->username . '/goals');
+
+        $response->assertOk();
+        $response->assertJsonCount(0, 'data');
+    }
+
+    public function test_private_goal_not_visible_to_owner(): void
+    {
+        Goal::factory()->private()->create([
+            'user_uuid' => $this->authUser->uuid,
+            'title' => 'My Private Goal',
+        ]);
+
+        $response = $this->actingAs($this->authUser)
+            ->getJson('/api/v1/users/' . $this->authUser->username . '/goals');
+
+        $response->assertOk();
+        $response->assertJsonCount(0, 'data');
+    }
+
     // ── Archived goals excluded ──
 
     public function test_archived_goals_not_visible(): void
