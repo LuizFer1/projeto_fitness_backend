@@ -18,8 +18,10 @@ return new class extends Migration
             $table->date('last_processed_date')->nullable()->comment('Last date processed by timezone cron');
         });
 
-        // Modify the enum
-        DB::statement("ALTER TABLE xp_transactions MODIFY COLUMN type ENUM('workout_logged', 'workout_completed', 'long_workout', 'water_goal', 'weight_logged', 'streak_bonus', 'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment', 'daily_login', 'penalty_workout', 'penalty_calories') NOT NULL");
+        // Modify the enum (MySQL-only, SQLite has no ENUM type)
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE xp_transactions MODIFY COLUMN type ENUM('workout_logged', 'workout_completed', 'long_workout', 'water_goal', 'weight_logged', 'streak_bonus', 'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment', 'daily_login', 'penalty_workout', 'penalty_calories') NOT NULL");
+        }
 
         Schema::table('daily_activity_limits', function (Blueprint $table) {
             $table->boolean('login_xp_granted')->default(false);
@@ -34,7 +36,9 @@ return new class extends Migration
         });
 
         // Reverting ENUM might drop data if new ones were used, but standard down method:
-        DB::statement("ALTER TABLE xp_transactions MODIFY COLUMN type ENUM('workout_logged', 'workout_completed', 'long_workout', 'water_goal', 'weight_logged', 'streak_bonus', 'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment') NOT NULL");
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE xp_transactions MODIFY COLUMN type ENUM('workout_logged', 'workout_completed', 'long_workout', 'water_goal', 'weight_logged', 'streak_bonus', 'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment') NOT NULL");
+        }
 
         Schema::table('user_gamification', function (Blueprint $table) {
             $table->dropColumn(['last_week_safety_day_used', 'last_processed_date']);
