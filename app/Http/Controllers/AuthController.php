@@ -2,15 +2,24 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\UserGamification;
+use App\Application\UseCases\Auth\LoginUserUseCase;
+use App\Application\UseCases\Auth\RegisterUserUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
+    private RegisterUserUseCase $registerUseCase;
+    private LoginUserUseCase $loginUseCase;
+
+    public function __construct(
+        RegisterUserUseCase $registerUseCase,
+        LoginUserUseCase $loginUseCase
+    ) {
+        $this->registerUseCase = $registerUseCase;
+        $this->loginUseCase = $loginUseCase;
+    }
+
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -21,47 +30,21 @@ class AuthController extends Controller
             'password'  => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name'          => $data['name'],
-            'last_name'     => $data['last_name'],
-            'email'         => $data['email'],
-            'cpf'           => $data['cpf'],
-            'password_hash' => Hash::make($data['password']),
-        ]);
+        $result = $this->registerUseCase->execute($data);
 
-        $user->refresh();
-
-        UserGamification::create(['user_uuid' => $user->uuid]);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'user'  => $user,
-            'token' => $token,
-        ], 201);
+        return response()->json($result, 201);
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(Request $request, GamificationService $gamification): JsonResponse
     {
-        $data = $request->validate([
+        $credentials = $request->validate([
             'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $result = $this->loginUseCase->execute($credentials);
 
-        if (! $user || ! Hash::check($data['password'], $user->password_hash)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciais inválidas.'],
-            ]);
-        }
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'user'  => $user,
-            'token' => $token,
-        ]);
+        return response()->json($result);
     }
 
     public function logout(Request $request): JsonResponse
@@ -71,8 +54,13 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout realizado com sucesso.']);
     }
 
-    public function me(Request $request): JsonResponse
+    public function me(Request $request, GamificationService $gamification): JsonResponse
     {
-        return response()->json($request->user()->load(['onboarding', 'gamification']));
+        $user = $request->user();
+
+        // RF-01: Grant daily login XP on profile access
+        $gamification->grantDailyLoginXp($user);
+
+        return response()->json($user->load(['onboarding', 'gamification']));
     }
 }
