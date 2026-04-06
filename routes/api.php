@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
@@ -24,6 +25,8 @@ Route::group([], function () {
                 Route::get('leaderboard/alltime', [LeaderboardController::class, 'alltime']);
                 Route::get('leaderboard/friends', [LeaderboardController::class, 'friends']);
             });
+
+            Route::get('achievements', [AchievementController::class, 'index']);
         });
 
     });
