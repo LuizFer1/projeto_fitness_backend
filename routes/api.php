@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
+use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\OnboardingController;
 use Illuminate\Support\Facades\Route;
@@ -27,6 +28,7 @@ Route::group([], function () {
             });
 
             Route::get('achievements', [AchievementController::class, 'index']);
+            Route::get('xp-history', [XpHistoryController::class, 'index']);
         });
 
     });
