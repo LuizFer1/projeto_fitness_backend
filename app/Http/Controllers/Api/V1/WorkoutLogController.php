@@ -9,6 +9,7 @@ use App\Models\WorkoutExerciseLog;
 use App\Services\GeminiService;
 use App\Services\GamificationService;
 use Carbon\Carbon;
+use OpenApi\Attributes as OA;
 
 class WorkoutLogController extends Controller
 {
@@ -21,34 +22,42 @@ class WorkoutLogController extends Controller
         $this->gamificationService = $gamificationService;
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/workouts/finish",
-     *     summary="Salva e analisa um treino finalizado",
-     *     description="Salva o log do treino, os exercícios realizados, e envia os dados para a IA (Gemini) calcular calorias gastas, músculos treinados e gerar um feedback motivacional.",
-     *     tags={"Workouts"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="date", type="string", format="date", example="2026-03-15"),
-     *             @OA\Property(property="time_start", type="string", format="time", example="14:00:00"),
-     *             @OA\Property(property="time_end", type="string", format="time", example="15:30:00"),
-     *             @OA\Property(property="plan_workout_id", type="string", format="uuid", example="uuid_here"),
-     *             @OA\Property(property="observations", type="string", example="Treino muito focado, mas ombro doeu um pouco."),
-     *             @OA\Property(property="exercises", type="array", @OA\Items(
-     *                 type="object",
-     *                 @OA\Property(property="exercise_id", type="string", format="uuid"),
-     *                 @OA\Property(property="sets", type="integer", example=3),
-     *                 @OA\Property(property="reps", type="integer", example=12),
-     *                 @OA\Property(property="weight_kg", type="number", example=20.5)
-     *             ))
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Treino salvo e analisado com sucesso"),
-     *     @OA\Response(response=422, description="Erro de validação ou erro na integração com a IA")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/v1/workouts/finish',
+        summary: 'Salva e analisa um treino finalizado',
+        description: 'Salva o log do treino, os exercícios realizados, e envia os dados para a IA (Gemini) calcular calorias gastas, músculos treinados e gerar um feedback motivacional.',
+        tags: ['Workouts'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-03-15'),
+                    new OA\Property(property: 'time_start', type: 'string', format: 'time', example: '14:00:00'),
+                    new OA\Property(property: 'time_end', type: 'string', format: 'time', example: '15:30:00'),
+                    new OA\Property(property: 'plan_workout_id', type: 'string', format: 'uuid', example: 'uuid_here'),
+                    new OA\Property(property: 'observations', type: 'string', example: 'Treino muito focado, mas ombro doeu um pouco.'),
+                    new OA\Property(
+                        property: 'exercises',
+                        type: 'array',
+                        items: new OA\Items(
+                            type: 'object',
+                            properties: [
+                                new OA\Property(property: 'exercise_id', type: 'string', format: 'uuid'),
+                                new OA\Property(property: 'sets', type: 'integer', example: 3),
+                                new OA\Property(property: 'reps', type: 'integer', example: 12),
+                                new OA\Property(property: 'weight_kg', type: 'number', example: 20.5),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Treino salvo e analisado com sucesso'),
+            new OA\Response(response: 422, description: 'Erro de validação ou erro na integração com a IA'),
+        ]
+    )]
     public function finish(Request $request)
     {
         $validated = $request->validate([

@@ -1,0 +1,88 @@
+# Ralph Progress Log — prd-001-gamificacao-routes
+PRD: PRD-004 — Corrigir rotas quebradas de gamificação e criar controllers faltantes
+Branch: ralph/gamificacao-routes-v2
+Started: Mon Apr  6 14:48:38 PDT 2026
+## Codebase Patterns
+- Controllers in Api/V1 use dependency injection, return JsonResponse, and follow namespace matching directory structure
+- RankingController has reusable buildRanking() and getUserPosition() logic for leaderboard queries
+- UserGamification model columns for XP: current_week_xp, current_month_xp, xp_total
+- Cache TTL for rankings is 300 seconds (5 min) — use Cache::remember
+- Models use HasUuids trait; user_id is string type
+- No PHP runtime in dev container — quality checks are static only
+- Route model binding for {username} resolves to User instance — controller param must be `User $username`
+- User model field is `nickname` (not `username`) — the route binding queries `username` column which may need migration alignment
+- Level thresholds are private constants in GamificationService — any controller needing them must duplicate the array
+---
+
+## 2026-04-06 - US-001
+- Created App\Http\Controllers\Api\V1\Gamification\LeaderboardController
+- Implements weekly(), monthly(), alltime(), friends() methods
+- Reused buildRanking() and getUserPosition() logic from RankingController
+- All methods use Cache::remember with 5min TTL (300s)
+- friends() returns empty array placeholder as specified
+- Files changed: app/Http/Controllers/Api/V1/Gamification/LeaderboardController.php (new)
+- **Learnings for future iterations:**
+  - The V1/Gamification directory didn't exist — had to create it
+  - RankingController in V1 root has the canonical ranking logic pattern to follow
+  - Legacy LeaderboardController in root namespace uses different response format (Portuguese keys) — don't copy that pattern
+  - No PHP/Docker available in this environment — can only do static verification
+  - Route model binding for 'username' already configured in api.php
+---
+
+## 2026-04-06 - US-002
+- Created App\Http\Controllers\Api\V1\Gamification\AchievementController
+- Implements index() method returning all active achievements with user's unlock status (locked/unlocked + unlocked_at)
+- Fetches all active achievements, then maps user's UserAchievement records to determine status
+- Files changed: app/Http/Controllers/Api/V1/Gamification/AchievementController.php (new)
+- **Learnings for future iterations:**
+  - Achievement model has `is_active` flag — filter by it when listing achievements
+  - UserAchievement has `unlocked_at` (datetime) and links user_id to achievement_id
+  - Used `pluck('unlocked_at', 'achievement_id')` for efficient keyed lookup instead of N+1 queries
+  - The `?->` (nullsafe operator) works well for optional datetime formatting
+---
+
+## 2026-04-06 - US-003
+- Created App\Http\Controllers\Api\V1\Gamification\XpHistoryController
+- Implements index() method returning paginated XP transactions for authenticated user
+- Response includes: id, amount (xp_gained), type, description, created_at
+- Uses Laravel's built-in paginate(20) for offset-based pagination
+- Ordered by created_at descending (most recent first)
+- Uses transform() on collection to shape response while preserving pagination metadata
+- Files changed: app/Http/Controllers/Api/V1/Gamification/XpHistoryController.php (new)
+- **Learnings for future iterations:**
+  - XpTransaction model has `$timestamps = false` but has a manually cast `created_at` datetime column
+  - The `xp_gained` field is the amount column — mapped to `amount` in API response for clarity
+  - Route and import for XpHistoryController already existed in api.php — only the controller was missing
+  - No PHP runtime in dev container — quality checks limited to static verification
+---
+
+## 2026-04-06 - US-004
+- Created App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController
+- Implements show(), achievements(), goals() methods
+- show() returns public profile data (name, username/nickname, bio, avatar, level, xp, streak) via User + UserGamification
+- achievements() returns user's unlocked achievements with eager-loaded Achievement relation
+- goals() returns only active goals (is_active = true) for the user
+- Route model binding already resolves {username} to User instance — controller param is `User $username`
+- Routes and import already existed in api.php — only the controller file was missing
+- Files changed: app/Http/Controllers/Api/V1/PublicProfile/PublicProfileController.php (new)
+- **Learnings for future iterations:**
+  - The database column is `nickname` but the route binding queries `username` — there may be a mismatch to fix later
+  - User model has `nickname` in fillable, not `username`; public profile maps `nickname` as `username` in JSON response
+  - User model `goal()` relationship returns single active goal; for listing all active goals, query UserGoal directly
+  - PublicProfile routes are under auth:sanctum middleware — these are not truly public endpoints
+---
+
+## 2026-04-06 - US-005
+- Created App\Http\Controllers\Api\V1\Gamification\GamificationDashboardController
+- Implements index() method returning consolidated gamification dashboard
+- Response includes: level (current + name), xp (current, next_level, progress %), streak (current, max), daily_limits, recent_badges (last 5)
+- Added GET /v1/gamification/dashboard route in api.php
+- Uses UserGamification model and UserAchievement with eager-loaded Achievement relation
+- Level thresholds mirrored from GamificationService constants
+- Files changed: app/Http/Controllers/Api/V1/Gamification/GamificationDashboardController.php (new), routes/api.php (modified)
+- **Learnings for future iterations:**
+  - GamificationService level thresholds are private constants — had to duplicate them in the controller; consider extracting to a shared config if they change
+  - UserAchievement has `$timestamps = false` but has manually cast `unlocked_at` datetime column
+  - User model has `gamification` hasOne relationship — can be accessed directly as `$user->gamification`
+  - No LevelDefinition model exists despite the seed reference — levels are hardcoded in GamificationService
+---

@@ -8,19 +8,62 @@ use App\Models\UserGamification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use OpenApi\Attributes as OA;
 
 class LeaderboardController extends Controller
 {
+    #[OA\Get(
+        path: '/api/v1/gamification/leaderboard/weekly',
+        summary: 'Ranking semanal',
+        description: 'Retorna o ranking de XP da semana atual.',
+        tags: ['Gamification'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Quantidade de resultados (max 100)', schema: new OA\Schema(type: 'integer', default: 20)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ranking semanal'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function weekly(Request $request): JsonResponse
     {
         return $this->leaderboard($request, 'weekly');
     }
 
+    #[OA\Get(
+        path: '/api/v1/gamification/leaderboard/monthly',
+        summary: 'Ranking mensal',
+        description: 'Retorna o ranking de XP do mês atual.',
+        tags: ['Gamification'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Quantidade de resultados (max 100)', schema: new OA\Schema(type: 'integer', default: 20)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ranking mensal'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function monthly(Request $request): JsonResponse
     {
         return $this->leaderboard($request, 'monthly');
     }
 
+    #[OA\Get(
+        path: '/api/v1/gamification/leaderboard/alltime',
+        summary: 'Ranking geral',
+        description: 'Retorna o ranking de XP de todos os tempos.',
+        tags: ['Gamification'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Quantidade de resultados (max 100)', schema: new OA\Schema(type: 'integer', default: 20)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ranking geral'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function alltime(Request $request): JsonResponse
     {
         return $this->leaderboard($request, 'all_time');
@@ -31,6 +74,20 @@ class LeaderboardController extends Controller
      *
      * Ranks accepted friends + the authenticated user by XP.
      */
+    #[OA\Get(
+        path: '/api/v1/gamification/leaderboard/friends',
+        summary: 'Ranking de amigos',
+        description: 'Retorna o ranking de XP entre amigos aceitos e o usuário autenticado.',
+        tags: ['Gamification'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Quantidade de resultados (max 100)', schema: new OA\Schema(type: 'integer', default: 20)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ranking de amigos'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function friends(Request $request): JsonResponse
     {
         $user = $request->user();

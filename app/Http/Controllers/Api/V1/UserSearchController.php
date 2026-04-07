@@ -7,12 +7,28 @@ use App\Models\Friendship;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use OpenApi\Attributes as OA;
 
 class UserSearchController extends Controller
 {
     /**
      * GET /v1/users/search?q=term — search users by name or username.
      */
+    #[OA\Get(
+        path: '/api/v1/users/search',
+        summary: 'Buscar usuários',
+        description: 'Pesquisa usuários por nome ou username. Exclui usuários bloqueados.',
+        tags: ['Users'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'q', in: 'query', required: true, description: 'Termo de busca (mínimo 3 caracteres)', schema: new OA\Schema(type: 'string', minLength: 3)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista paginada de usuários encontrados'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 422, description: 'Erro de validação'),
+        ]
+    )]
     public function __invoke(Request $request): JsonResponse
     {
         $data = $request->validate([

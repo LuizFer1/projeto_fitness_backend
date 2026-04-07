@@ -12,9 +12,21 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use OpenApi\Attributes as OA;
 
 class PrivacyController extends Controller
 {
+    #[OA\Get(
+        path: '/api/v1/privacy/my-data',
+        summary: 'Exportar meus dados',
+        description: 'Exporta todos os dados pessoais do usuário autenticado (LGPD).',
+        tags: ['Privacy'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados exportados com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function exportData(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -54,6 +66,28 @@ class PrivacyController extends Controller
         ]);
     }
 
+    #[OA\Delete(
+        path: '/api/v1/privacy/delete-account',
+        summary: 'Excluir conta',
+        description: 'Exclui permanentemente a conta do usuário e todos os dados associados (LGPD).',
+        tags: ['Privacy'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['password'],
+                properties: [
+                    new OA\Property(property: 'password', type: 'string', example: 'senha1234'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Conta excluída com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 422, description: 'Senha incorreta'),
+        ]
+    )]
     public function deleteAccount(Request $request): JsonResponse
     {
         $request->validate([

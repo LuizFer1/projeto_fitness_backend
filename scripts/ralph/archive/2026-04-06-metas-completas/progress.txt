@@ -1,0 +1,99 @@
+# Ralph Progress Log — prd-003-metas
+PRD: PRD-002 — Módulo de metas completo: CRUD genérico, checkins de progresso, progresso percentual
+Branch: ralph/metas-completas
+Started: Mon Apr  6 15:10:55 PDT 2026
+
+## Codebase Patterns
+- Migrations use anonymous classes (`return new class extends Migration`)
+- UUID primary keys: `$table->uuid('id')->primary()`
+- Foreign UUIDs: `$table->foreignUuid('col')->references('id')->on('table')->cascadeOnDelete()`
+- PHP binary at `/tmp/php` (not in PATH)
+- l5-swagger package not fully installed — `php artisan` commands fail with config error. Pint lint works via `/tmp/php vendor/bin/pint`
+- Existing user_goals table uses `is_active` boolean, `main_goal` enum, and specific goal columns (calories, steps, weight, etc.)
+- Generic goal columns added: title, type, target_value, current_value, unit, visibility, status
+- GoalCheckin model: belongsTo UserGoal; UserGoal has hasMany goalCheckins
+- Use Laravel Attribute class for computed accessors (e.g., progress_percentage)
+- GamificationService: use `creditXp()` for grants, idempotency via `XpTransaction::where(type, ref_id, ref_table)->exists()`
+- GamificationService: badge slugs must match `Achievement.slug` in DB — seed new badges in BadgeSeeder
+---
+
+## 2026-04-06 - US-001
+- Created migration `2026_04_06_150000_create_goal_checkins_table.php` for goal_checkins table
+- Table columns: id (uuid PK), user_goal_id (foreignUuid cascade), value (decimal 10,2), notes (text nullable), recorded_at (date), timestamps
+- Files changed: `database/migrations/2026_04_06_150000_create_goal_checkins_table.php`
+- **Learnings for future iterations:**
+  - PHP binary is at `/tmp/php`, not in PATH
+  - `php artisan` commands fail due to missing l5-swagger Generator class — config/l5-swagger.php line 165 requires `L5Swagger\Generator` which is not installed
+  - Pint lint works fine: `/tmp/php vendor/bin/pint --test <file>`
+  - Migration cannot be verified with `php artisan migrate` in this environment; syntax and lint checks pass
+  - Existing user_goals model is at `app/Models/UserGoal.php` with HasUuids trait
+---
+
+## 2026-04-06 - US-002
+- Created GoalCheckin model with UUID support, fillable fields, casts, and belongsTo UserGoal relationship
+- Added hasMany goalCheckins relationship to UserGoal model
+- Added progress_percentage Attribute accessor to UserGoal: (current_value / target_value) * 100, returns 0 if target_value is null/0
+- Created migration to add generic goal columns to user_goals: title, type, target_value, current_value, unit, visibility, status
+- Updated UserGoal fillable and casts to include new columns
+- Files changed: `app/Models/GoalCheckin.php`, `app/Models/UserGoal.php`, `database/migrations/2026_04_06_160000_add_generic_goal_columns_to_user_goals_table.php`
+- **Learnings for future iterations:**
+  - UserGoal now has both legacy specific columns (goal_calories_day, etc.) and new generic columns (title, target_value, etc.)
+  - Use `Illuminate\Database\Eloquent\Casts\Attribute` for computed accessors in Laravel
+  - progress_percentage is appended via $appends so it's always included in serialization
+  - The relationship method is `goalCheckins()` (camelCase) on UserGoal
+- User model has `goals()` hasMany relationship (plural) for all goals, and `goal()` hasOne for legacy active goal
+- GoalController CRUD routes are under `v1/goals` prefix with auth:sanctum middleware
+- Checkin creation uses relationship `goalCheckins()->create()` — no need to import GoalCheckin model (Pint removes unused imports)
+---
+
+## 2026-04-06 - US-004
+- Added `storeCheckin` and `listCheckins` methods to GoalController
+- POST /v1/goals/{id}/checkins — creates checkin, updates current_value, auto-completes goal if progress >= 100%
+- GET /v1/goals/{id}/checkins — lists checkins with pagination (15 per page), ordered by recorded_at desc
+- Added routes in api.php under existing v1/goals prefix
+- Files changed: `app/Http/Controllers/GoalController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Pint auto-removes unused imports — don't manually import models if only used via relationships
+  - `$goal->refresh()` is needed after updating current_value to get fresh progress_percentage
+  - Checkin value is additive to current_value (cumulative progress model)
+  - Pagination uses Laravel's built-in `paginate(15)` which returns paginated JSON response
+---
+
+## 2026-04-06 - US-003
+- Refactored GoalController with full CRUD: index (with status filter), store, show, update, archive
+- Kept existing updateExercise and updateAlimentation methods untouched
+- Added `goals()` hasMany relationship to User model
+- Added routes under `v1/goals` prefix in api.php with auth:sanctum middleware
+- Files changed: `app/Http/Controllers/GoalController.php`, `app/Models/User.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - User model had only `goal()` (singular hasOne) — needed to add `goals()` (plural hasMany) for generic goals
+  - Pint enforces: trailing commas in multiline, spaces around `!` operator, binary operator spacing
+  - Routes are nested inside `Route::middleware('auth:sanctum')` group, no need for separate middleware on goal routes
+  - `findOrFail` on a relationship query scopes to the user automatically — good for authorization
+---
+
+## 2026-04-06 - US-005
+- Added `XP_GOAL_COMPLETED = 100` constant to GamificationService
+- Added `grantGoalCompletedXp(User $user, string $goalId)` method with idempotency check (ref_id + ref_table)
+- Added `checkGoalBadges(User $user)` method checking milestones: metas_1, metas_5, metas_10
+- Integrated into GoalController::storeCheckin — when goal reaches 100% and status changes to completed, grants XP and checks badges
+- Injected GamificationService into GoalController via constructor
+- Files changed: `app/Services/GamificationService.php`, `app/Http/Controllers/GoalController.php`
+- **Learnings for future iterations:**
+  - GamificationService uses `creditXp()` private helper which auto-applies streak bonus and checks level up
+  - Idempotency for one-time XP grants uses `XpTransaction::where(type, ref_id, ref_table)->exists()`
+  - Badge slugs must match `Achievement.slug` in the database — badges like metas_1, metas_5, metas_10 need to be seeded
+  - Pint reformats the entire file when touched (spacing, imports order, etc.) — expect large diffs on first edit
+  - GoalController is in `App\Http\Controllers` namespace (not Api\V1) — constructor injection works the same way
+---
+
+## 2026-04-06 - US-006
+- Added `progress` method to GoalController returning goal info + checkin history sorted by date asc
+- Response: goal (title, target_value, unit), current_value, progress_percentage, checkins array
+- Added GET /v1/goals/{id}/progress route in api.php
+- Files changed: `app/Http/Controllers/GoalController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Checkins sorted ascending by recorded_at for chart data (chronological order)
+  - Select specific columns on checkins query to keep response lightweight
+  - progress_percentage comes from UserGoal's Attribute accessor (auto-appended via $appends)
+---

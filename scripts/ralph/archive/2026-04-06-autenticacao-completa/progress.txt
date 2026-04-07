@@ -1,0 +1,99 @@
+# Ralph Progress Log — prd-002-autenticacao
+PRD: PRD-001 — Completar módulo de autenticação: verificação email, password reset, rate limiting, logout-all
+Branch: ralph/autenticacao-completa
+Started: Mon Apr  6 14:58:44 PDT 2026
+---
+
+## Codebase Patterns
+- PHP binary is at `/tmp/php` (not in PATH) — use `/tmp/php` for all artisan/pint commands
+- Lint with `/tmp/php /workspace/vendor/bin/pint <files>` to auto-fix before committing
+- AuthController is at `app/Http/Controllers/AuthController.php` — flat namespace, no Auth subfolder
+- Sanctum tokens: `$user->tokens()` gives all tokens, `currentAccessToken()` gives the current one
+- Routes use `auth:sanctum` middleware group in `routes/api.php`
+- User model stores password as `password_hash` (not `password`) — use this column name everywhere
+- User model has `Notifiable` trait — required for email-based features (password reset, email verification)
+- Users table has NO `remember_token` column — avoid features that rely on it
+- Password reset config is in config/auth.php `passwords.users` — token expires in 60 min
+- Email verification uses `verified` middleware alias (Laravel built-in EnsureEmailIsVerified) — returns 403 JSON for API requests
+- verify-email route is public (unauthenticated) — takes `id` (uuid) and `hash` (sha1 of email) params
+- resend-verification requires `auth:sanctum` but NOT `verified` middleware
+- Rate limiters are defined in `AppServiceProvider::boot()` using `RateLimiter::for()` — apply via `throttle:<name>` middleware
+- Global API rate limit wraps all routes; specific limiters (login, register) stack on top as additional middleware
+---
+
+## 2026-04-06 - US-003
+- Implemented `changePassword()` method in AuthController
+- Added `PUT /auth/password` route in api.php (authenticated via `auth:sanctum`)
+- Validates `current_password` against stored hash before accepting change
+- New password requires min 8 chars, must contain letters and numbers (regex validation)
+- Requires `password_confirmation` field (Laravel `confirmed` rule)
+- Revokes all tokens except the current one after password change
+- Returns 200 with success message
+- Files changed: `app/Http/Controllers/AuthController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Password field in User model is `password_hash`, not `password` — always use `password_hash` for Hash::check and Hash::make
+  - Use `currentAccessToken()->id` to get the current token ID for exclusion when revoking other tokens
+  - Laravel `confirmed` rule expects a `password_confirmation` field automatically
+---
+
+## 2026-04-06 - US-004
+- Implemented `forgotPassword()` and `resetPassword()` methods in AuthController
+- Added `POST /auth/forgot-password` route (public) — sends reset link via Password::sendResetLink
+- Added `POST /auth/reset-password` route (public) — validates token and resets password
+- forgot-password always returns 200 regardless of email existence (prevents enumeration)
+- reset-password validates token, updates password_hash, revokes all user tokens, deletes reset token (single use)
+- Token expiry configured at 60 minutes in config/auth.php (already existed)
+- Added `Notifiable` trait to User model (required for Password::sendResetLink to send emails)
+- Password validation on reset: min 8 chars, must contain letters and numbers, confirmed
+- Files changed: `app/Http/Controllers/AuthController.php`, `app/Models/User.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - User model needs `Notifiable` trait for any email sending (Password::sendResetLink, email verification, etc.)
+  - Password::sendResetLink silently returns status even if user doesn't exist — good for security, no need to catch exceptions
+  - Password::reset() callback handles the actual password update; the broker then deletes the token (single-use)
+  - The `password_reset_tokens` table already exists in the users migration file
+  - config/auth.php `passwords.users.expire` controls token lifetime (60 min = 1 hour)
+---
+
+## 2026-04-06 - US-002
+- Implemented `logoutAll()` method in AuthController that revokes all personal_access_tokens for the user
+- Added `POST /auth/logout-all` route in api.php (authenticated)
+- Returns 200 with message and count of sessions terminated
+- Files changed: `app/Http/Controllers/AuthController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - PHP is not in PATH; use `/tmp/php` to run artisan, pint, etc.
+  - Pint auto-fixes alignment issues (binary_operator_spaces) — run it on files before committing
+  - The `tokens()` relation on User (via HasApiTokens) returns all personal_access_tokens for deletion
+---
+
+## 2026-04-06 - US-005
+- Added `MustVerifyEmail` interface to User model
+- Created migration to add `email_verified_at` column to users table
+- Added `verifyEmail()` method (public route) — validates id (uuid) + hash (sha1 of email)
+- Added `resendVerification()` method (authenticated route) — resends verification notification
+- Registration now sends verification email via `sendEmailVerificationNotification()`
+- Protected endpoints (me, onboarding) now require `verified` middleware — returns 403 for unverified users
+- Verification and resend routes are excluded from `verified` middleware
+- Files changed: `app/Models/User.php`, `app/Http/Controllers/AuthController.php`, `routes/api.php`, `database/migrations/2026_04_06_000001_add_email_verified_at_to_users_table.php`
+- **Learnings for future iterations:**
+  - Laravel's `EnsureEmailIsVerified` middleware (alias `verified`) returns 403 JSON automatically for API requests (`expectsJson()`)
+  - `MustVerifyEmail` interface methods (`hasVerifiedEmail`, `markEmailAsVerified`, `sendEmailVerificationNotification`) are already implemented by the base Authenticatable class
+  - For API verification, use uuid + sha1(email) hash instead of Laravel's signed URLs (which are web-focused)
+  - verify-email must be a public route (user may not have a token when clicking the email link)
+  - resend-verification needs auth but NOT verified middleware (otherwise unverified users can't access it)
+---
+
+## 2026-04-06 - US-006
+- Configured global API rate limiter: 60 req/min per user (or IP if unauthenticated)
+- Configured register rate limiter: 3/hour per IP
+- Configured ai-generation rate limiter: 5/hour per user (ready for future AI routes)
+- Wrapped all API routes with `throttle:api` middleware in api.php
+- Applied `throttle:register` specifically to the register route
+- Login already had `throttle:login` from US-001
+- Laravel automatically returns 429 with Retry-After and X-RateLimit headers
+- Files changed: `app/Providers/AppServiceProvider.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Rate limiters stack: a route inside `throttle:api` group with its own `throttle:login` gets both limits checked
+  - `$request->user()?->id` returns null for unauthenticated requests — use `?: $request->ip()` as fallback
+  - `ai-generation` limiter is defined but not yet applied to any route (no AI routes exist yet) — apply when AI endpoints are added
+  - Pint auto-fixed concat_space (`.` to `.` with no spaces) and ordered_imports in AppServiceProvider
+---

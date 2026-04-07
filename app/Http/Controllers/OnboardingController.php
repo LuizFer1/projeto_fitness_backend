@@ -6,6 +6,7 @@ use App\Application\UseCases\Onboarding\SubmitOnboardingUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class OnboardingController extends Controller
 {
@@ -16,6 +17,17 @@ class OnboardingController extends Controller
         $this->submitOnboardingUseCase = $submitOnboardingUseCase;
     }
 
+    #[OA\Get(
+        path: '/api/onboarding',
+        summary: 'Obter dados de onboarding',
+        description: 'Retorna os dados de onboarding do usuário autenticado.',
+        tags: ['Onboarding'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados de onboarding'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function show(Request $request): JsonResponse
     {
         $onboarding = $request->user()->onboarding;
@@ -23,6 +35,33 @@ class OnboardingController extends Controller
         return response()->json($onboarding);
     }
 
+    #[OA\Post(
+        path: '/api/onboarding',
+        summary: 'Enviar dados de onboarding',
+        description: 'Salva as informações de onboarding do usuário.',
+        tags: ['Onboarding'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'gender', type: 'string', enum: ['M', 'F', 'other', 'prefer_not_to_say'], example: 'M'),
+                    new OA\Property(property: 'age', type: 'integer', minimum: 10, maximum: 120, example: 25),
+                    new OA\Property(property: 'height_cm', type: 'integer', minimum: 100, maximum: 250, example: 175),
+                    new OA\Property(property: 'weight_kg', type: 'number', minimum: 30, maximum: 300, example: 75.5),
+                    new OA\Property(property: 'body_fat_percent', type: 'number', minimum: 3, maximum: 60, example: 15.0),
+                    new OA\Property(property: 'workouts_per_week', type: 'integer', minimum: 0, maximum: 7, example: 4),
+                    new OA\Property(property: 'work_style', type: 'string', enum: ['white_collar', 'blue_collar', 'sedentary', 'moderate', 'active'], example: 'white_collar'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Onboarding salvo com sucesso'),
+            new OA\Response(response: 400, description: 'Erro de validação'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

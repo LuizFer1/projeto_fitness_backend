@@ -9,12 +9,36 @@ use App\Models\PostComment;
 use App\Models\PostLike;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class PostController extends Controller
 {
     /**
      * POST /v1/posts — create a text post.
      */
+    #[OA\Post(
+        path: '/api/v1/posts',
+        summary: 'Criar post',
+        description: 'Cria um novo post de texto.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['content', 'visibility'],
+                properties: [
+                    new OA\Property(property: 'content', type: 'string', maxLength: 500, example: 'Treino de hoje foi incrível!'),
+                    new OA\Property(property: 'visibility', type: 'string', enum: ['public', 'friends_only'], example: 'public'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Post criado com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 422, description: 'Erro de validação'),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -39,6 +63,17 @@ class PostController extends Controller
     /**
      * GET /v1/feed — posts from friends + own, cursor pagination.
      */
+    #[OA\Get(
+        path: '/api/v1/feed',
+        summary: 'Feed de posts',
+        description: 'Retorna posts do usuário e de amigos com paginação por cursor.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista paginada de posts'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function feed(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -78,6 +113,20 @@ class PostController extends Controller
     /**
      * GET /v1/posts/{id} — single post with comments and like count.
      */
+    #[OA\Get(
+        path: '/api/v1/posts/{id}',
+        summary: 'Detalhes do post',
+        description: 'Retorna um post com comentários e contagem de likes.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do post', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados do post'),
+            new OA\Response(response: 404, description: 'Post não encontrado'),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $user = request()->user();
@@ -103,6 +152,21 @@ class PostController extends Controller
     /**
      * DELETE /v1/posts/{id} — soft delete own post.
      */
+    #[OA\Delete(
+        path: '/api/v1/posts/{id}',
+        summary: 'Excluir post',
+        description: 'Exclui (soft delete) um post do usuário autenticado.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do post', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Post excluído'),
+            new OA\Response(response: 403, description: 'Não autorizado'),
+            new OA\Response(response: 404, description: 'Post não encontrado'),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $post = Post::findOrFail($id);
@@ -120,6 +184,20 @@ class PostController extends Controller
     /**
      * POST /v1/posts/{id}/like — toggle like.
      */
+    #[OA\Post(
+        path: '/api/v1/posts/{id}/like',
+        summary: 'Curtir/descurtir post',
+        description: 'Alterna o like do usuário autenticado em um post.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do post', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Status do like atualizado'),
+            new OA\Response(response: 404, description: 'Post não encontrado'),
+        ]
+    )]
     public function like(string $id): JsonResponse
     {
         $post = Post::findOrFail($id);
@@ -151,6 +229,31 @@ class PostController extends Controller
     /**
      * POST /v1/posts/{id}/comments — create comment.
      */
+    #[OA\Post(
+        path: '/api/v1/posts/{id}/comments',
+        summary: 'Comentar em post',
+        description: 'Cria um comentário em um post.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do post', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['content'],
+                properties: [
+                    new OA\Property(property: 'content', type: 'string', maxLength: 500, example: 'Ótimo treino!'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Comentário criado'),
+            new OA\Response(response: 404, description: 'Post não encontrado'),
+            new OA\Response(response: 422, description: 'Erro de validação'),
+        ]
+    )]
     public function storeComment(Request $request, string $id): JsonResponse
     {
         $post = Post::findOrFail($id);
@@ -180,6 +283,22 @@ class PostController extends Controller
     /**
      * DELETE /v1/posts/{id}/comments/{commentId} — soft delete own comment.
      */
+    #[OA\Delete(
+        path: '/api/v1/posts/{id}/comments/{commentId}',
+        summary: 'Excluir comentário',
+        description: 'Exclui (soft delete) um comentário do usuário autenticado.',
+        tags: ['Posts'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do post', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'commentId', in: 'path', required: true, description: 'ID do comentário', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Comentário excluído'),
+            new OA\Response(response: 403, description: 'Não autorizado'),
+            new OA\Response(response: 404, description: 'Comentário não encontrado'),
+        ]
+    )]
     public function destroyComment(string $id, string $commentId): JsonResponse
     {
         $comment = PostComment::where('post_id', $id)

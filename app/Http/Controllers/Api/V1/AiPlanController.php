@@ -13,6 +13,7 @@ use App\Services\GeminiService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class AiPlanController extends Controller
 {
@@ -23,29 +24,31 @@ class AiPlanController extends Controller
         $this->geminiService = $geminiService;
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/plans/generate-workout",
-     *     summary="Generate a personalized AI workout plan",
-     *     description="Sends user preferences to Gemini AI and receives a structured workout plan that is saved to the database.",
-     *     tags={"AI Plans"},
-     *     @OA\RequestBody(
-     *         required=true,
-     *         @OA\JsonContent(
-     *             type="object",
-     *             @OA\Property(property="goal", type="string", example="hypertrophy"),
-     *             @OA\Property(property="muscles", type="string", example="chest, triceps, shoulders"),
-     *             @OA\Property(property="level", type="string", example="intermediate"),
-     *             @OA\Property(property="days_per_week", type="integer", example=4),
-     *             @OA\Property(property="workout_time_minutes", type="integer", example=60),
-     *             @OA\Property(property="limitations", type="string", example="shoulder injury on right side"),
-     *             @OA\Property(property="location", type="string", example="home")
-     *         )
-     *     ),
-     *     @OA\Response(response=201, description="Workout plan generated and saved successfully"),
-     *     @OA\Response(response=422, description="Validation error or AI processing failure")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/v1/plans/generate-workout',
+        summary: 'Generate a personalized AI workout plan',
+        description: 'Sends user preferences to Gemini AI and receives a structured workout plan that is saved to the database.',
+        tags: ['AI Plans'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'goal', type: 'string', example: 'hypertrophy'),
+                    new OA\Property(property: 'muscles', type: 'string', example: 'chest, triceps, shoulders'),
+                    new OA\Property(property: 'level', type: 'string', example: 'intermediate'),
+                    new OA\Property(property: 'days_per_week', type: 'integer', example: 4),
+                    new OA\Property(property: 'workout_time_minutes', type: 'integer', example: 60),
+                    new OA\Property(property: 'limitations', type: 'string', example: 'shoulder injury on right side'),
+                    new OA\Property(property: 'location', type: 'string', example: 'home'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Workout plan generated and saved successfully'),
+            new OA\Response(response: 422, description: 'Validation error or AI processing failure'),
+        ]
+    )]
     public function generateWorkout(Request $request)
     {
         $validated = $request->validate([
@@ -160,14 +163,14 @@ class AiPlanController extends Controller
         }
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/plans",
-     *     summary="List all plans for the authenticated user",
-     *     tags={"AI Plans"},
-     *     @OA\Response(response=200, description="List of plans")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/v1/plans',
+        summary: 'List all plans for the authenticated user',
+        tags: ['AI Plans'],
+        responses: [
+            new OA\Response(response: 200, description: 'List of plans'),
+        ]
+    )]
     public function index(Request $request)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -185,16 +188,18 @@ class AiPlanController extends Controller
         return response()->json(['plans' => $plans]);
     }
 
-    /**
-     * @OA\Get(
-     *     path="/api/v1/plans/{id}",
-     *     summary="Get a specific plan by ID",
-     *     tags={"AI Plans"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Response(response=200, description="Plan details"),
-     *     @OA\Response(response=404, description="Plan not found")
-     * )
-     */
+    #[OA\Get(
+        path: '/api/v1/plans/{id}',
+        summary: 'Get a specific plan by ID',
+        tags: ['AI Plans'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plan details'),
+            new OA\Response(response: 404, description: 'Plan not found'),
+        ]
+    )]
     public function show(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -207,16 +212,18 @@ class AiPlanController extends Controller
         return response()->json(['plan' => $plan]);
     }
 
-    /**
-     * @OA\Patch(
-     *     path="/api/v1/plans/{id}/activate",
-     *     summary="Accept and activate a draft plan",
-     *     tags={"AI Plans"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Response(response=200, description="Plan activated"),
-     *     @OA\Response(response=404, description="Plan not found")
-     * )
-     */
+    #[OA\Patch(
+        path: '/api/v1/plans/{id}/activate',
+        summary: 'Accept and activate a draft plan',
+        tags: ['AI Plans'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plan activated'),
+            new OA\Response(response: 404, description: 'Plan not found'),
+        ]
+    )]
     public function activate(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -235,16 +242,18 @@ class AiPlanController extends Controller
         return response()->json(['message' => 'Plan activated!', 'plan' => $plan]);
     }
 
-    /**
-     * @OA\Patch(
-     *     path="/api/v1/plans/{id}/archive",
-     *     summary="Archive a plan",
-     *     tags={"AI Plans"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Response(response=200, description="Plan archived"),
-     *     @OA\Response(response=404, description="Plan not found")
-     * )
-     */
+    #[OA\Patch(
+        path: '/api/v1/plans/{id}/archive',
+        summary: 'Archive a plan',
+        tags: ['AI Plans'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plan archived'),
+            new OA\Response(response: 404, description: 'Plan not found'),
+        ]
+    )]
     public function archive(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -255,16 +264,18 @@ class AiPlanController extends Controller
         return response()->json(['message' => 'Plan archived.', 'plan' => $plan]);
     }
 
-    /**
-     * @OA\Post(
-     *     path="/api/v1/plans/{id}/duplicate",
-     *     summary="Duplicate an existing plan as a new draft",
-     *     tags={"AI Plans"},
-     *     @OA\Parameter(name="id", in="path", required=true, @OA\Schema(type="string", format="uuid")),
-     *     @OA\Response(response=201, description="Plan duplicated"),
-     *     @OA\Response(response=404, description="Plan not found")
-     * )
-     */
+    #[OA\Post(
+        path: '/api/v1/plans/{id}/duplicate',
+        summary: 'Duplicate an existing plan as a new draft',
+        tags: ['AI Plans'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 201, description: 'Plan duplicated'),
+            new OA\Response(response: 404, description: 'Plan not found'),
+        ]
+    )]
     public function duplicate(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
