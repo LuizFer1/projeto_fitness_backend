@@ -9,7 +9,7 @@ use App\Models\Exercise;
 use App\Models\PlanMeal;
 use App\Models\PlanWorkout;
 use App\Models\PlanWorkoutExercise;
-use App\Services\GeminiService;
+use App\Services\GroqService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,11 +17,11 @@ use OpenApi\Attributes as OA;
 
 class AiPlanController extends Controller
 {
-    private $geminiService;
+    private $groqService;
 
-    public function __construct(GeminiService $geminiService)
+    public function __construct(GroqService $groqService)
     {
-        $this->geminiService = $geminiService;
+        $this->groqService = $groqService;
     }
 
     #[OA\Post(
@@ -88,7 +88,7 @@ class AiPlanController extends Controller
             . "Note for \"day_of_week\": 0=Sunday, 1=Monday, 2=Tuesday, etc. If the plan is ABC (sequential, no fixed days), you can number them from 1 to N.";
 
         try {
-            $aiResponse = $this->geminiService->generateTextResponse(null, $prompt);
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
 
             // Save the plan inside a transaction
             $plan = DB::transaction(function () use ($user, $validated, $aiResponse, $prompt) {

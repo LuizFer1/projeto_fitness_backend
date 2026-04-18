@@ -6,19 +6,19 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\WorkoutLog;
 use App\Models\WorkoutExerciseLog;
-use App\Services\GeminiService;
+use App\Services\GroqService;
 use App\Services\GamificationService;
 use Carbon\Carbon;
 use OpenApi\Attributes as OA;
 
 class WorkoutLogController extends Controller
 {
-    private $geminiService;
+    private $groqService;
     private $gamificationService;
 
-    public function __construct(GeminiService $geminiService, GamificationService $gamificationService)
+    public function __construct(GroqService $groqService, GamificationService $gamificationService)
     {
-        $this->geminiService = $geminiService;
+        $this->groqService = $groqService;
         $this->gamificationService = $gamificationService;
     }
 
@@ -92,7 +92,7 @@ class WorkoutLogController extends Controller
             . "{\"informacoes_treino\": \"paragrafo motivacional/analise\", \"musculos_treinados\": [\"Peito\"], \"calorias_gastas_estimadas\": 450, \"tempo_medio_por_exercicio_minutos\": 4.5}";
 
         try {
-            $aiResponse = $this->geminiService->generateTextResponse(null, $prompt);
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
             
             $workoutLog = WorkoutLog::create([
                 'user_id' => $user->id,

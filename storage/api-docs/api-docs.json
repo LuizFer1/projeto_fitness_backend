@@ -1480,10 +1480,10 @@
                                 "properties": {
                                     "gender": {
                                         "type": "string",
-                                        "example": "M",
+                                        "example": "male",
                                         "enum": [
-                                            "M",
-                                            "F",
+                                            "male",
+                                            "female",
                                             "other",
                                             "prefer_not_to_say"
                                         ]

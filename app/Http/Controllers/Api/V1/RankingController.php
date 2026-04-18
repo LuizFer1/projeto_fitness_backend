@@ -57,7 +57,18 @@ class RankingController extends Controller
         $gam  = $user->gamification;
 
         if (!$gam) {
-            return response()->json(['error' => 'Gamification não iniciada.'], 404);
+            return response()->json([
+                'xp_total'        => 0,
+                'current_level'   => 1,
+                'xp_to_next'      => 200,
+                'current_streak'  => 0,
+                'max_streak'      => 0,
+                'current_week_xp' => 0,
+                'current_month_xp'=> 0,
+                'total_workouts'  => 0,
+                'badges'          => [],
+                'new_badges'      => [],
+            ]);
         }
 
         $badges = UserAchievement::where('user_id', $user->id)

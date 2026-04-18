@@ -10,7 +10,7 @@ class EloquentNutritionRepository implements NutritionRepositoryInterface
     public function createOrUpdateDailyGoal(string $userUuid, string $date, int $tdee): NutritionDaily
     {
         $daily = NutritionDaily::firstOrCreate(
-            ['user_uuid' => $userUuid, 'day' => $date],
+            ['user_id' => $userUuid, 'day' => $date],
             ['calories_goal' => $tdee]
         );
         

@@ -46,7 +46,7 @@ class OnboardingController extends Controller
             content: new OA\JsonContent(
                 type: 'object',
                 properties: [
-                    new OA\Property(property: 'gender', type: 'string', enum: ['M', 'F', 'other', 'prefer_not_to_say'], example: 'M'),
+                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female', 'other', 'prefer_not_to_say'], example: 'male'),
                     new OA\Property(property: 'age', type: 'integer', minimum: 10, maximum: 120, example: 25),
                     new OA\Property(property: 'height_cm', type: 'integer', minimum: 100, maximum: 250, example: 175),
                     new OA\Property(property: 'weight_kg', type: 'number', minimum: 30, maximum: 300, example: 75.5),
@@ -65,7 +65,7 @@ class OnboardingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'gender'            => 'nullable|string|in:M,F,other,prefer_not_to_say',
+            'gender'            => 'nullable|string|in:male,female,other,prefer_not_to_say',
             'age'               => 'nullable|integer|min:10|max:120',
             'height_cm'         => 'nullable|integer|min:100|max:250',
             'weight_kg'         => 'nullable|numeric|min:30|max:300',
@@ -75,7 +75,7 @@ class OnboardingController extends Controller
         ]);
 
         try {
-            $onboarding = $this->submitOnboardingUseCase->execute($request->user()->uuid, $data);
+            $onboarding = $this->submitOnboardingUseCase->execute($request->user()->id, $data);
             return response()->json($onboarding, 201);
         } catch (ValidationException $e) {
             return response()->json([

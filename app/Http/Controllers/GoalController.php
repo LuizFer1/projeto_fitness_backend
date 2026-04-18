@@ -16,7 +16,17 @@ class GoalController extends Controller
         $goal = $request->user()->goal;
 
         if (!$goal) {
-            return response()->json(['message' => 'No active goals found.'], 404);
+            return response()->json([
+                'main_goal' => null,
+                'goal_calories_day' => null,
+                'goal_protein_g' => null,
+                'goal_carbs_g' => null,
+                'goal_fat_g' => null,
+                'goal_workouts_week' => null,
+                'goal_water_liters' => null,
+                'goal_steps_day' => null,
+                'goal_weight_kg' => null,
+            ]);
         }
 
         return response()->json($goal);

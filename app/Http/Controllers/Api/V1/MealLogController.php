@@ -5,18 +5,18 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\MealLog;
-use App\Services\GeminiService;
+use App\Services\GroqService;
 use App\Services\GamificationService;
 use OpenApi\Attributes as OA;
 
 class MealLogController extends Controller
 {
-    private $geminiService;
+    private $groqService;
     private $gamificationService;
 
-    public function __construct(GeminiService $geminiService, GamificationService $gamificationService)
+    public function __construct(GroqService $groqService, GamificationService $gamificationService)
     {
-        $this->geminiService = $geminiService;
+        $this->groqService = $groqService;
         $this->gamificationService = $gamificationService;
     }
 
@@ -57,7 +57,7 @@ class MealLogController extends Controller
             . "{\"calorias_totais\": 520, \"macros_totais\": {\"proteinas_g\": 35.5, \"carboidratos_g\": 45.0, \"gorduras_g\": 20.2}, \"feedback_breve\": \"texto\", \"itens_detalhados\": [{\"nome\": \"Frango\", \"quantidadeDada\": \"100g\", \"calorias\": 165}]}";
 
         try {
-            $aiResponse = $this->geminiService->generateTextResponse(null, $prompt);
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
 
             $mealLog = MealLog::create([
                 'user_id' => $user->id,
@@ -123,7 +123,7 @@ class MealLogController extends Controller
             . "{\"calorias_totais_estimadas\": 600, \"macros_estimados\": {\"proteinas_g\": 40, \"carboidratos_g\": 60, \"gorduras_g\": 25}, \"feedback_breve\": \"Analise visual curta\", \"itens_identificados\": [{\"nome_estimado\": \"Arroz\", \"quantidade_estimada_gramas\": 150, \"calorias_estimadas\": 170}]}";
 
         try {
-            $aiResponse = $this->geminiService->generateVisionResponse(null, $prompt, $base64);
+            $aiResponse = $this->groqService->generateVisionResponse(null, $prompt, $base64);
 
             $mealLog = MealLog::create([
                 'user_id' => $user->id,

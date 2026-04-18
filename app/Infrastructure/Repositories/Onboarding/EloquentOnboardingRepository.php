@@ -9,13 +9,13 @@ class EloquentOnboardingRepository implements OnboardingRepositoryInterface
 {
     public function hasOnboarding(string $userUuid): bool
     {
-        return UserOnboarding::where('user_uuid', $userUuid)->exists();
+        return UserOnboarding::where('user_id', $userUuid)->exists();
     }
 
     public function updateOrCreate(string $userUuid, array $data): UserOnboarding
     {
         return UserOnboarding::updateOrCreate(
-            ['user_uuid' => $userUuid],
+            ['user_id' => $userUuid],
             $data
         );
     }

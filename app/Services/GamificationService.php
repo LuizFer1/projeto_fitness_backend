@@ -20,6 +20,7 @@ class GamificationService
     private const XP_LOGIN          = 10;
     private const XP_MEAL_LOGGED    = 20;
     private const XP_WORKOUT        = 30;
+    private const XP_WEIGHT_LOGGED  = 15;
     private const PENALTY_CALORIES  = 15;
     private const PENALTY_WORKOUT   = 50;
     private const STREAK_BONUS_PCT  = 0.10;   // +10% per 7 days
@@ -100,6 +101,26 @@ class GamificationService
             $limit->increment('workout_count');
             $gam = $this->gamification($user);
             $gam->increment('total_workouts');
+            $this->touchActivity($user, $today);
+            return $tx;
+        });
+    }
+
+    // ================================================================
+    //  RF-01 — Weight Logged XP (+15, once/day)
+    // ================================================================
+    public function grantWeightLoggedXp(User $user): ?XpTransaction
+    {
+        $today = $this->userToday($user);
+        $limit = $this->getOrCreateDailyLimit($user, $today);
+
+        if ($limit->weight_logged) {
+            return null;
+        }
+
+        return DB::transaction(function () use ($user, $today, $limit) {
+            $tx = $this->creditXp($user, 'weight_logged', self::XP_WEIGHT_LOGGED, 'Registro de peso', $today);
+            $limit->update(['weight_logged' => true]);
             $this->touchActivity($user, $today);
             return $tx;
         });

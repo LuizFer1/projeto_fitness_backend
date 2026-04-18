@@ -5,18 +5,18 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\AiPlan;
-use App\Services\GeminiService;
+use App\Services\GroqService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class AiMealPlanController extends Controller
 {
-    private $geminiService;
+    private $groqService;
 
-    public function __construct(GeminiService $geminiService)
+    public function __construct(GroqService $groqService)
     {
-        $this->geminiService = $geminiService;
+        $this->groqService = $groqService;
     }
 
     // ─── helpers ────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ class AiMealPlanController extends Controller
         $prompt = $this->buildGeneratePrompt($validated);
 
         try {
-            $aiResponse = $this->geminiService->generateTextResponse(null, $prompt);
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
 
             DB::transaction(function () use ($user, $validated, $aiResponse, $prompt) {
                 AiPlan::create([
@@ -278,7 +278,7 @@ class AiMealPlanController extends Controller
             . "You MUST return the response EXCLUSIVELY in a valid JSON object, without markdown formatting.";
 
         try {
-            $aiResponse = $this->geminiService->generateTextResponse(null, $prompt);
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
 
             AiPlan::create([
                 'user_id'           => $user->id,
