@@ -1,0 +1,87 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/gamificacao-routes-v2",
+  "description": "PRD-004 — Corrigir rotas quebradas de gamificação e criar controllers faltantes",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Criar LeaderboardController no namespace V1/Gamification",
+      "description": "As a developer, I need the LeaderboardController in the correct namespace so the existing routes in api.php stop returning 500 errors.",
+      "acceptanceCriteria": [
+        "Create App\\Http\\Controllers\\Api\\V1\\Gamification\\LeaderboardController",
+        "Implement weekly() method — returns weekly ranking using existing RankingController or LeaderboardController logic",
+        "Implement monthly() method — returns monthly ranking",
+        "Implement alltime() method — returns all-time ranking",
+        "Implement friends() method — returns empty array placeholder (social module not yet built)",
+        "All methods use Cache::remember with 5min TTL",
+        "Routes GET /v1/gamification/leaderboard/* return 200 with valid JSON",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Existing logic in LeaderboardController (root namespace) and RankingController can be reused. Branch from dev."
+    },
+    {
+      "id": "US-002",
+      "title": "Criar AchievementController no namespace V1/Gamification",
+      "description": "As a user, I want to see the list of all achievements and my unlock status.",
+      "acceptanceCriteria": [
+        "Create App\\Http\\Controllers\\Api\\V1\\Gamification\\AchievementController",
+        "Implement index() method — returns all achievements with user's unlock status (locked/unlocked + unlocked_at)",
+        "Use Achievement and UserAchievement models",
+        "Route GET /v1/gamification/achievements returns 200 with valid JSON array",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Achievement and UserAchievement models already exist."
+    },
+    {
+      "id": "US-003",
+      "title": "Criar XpHistoryController no namespace V1/Gamification",
+      "description": "As a user, I want to see my XP transaction history.",
+      "acceptanceCriteria": [
+        "Create App\\Http\\Controllers\\Api\\V1\\Gamification\\XpHistoryController",
+        "Implement index() method — returns paginated XP transactions for authenticated user",
+        "Include: amount, type, description, created_at in response",
+        "Support pagination (cursor or offset)",
+        "Route GET /v1/gamification/xp-history returns 200 with valid JSON",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "XpTransaction model already exists."
+    },
+    {
+      "id": "US-004",
+      "title": "Criar PublicProfileController no namespace V1/PublicProfile",
+      "description": "As a user, I want to view other users' public profiles, achievements, and goals by username.",
+      "acceptanceCriteria": [
+        "Create App\\Http\\Controllers\\Api\\V1\\PublicProfile\\PublicProfileController",
+        "Implement show(User $username) — returns public profile data (name, username, bio, avatar, level, xp, streak)",
+        "Implement achievements(User $username) — returns user's unlocked achievements",
+        "Implement goals(User $username) — returns user's public goals only",
+        "All routes under /v1/users/{username}/* return 200 with valid JSON",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "Route model binding for 'username' already configured in api.php."
+    },
+    {
+      "id": "US-005",
+      "title": "Criar endpoint de dashboard de gamificação",
+      "description": "As a user, I want a consolidated gamification dashboard.",
+      "acceptanceCriteria": [
+        "Add GET /v1/gamification/dashboard route in api.php",
+        "Response includes: level (current, name), xp (current, next_level, progress %), streak (current, max), daily_limits, recent badges",
+        "Uses GamificationService and UserGamification model",
+        "Returns 200 with valid JSON",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "GamificationService has all the logic needed."
+    }
+  ]
+}

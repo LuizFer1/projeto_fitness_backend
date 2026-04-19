@@ -1,0 +1,120 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/infraestrutura-nfr",
+  "description": "PRD-006 — Infraestrutura e NFRs: health check, logs, LGPD, API padronizada, testes",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Implementar health check endpoint",
+      "description": "As a DevOps engineer, I need a health check endpoint to monitor the API.",
+      "acceptanceCriteria": [
+        "Add GET /health public route (no auth required)",
+        "Check database connectivity",
+        "Check Redis connectivity",
+        "Return JSON: { status, checks: { database, redis }, timestamp }",
+        "Return 200 if healthy, 503 if any check fails",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Adicionar request ID e logs estruturados",
+      "description": "As a developer, I need traceable request IDs and JSON logs.",
+      "acceptanceCriteria": [
+        "Create RequestIdMiddleware that generates UUID and adds to Log context",
+        "Add X-Request-Id header to all responses",
+        "Configure JSON log channel in config/logging.php",
+        "Register middleware globally",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Padronizar respostas de erro da API",
+      "description": "As an API consumer, I want consistent error responses.",
+      "acceptanceCriteria": [
+        "Standardized error format: { error: { code, message, fields } }",
+        "ValidationException returns 422 with field errors",
+        "ModelNotFoundException returns 404",
+        "AuthenticationException returns 401",
+        "ThrottleRequestsException returns 429 with Retry-After",
+        "No stack traces in production",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Edit bootstrap/app.php exception handling."
+    },
+    {
+      "id": "US-004",
+      "title": "Implementar LGPD — exportação de dados",
+      "description": "As a user, I want to export all my personal data (LGPD compliance).",
+      "acceptanceCriteria": [
+        "Add GET /v1/privacy/my-data route (authenticated)",
+        "Create PrivacyController with exportData method",
+        "Export: profile, onboarding, goals, workout logs, meal logs, XP transactions, achievements, gamification",
+        "Return as JSON",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Implementar LGPD — exclusão de conta",
+      "description": "As a user, I want to delete my account and all data permanently.",
+      "acceptanceCriteria": [
+        "Add DELETE /v1/privacy/delete-account route (authenticated)",
+        "Require password confirmation in request body",
+        "Delete all user data across all tables",
+        "Revoke all tokens",
+        "Return 200 with confirmation",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Criar testes de feature para autenticação",
+      "description": "As a developer, I need feature tests for auth endpoints.",
+      "acceptanceCriteria": [
+        "Create tests/Feature/Auth/RegisterTest.php — test registration success and validation",
+        "Create tests/Feature/Auth/LoginTest.php — test login success and failures",
+        "Create tests/Feature/Auth/LogoutTest.php — test token revocation",
+        "All tests pass with php artisan test",
+        "Minimum 8 test cases",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "Use RefreshDatabase trait."
+    },
+    {
+      "id": "US-007",
+      "title": "Criar testes unitários para GamificationService",
+      "description": "As a developer, I need unit tests for the gamification service.",
+      "acceptanceCriteria": [
+        "Create tests/Unit/Services/GamificationServiceTest.php",
+        "Test grantDailyLoginXp — grants XP once per day",
+        "Test grantWorkoutCompletedXp — grants XP and increments count",
+        "Test checkLevelUp — promotes at correct thresholds",
+        "Test awardBadge — idempotent",
+        "Minimum 6 test cases",
+        "All tests pass",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

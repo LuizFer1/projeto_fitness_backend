@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Http\Client\ConnectionException;
 use Exception;
 
-class GeminiService
+class GroqService
 {
     private $apiKey;
     private $baseUrl;
@@ -32,8 +32,7 @@ class GeminiService
         $this->requireJsonResponse = filter_var(config('services.groq.require_json_response', true), FILTER_VALIDATE_BOOLEAN);
 
         if (empty($this->apiKey)) {
-            Log::error('Groq API Error: API key is missing in config.');
-            throw new Exception('Groq API key is missing. Please check your .env file.');
+            Log::warning('Groq API key is missing in config. AI features will be unavailable.');
         }
     }
 
@@ -42,6 +41,9 @@ class GeminiService
      */
     public function generateTextResponse(?string $model, string $prompt): ?array
     {
+        if (empty($this->apiKey)) {
+            throw new Exception('Groq API key is missing. Please check your .env file.');
+        }
         $model = $model ?: $this->defaultModel;
         $messages = [
             [
@@ -69,6 +71,9 @@ class GeminiService
      */
     public function generateVisionResponse(?string $model, string $prompt, string $imageBase64, string $mimeType = 'image/jpeg'): ?array
     {
+        if (empty($this->apiKey)) {
+            throw new Exception('Groq API key is missing. Please check your .env file.');
+        }
         $model = $model ?: $this->visionModel;
         $messages = [
             [

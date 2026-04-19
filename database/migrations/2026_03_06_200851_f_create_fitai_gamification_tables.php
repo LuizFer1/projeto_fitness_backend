@@ -2,8 +2,8 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -35,7 +35,8 @@ return new class extends Migration
             $table->enum('type', [
                 'workout_logged', 'workout_completed', 'long_workout',
                 'water_goal', 'weight_logged', 'streak_bonus',
-                'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment'
+                'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment',
+                'daily_login', 'penalty_workout', 'penalty_calories',
             ]);
             $table->integer('xp_gained');
             $table->string('description', 200)->nullable();
@@ -105,9 +106,9 @@ return new class extends Migration
             $table->string('name', 120);
             $table->text('description')->nullable();
             $table->string('icon', 10)->nullable();
-            $table->enum('category', ['consistency','workout','water','nutrition','hardcore','special']);
+            $table->enum('category', ['consistency', 'workout', 'water', 'nutrition', 'hardcore', 'special']);
             $table->integer('xp_reward')->default(0);
-            $table->enum('condition_type', ['streak_days','total_workouts','water_days','active_days','hardcore_weeks']);
+            $table->enum('condition_type', ['streak_days', 'total_workouts', 'water_days', 'active_days', 'hardcore_weeks']);
             $table->integer('condition_value')->comment('Ex: 7 for 7 days streak');
             $table->boolean('is_hidden')->default(false)->comment('1 = hidden until unlocked');
             $table->boolean('is_active')->default(true);
@@ -143,9 +144,9 @@ return new class extends Migration
             $table->string('name', 120);
             $table->text('description')->nullable();
             $table->string('icon', 10)->nullable();
-            $table->enum('type', ['basic','special','event'])->default('basic');
-            $table->enum('periodicity', ['once','weekly','monthly','recurring'])->default('once');
-            $table->enum('condition_type', ['streak_days','workouts_period','water_days','meals_logged','weight_logged']);
+            $table->enum('type', ['basic', 'special', 'event'])->default('basic');
+            $table->enum('periodicity', ['once', 'weekly', 'monthly', 'recurring'])->default('once');
+            $table->enum('condition_type', ['streak_days', 'workouts_period', 'water_days', 'meals_logged', 'weight_logged']);
             $table->integer('condition_value');
             $table->integer('xp_reward')->default(0);
             $table->boolean('is_active')->default(true);
@@ -163,7 +164,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
             $table->foreignUuid('quest_id')->references('id')->on('quests')->restrictOnDelete();
-            $table->enum('status', ['not_started','in_progress','completed','expired'])->default('not_started');
+            $table->enum('status', ['not_started', 'in_progress', 'completed', 'expired'])->default('not_started');
             $table->integer('current_progress')->default(0);
             $table->integer('target_progress');
             $table->date('started_at')->nullable();
@@ -180,7 +181,7 @@ return new class extends Migration
         Schema::create('ranking_snapshots', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('type', ['weekly','monthly','all_time']);
+            $table->enum('type', ['weekly', 'monthly', 'all_time']);
             $table->string('ref_period', 10)->comment('"2025-W22" | "2025-06" | "all"');
             $table->integer('period_xp')->default(0);
             $table->integer('position')->nullable();

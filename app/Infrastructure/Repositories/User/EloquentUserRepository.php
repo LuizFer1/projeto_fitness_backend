@@ -20,6 +20,6 @@ class EloquentUserRepository implements UserRepositoryInterface
 
     public function createGamificationProfile(string $userUuid): void
     {
-        UserGamification::create(['user_uuid' => $userUuid]);
+        UserGamification::create(['user_id' => $userUuid]);
     }
 }

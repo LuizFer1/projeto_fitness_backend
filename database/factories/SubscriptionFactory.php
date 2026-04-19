@@ -10,30 +10,18 @@ class SubscriptionFactory extends Factory
 {
     public function definition(): array
     {
-        $startedAt = fake()->dateTimeBetween('-6 months', 'now');
-        $billingPeriod = fake()->randomElement(['monthly', 'semiannual', 'annual']);
-
-        $periodMonths = match ($billingPeriod) {
-            'monthly'    => 1,
-            'semiannual' => 6,
-            'annual'     => 12,
-        };
-
-        $periodEnd = (clone $startedAt)->modify("+{$periodMonths} months");
+        $startedAt = now();
 
         return [
-            'user_uuid'            => User::factory(),
-            'plan_uuid'            => Plan::factory(),
-            'price_uuid'           => null,
-            'status'               => fake()->randomElement(['active', 'trialing', 'canceled', 'expired']),
-            'billing_period'       => $billingPeriod,
-            'started_at'           => $startedAt,
-            'current_period_start' => $startedAt,
-            'current_period_end'   => $periodEnd,
-            'trial_start'          => null,
-            'trial_end'            => null,
-            'cancel_at'            => null,
-            'canceled_at'          => null,
+            'user_id'               => User::factory(),
+            'plan_id'               => Plan::factory(),
+            'plan_price_id'         => null,
+            'status'                => 'active',
+            'started_at'            => $startedAt,
+            'trial_ends_at'         => null,
+            'current_period_end'    => $startedAt->copy()->addMonth(),
+            'canceled_at'           => null,
+            'cancel_at_period_end'  => false,
         ];
     }
 
@@ -46,9 +34,9 @@ class SubscriptionFactory extends Factory
     {
         $now = now();
         return $this->state(fn () => [
-            'status'      => 'trialing',
-            'trial_start' => $now,
-            'trial_end'   => $now->copy()->addDays(30),
+            'status'         => 'trialing',
+            'started_at'     => $now,
+            'trial_ends_at'  => $now->copy()->addDays(30),
         ]);
     }
 }

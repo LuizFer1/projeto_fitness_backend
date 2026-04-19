@@ -1,0 +1,99 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/autenticacao-completa",
+  "description": "PRD-001 — Completar módulo de autenticação: verificação email, password reset, rate limiting, logout-all",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Adicionar rate limiting no login",
+      "description": "As a security-conscious developer, I need rate limiting on the login endpoint to prevent brute force attacks.",
+      "acceptanceCriteria": [
+        "Configure RateLimiter for login: max 5 attempts per 15 minutes per IP+email combination",
+        "Apply throttle middleware to POST /login route",
+        "Return 429 status with Retry-After header when limit exceeded",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Use Laravel RateLimiter in AppServiceProvider or RouteServiceProvider."
+    },
+    {
+      "id": "US-002",
+      "title": "Implementar logout de todos os dispositivos",
+      "description": "As a user, I want to logout from all devices at once for security.",
+      "acceptanceCriteria": [
+        "Add POST /auth/logout-all route in api.php (authenticated)",
+        "Implement method that revokes all personal_access_tokens for the user",
+        "Return 200 with count of sessions terminated",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "AuthController already has logout(). Add logoutAll() method."
+    },
+    {
+      "id": "US-003",
+      "title": "Implementar alteração de senha",
+      "description": "As an authenticated user, I want to change my password by providing my current password.",
+      "acceptanceCriteria": [
+        "Add PUT /auth/password route in api.php (authenticated)",
+        "Validate current_password matches before accepting new password",
+        "New password: min 8 chars, must contain letters and numbers",
+        "Revoke all tokens except current after password change",
+        "Return 200 with success message",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Implementar recuperação de senha (forgot + reset)",
+      "description": "As a user who forgot my password, I want to reset it via email link.",
+      "acceptanceCriteria": [
+        "Add POST /auth/forgot-password route (public) — sends reset link email",
+        "Add POST /auth/reset-password route (public) — applies new password with token",
+        "Token expires after 1 hour, single use",
+        "Always return 200 on forgot-password regardless of email existence (prevent enumeration)",
+        "After reset, revoke all user tokens",
+        "Use Laravel Password broker (Password::sendResetLink)",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": "password_reset_tokens table already exists in migrations."
+    },
+    {
+      "id": "US-005",
+      "title": "Implementar verificação de e-mail",
+      "description": "As a platform operator, I need users to verify their email to ensure valid accounts.",
+      "acceptanceCriteria": [
+        "Add MustVerifyEmail interface to User model",
+        "Add POST /auth/verify-email route — validates verification token",
+        "Add POST /auth/resend-verification route — resends verification email",
+        "Send verification email on registration",
+        "Unverified users receive 403 on protected endpoints (except verify/resend)",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Use Laravel built-in email verification. Be careful not to break existing login flow."
+    },
+    {
+      "id": "US-006",
+      "title": "Adicionar rate limiting global na API",
+      "description": "As a developer, I need global rate limiting on all API endpoints for security and stability.",
+      "acceptanceCriteria": [
+        "Configure global API rate limiter: 60 requests/minute per user (or IP if unauthenticated)",
+        "Configure specific limits: register 3/hour per IP, AI generation 5/hour per user",
+        "Apply to route groups in api.php",
+        "Return 429 with proper headers when exceeded",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": "leaderboard throttle already exists in api.php. Extend the pattern."
+    }
+  ]
+}

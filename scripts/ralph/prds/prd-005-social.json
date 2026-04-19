@@ -1,0 +1,126 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/modulo-social",
+  "description": "PRD-005 — Módulo social: sistema de amizades, feed, posts e interações",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Criar migrations para tabelas sociais",
+      "description": "As a developer, I need database tables for friendships, posts, likes, and comments.",
+      "acceptanceCriteria": [
+        "Create migration for friendships table: id (uuid PK), requester_id (foreign uuid to users), addressee_id (foreign uuid to users), status (enum: pending|accepted|blocked), accepted_at, blocked_at, created_at, updated_at. Unique index on (requester_id, addressee_id)",
+        "Create migration for posts table: id (uuid PK), user_id (foreign uuid), type (enum: text|achievement|goal_completed|workout_completed|level_up), content (text nullable), metadata (json nullable), visibility (enum: public|friends_only), created_at, updated_at, deleted_at",
+        "Create migration for post_likes: id (uuid PK), post_id (foreign uuid), user_id (foreign uuid), created_at. Unique on (post_id, user_id)",
+        "Create migration for post_comments: id (uuid PK), post_id (foreign uuid), user_id (foreign uuid), content (text), created_at, updated_at, deleted_at",
+        "All migrations run successfully",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Criar models sociais",
+      "description": "As a developer, I need Eloquent models for all social tables.",
+      "acceptanceCriteria": [
+        "Create Friendship model with UUID, scopes for pending/accepted/blocked",
+        "Create Post model with UUID, soft deletes, hasMany likes/comments",
+        "Create PostLike model with UUID",
+        "Create PostComment model with UUID, soft deletes",
+        "Add friends and posts relationships to User model",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Implementar sistema de amizades",
+      "description": "As a user, I want to send, accept, reject friend requests and manage friends.",
+      "acceptanceCriteria": [
+        "Create FriendController",
+        "GET /v1/friends — list accepted friends with pagination",
+        "GET /v1/friends/requests — list pending requests received",
+        "POST /v1/friends/request — send request (body: { username })",
+        "POST /v1/friends/{id}/accept — accept request",
+        "POST /v1/friends/{id}/reject — reject request",
+        "DELETE /v1/friends/{id} — remove friendship",
+        "POST /v1/friends/{id}/block — block user",
+        "Cannot send request to yourself",
+        "Add routes in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Implementar busca de usuários",
+      "description": "As a user, I want to search for other users to add as friends.",
+      "acceptanceCriteria": [
+        "GET /v1/users/search?q=term — search by name or username (LIKE query)",
+        "Minimum 3 characters required",
+        "Return: id, username, name, avatar_url, is_friend, friendship_status",
+        "Exclude blocked users",
+        "Limit 20 results with pagination",
+        "Add route in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Implementar criação e listagem de posts/feed",
+      "description": "As a user, I want to create posts and see a feed of friends' posts.",
+      "acceptanceCriteria": [
+        "Create PostController",
+        "POST /v1/posts — create text post (max 500 chars, body: { content, visibility })",
+        "GET /v1/feed — posts from friends + own, ordered by created_at DESC, cursor pagination",
+        "GET /v1/posts/{id} — single post with comments and like count",
+        "DELETE /v1/posts/{id} — soft delete own post only",
+        "Include like_count, comment_count, is_liked_by_me in responses",
+        "Add routes in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Implementar likes e comentários em posts",
+      "description": "As a user, I want to like and comment on friends' posts.",
+      "acceptanceCriteria": [
+        "POST /v1/posts/{id}/like — toggle like",
+        "POST /v1/posts/{id}/comments — create comment (body: { content })",
+        "DELETE /v1/posts/{id}/comments/{commentId} — soft delete own comment",
+        "Return updated like_count after toggle",
+        "Add routes in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Atualizar leaderboard de amigos com dados reais",
+      "description": "As a user, I want the friends leaderboard to use real friendship data.",
+      "acceptanceCriteria": [
+        "Update LeaderboardController@friends to query accepted friends",
+        "Rank by XP from user_gamification table",
+        "Include authenticated user in ranking",
+        "Same response format as other leaderboard endpoints",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "Depends on friendship system from US-003."
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+# Ralph Progress Log — prd-004-planos-ia
+PRD: PRD-003 — Complementar planos IA: comentários, checkins de execução, processamento assíncrono
+Branch: ralph/planos-ia-complemento
+Started: Mon Apr  6 15:25:03 PDT 2026
+---
+
+## Codebase Patterns
+- PHP binary is at `/tmp/php` (not in PATH)
+- No PHPStan available; use `/tmp/php -l` for syntax check and `PATH="/tmp:$PATH" /tmp/php vendor/bin/pint --test` for linting
+- Migrations use anonymous classes (`return new class extends Migration`)
+- All tables use UUID primary keys with `HasUuids` trait on models
+- Foreign UUIDs use `foreignUuid()->references('id')->on('table')->cascadeOnDelete()`
+- AiPlan model uses `$guarded = []` and `$timestamps = false`
+- Existing ai_plans table already has `version` column (smallInteger, default 1)
+- `artisan` commands fail due to L5-Swagger config issue - create files manually
+- Plan-related routes are under `Route::prefix('v1/plans/{planId}')` group in api.php
+- Async plan generation pattern: create AiPlan with 'generating' status, dispatch job, return plan ID as job_id
+- MySQL ENUM column changes require raw SQL `ALTER TABLE ... MODIFY COLUMN` in migrations
+
+---
+
+## 2026-04-06 - US-001
+- Created migration for `plan_comments` table with all required columns
+- Files changed: `database/migrations/2026_04_06_000001_create_plan_comments_table.php`
+- **Learnings for future iterations:**
+  - PHP is at `/tmp/php`, not in PATH
+  - Artisan commands fail due to `L5Swagger\Generator` class not found - must create migration files manually
+  - Use `pint --test` for lint validation (no PHPStan available)
+  - Existing ai_plans migration is at `2026_03_06_200851_d_create_fitai_ai_plans_tables.php`
+  - ai_plans already has a `version` column (relevant for US-005)
+---
+
+## 2026-04-06 - US-002
+- Created migration for `plan_checkins` table with all required columns
+- Added unique constraint on (user_id, checkable_type, checkable_id, completed_at) to support duplicate prevention in US-006
+- Files changed: `database/migrations/2026_04_06_000002_create_plan_checkins_table.php`
+- **Learnings for future iterations:**
+  - Used `timestamp('created_at')->useCurrent()` instead of `$table->timestamps()` since the table only needs `created_at` (no `updated_at`)
+  - Unique constraint on checkins will help enforce "no duplicate checkins for same item on same day" requirement in US-006
+---
+
+## 2026-04-06 - US-003
+- Created PlanComment model with UUID, fillable fields, belongsTo AiPlan and User, datetime cast for resolved_at
+- Created PlanCheckin model with UUID, fillable fields, belongsTo AiPlan and User, timestamps disabled (only created_at via migration), casts for difficulty/completed_at/created_at
+- Added hasMany comments() and checkins() relationships to AiPlan model
+- Files changed: `app/Models/PlanComment.php`, `app/Models/PlanCheckin.php`, `app/Models/AiPlan.php`
+- **Learnings for future iterations:**
+  - Pint requires `PATH="/tmp:$PATH"` prefix or it can't find the php binary
+  - Pint enforces `class_attributes_separation` — need blank lines between class properties
+  - PlanCheckin has `$timestamps = false` since migration only has `created_at` (no `updated_at`)
+---
+
+## 2026-04-06 - US-004
+- Created PlanCommentController with store() and index() endpoints
+- Added routes: POST and GET /v1/plans/{planId}/comments in api.php
+- Both endpoints validate plan ownership via `AiPlan::where('user_id', $user->id)`
+- store() validates content (required, max 2000), scope (enum: plan|day|exercise|meal), target_id (nullable uuid)
+- Files changed: `app/Http/Controllers/Api/V1/PlanCommentController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Plan routes were not yet registered in api.php — existing AiPlanController had no routes
+  - Pint auto-fixed method_argument_space and single_blank_line_at_eof in api.php
+  - Routes use `Route::prefix('v1/plans/{planId}')` grouping pattern for nested resources
+---
+
+## 2026-04-06 - US-005
+- Created PlanRefineController with refine() endpoint
+- POST /v1/plans/{planId}/refine triggers AI refinement using unresolved comments
+- Creates new AiPlan with incremented version, marks comments as resolved (resolved_at = now)
+- Enforces max 3 refinements per plan per day (returns 429 if exceeded)
+- Returns 422 if no unresolved comments exist
+- Added route in api.php under the existing v1/plans/{planId} prefix group
+- Files changed: `app/Http/Controllers/Api/V1/PlanRefineController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - The `AiMealPlanController::regenerate()` method is a good reference for the refinement pattern (sends original content + user feedback to AI, creates new plan)
+  - Rate limiting refinements uses a `LIKE` query on `generation_reason` — consider adding a dedicated column if this pattern is used more broadly
+  - Pint enforces `concat_space` (no spaces around `.`) and `single_quote` for strings without interpolation
+---
+
+## 2026-04-06 - US-006
+- Created PlanCheckinController with store() and index() endpoints
+- POST /v1/plans/{planId}/checkin creates a checkin with checkable_type, checkable_id, notes, difficulty
+- GET /v1/plans/{planId}/checkins returns checkins with summary stats (total items, completed, adherence %)
+- Duplicate prevention: checks for existing checkin with same user/plan/type/id on same day, returns 409 if found
+- Adherence calculation counts checkable items from plan content JSON (days, exercises, meals)
+- Added routes in api.php under existing v1/plans/{planId} prefix group
+- Files changed: `app/Http/Controllers/Api/V1/PlanCheckinController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Plan content is stored as JSON in `content` column — structure has `days[]` with nested `exercises[]` and `meals[]`
+  - Duplicate prevention uses `whereDate('completed_at', $today)` query rather than relying solely on the DB unique constraint (which uses exact timestamp)
+  - 409 Conflict is used for duplicate checkin attempts
+---
+
+## 2026-04-06 - US-007
+- Converted workout and meal plan generation to async processing via Laravel Queue
+- Created GenerateWorkoutPlanJob extracting logic from AiPlanController@generateWorkout
+- Created GenerateMealPlanJob extracting logic from AiMealPlanController@generateMealPlan
+- Controllers now create AiPlan with status 'generating', dispatch job, return 202 Accepted with job_id (= plan UUID)
+- Added GET /v1/plans/jobs/{jobId} endpoint (PlanJobStatusController) to check job status (processing/completed/failed)
+- Added migration to extend ai_plans status enum with 'generating' and 'failed'
+- Both jobs retry up to 3 times ($tries = 3) and mark plan as 'failed' on final failure
+- Files changed: `app/Jobs/GenerateWorkoutPlanJob.php`, `app/Jobs/GenerateMealPlanJob.php`, `app/Http/Controllers/Api/V1/PlanJobStatusController.php`, `app/Http/Controllers/Api/V1/AiPlanController.php`, `app/Http/Controllers/Api/V1/AiMealPlanController.php`, `routes/api.php`, `database/migrations/2026_04_06_000003_add_generating_failed_to_ai_plans_status.php`
+- **Learnings for future iterations:**
+  - Pattern for async plan generation: create AiPlan with 'generating' status first, dispatch job, return plan ID as job_id. Job updates status to 'draft' on success or 'failed' on failure.
+  - Job status endpoint reuses the plan ID — no separate job tracking table needed since the plan itself carries the status.
+  - Laravel's `failed()` method on jobs is called after all retries are exhausted — use it to update external state.
+  - The ai_plans status enum needed a migration to add new values — MySQL ENUM changes require raw SQL ALTER TABLE.
+---

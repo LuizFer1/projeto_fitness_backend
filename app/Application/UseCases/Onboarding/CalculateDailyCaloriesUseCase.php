@@ -25,7 +25,7 @@ class CalculateDailyCaloriesUseCase
             $h = (int) $data['height_cm'];
             $a = (int) $data['age'];
             
-            if ($data['gender'] === 'M') {
+            if ($data['gender'] === 'male') {
                 $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) + 5;
             } else {
                 $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) - 161;

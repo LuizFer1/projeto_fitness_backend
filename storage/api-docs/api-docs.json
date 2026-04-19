@@ -1,0 +1,3407 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Fitness AI API Documentation",
+        "description": "L5 Swagger OpenApi description for the Fitness Backend",
+        "contact": {
+            "email": "contact@example.com"
+        },
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Local API Server"
+        }
+    ],
+    "paths": {
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Health check",
+                "description": "Verifica o status da aplicação, banco de dados e Redis.",
+                "operationId": "eafb61167d2639c57d4815f1769012fe",
+                "responses": {
+                    "200": {
+                        "description": "Todos os serviços estão saudáveis"
+                    },
+                    "503": {
+                        "description": "Um ou mais serviços estão indisponíveis"
+                    }
+                }
+            }
+        },
+        "/api/v1/admin/badges": {
+            "get": {
+                "tags": [
+                    "Admin - Badges"
+                ],
+                "summary": "Listar badges (admin)",
+                "description": "Retorna todas as conquistas/badges cadastradas.",
+                "operationId": "a28b76d016367f1ec4e018bfc7586b99",
+                "responses": {
+                    "200": {
+                        "description": "Lista de badges"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Badges"
+                ],
+                "summary": "Criar badge (admin)",
+                "description": "Cadastra uma nova conquista/badge.",
+                "operationId": "dfe60fbb1b7eb063c40b29dcbbb89b25",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "slug",
+                                    "name",
+                                    "category",
+                                    "condition_type",
+                                    "condition_value"
+                                ],
+                                "properties": {
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "streak-7-dias"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Sequência de 7 Dias"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Treinou por 7 dias consecutivos"
+                                    },
+                                    "icon": {
+                                        "type": "string",
+                                        "example": "fire"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "consistency",
+                                            "workout",
+                                            "water",
+                                            "nutrition",
+                                            "hardcore",
+                                            "special"
+                                        ]
+                                    },
+                                    "xp_reward": {
+                                        "type": "integer",
+                                        "example": 100
+                                    },
+                                    "condition_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "streak_days",
+                                            "total_workouts",
+                                            "water_days",
+                                            "active_days",
+                                            "hardcore_weeks"
+                                        ]
+                                    },
+                                    "condition_value": {
+                                        "type": "integer",
+                                        "example": 7
+                                    },
+                                    "is_hidden": {
+                                        "type": "boolean",
+                                        "example": false
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Badge criado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/badges/{id}": {
+            "put": {
+                "tags": [
+                    "Admin - Badges"
+                ],
+                "summary": "Atualizar badge (admin)",
+                "description": "Atualiza os dados de um badge existente.",
+                "operationId": "299e3965193754b4be39faba94be14c7",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "slug": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "icon": {
+                                        "type": "string"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "xp_reward": {
+                                        "type": "integer"
+                                    },
+                                    "condition_type": {
+                                        "type": "string"
+                                    },
+                                    "condition_value": {
+                                        "type": "integer"
+                                    },
+                                    "is_hidden": {
+                                        "type": "boolean"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Badge atualizado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Badges"
+                ],
+                "summary": "Remover badge (admin)",
+                "description": "Remove um badge do catálogo.",
+                "operationId": "f8ae3a5629b27b6029393fd6c4012548",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Badge removido"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/exercises": {
+            "get": {
+                "tags": [
+                    "Admin - Exercises"
+                ],
+                "summary": "Listar exercícios (admin)",
+                "description": "Retorna a lista paginada de exercícios do catálogo, com filtro opcional por nome.",
+                "operationId": "19efb4480f1c8a197ca20c1578c181d9",
+                "parameters": [
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "description": "Filtro por nome",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de exercícios"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Exercises"
+                ],
+                "summary": "Criar exercício (admin)",
+                "description": "Cadastra um novo exercício no catálogo.",
+                "operationId": "743a645fa84ef6914b364c2a41fd4ac1",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Agachamento Livre"
+                                    },
+                                    "muscle_group": {
+                                        "type": "string",
+                                        "example": "pernas"
+                                    },
+                                    "category": {
+                                        "type": "string",
+                                        "enum": [
+                                            "strength",
+                                            "cardio",
+                                            "mobility",
+                                            "hiit",
+                                            "stretching",
+                                            "functional"
+                                        ]
+                                    },
+                                    "difficulty": {
+                                        "type": "string",
+                                        "enum": [
+                                            "beginner",
+                                            "intermediate",
+                                            "advanced"
+                                        ]
+                                    },
+                                    "equipment": {
+                                        "type": "string",
+                                        "example": "barra"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "calories_per_min": {
+                                        "type": "number",
+                                        "example": 8.5
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Exercício criado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/exercises/{id}": {
+            "put": {
+                "tags": [
+                    "Admin - Exercises"
+                ],
+                "summary": "Atualizar exercício (admin)",
+                "description": "Atualiza os dados de um exercício existente.",
+                "operationId": "b340acafb718fcb65114f5a0a1f7305c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "muscle_group": {
+                                        "type": "string"
+                                    },
+                                    "category": {
+                                        "type": "string"
+                                    },
+                                    "difficulty": {
+                                        "type": "string"
+                                    },
+                                    "equipment": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "calories_per_min": {
+                                        "type": "number"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Exercício atualizado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Exercises"
+                ],
+                "summary": "Remover exercício (admin)",
+                "description": "Remove um exercício do catálogo.",
+                "operationId": "87cf655c355c92907b4f1f4a2f721d85",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Exercício removido"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/exercises/bulk": {
+            "post": {
+                "tags": [
+                    "Admin - Exercises"
+                ],
+                "summary": "Importar exercícios em lote (admin)",
+                "description": "Cria múltiplos exercícios em uma única requisição.",
+                "operationId": "b88f53c3790202dc3ec9a664f18d2030",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "exercises"
+                                ],
+                                "properties": {
+                                    "exercises": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "name"
+                                            ],
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string"
+                                                },
+                                                "muscle_group": {
+                                                    "type": "string"
+                                                },
+                                                "category": {
+                                                    "type": "string"
+                                                },
+                                                "difficulty": {
+                                                    "type": "string"
+                                                },
+                                                "equipment": {
+                                                    "type": "string"
+                                                },
+                                                "description": {
+                                                    "type": "string"
+                                                },
+                                                "calories_per_min": {
+                                                    "type": "number"
+                                                },
+                                                "is_active": {
+                                                    "type": "boolean"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Exercícios criados em lote"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/quests": {
+            "get": {
+                "tags": [
+                    "Admin - Quests"
+                ],
+                "summary": "Listar quests (admin)",
+                "description": "Retorna todas as quests cadastradas.",
+                "operationId": "4dc0bf565baa671dab198d24100f88b9",
+                "responses": {
+                    "200": {
+                        "description": "Lista de quests"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Admin - Quests"
+                ],
+                "summary": "Criar quest (admin)",
+                "description": "Cadastra uma nova quest/missão.",
+                "operationId": "59c9e3e9272d58b4157592d271c56233",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "slug",
+                                    "name",
+                                    "type",
+                                    "periodicity",
+                                    "condition_type",
+                                    "condition_value"
+                                ],
+                                "properties": {
+                                    "slug": {
+                                        "type": "string",
+                                        "example": "treinos-semana-3"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Treinar 3x na Semana"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "icon": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "basic",
+                                            "special",
+                                            "event"
+                                        ]
+                                    },
+                                    "periodicity": {
+                                        "type": "string",
+                                        "enum": [
+                                            "once",
+                                            "weekly",
+                                            "monthly",
+                                            "recurring"
+                                        ]
+                                    },
+                                    "condition_type": {
+                                        "type": "string",
+                                        "enum": [
+                                            "streak_days",
+                                            "workouts_period",
+                                            "water_days",
+                                            "meals_logged",
+                                            "weight_logged"
+                                        ]
+                                    },
+                                    "condition_value": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "xp_reward": {
+                                        "type": "integer",
+                                        "example": 50
+                                    },
+                                    "is_active": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Quest criada"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/quests/{id}": {
+            "put": {
+                "tags": [
+                    "Admin - Quests"
+                ],
+                "summary": "Atualizar quest (admin)",
+                "description": "Atualiza os dados de uma quest existente.",
+                "operationId": "bb43120010a73aad23690de5d552adbd",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "slug": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "description": {
+                                        "type": "string"
+                                    },
+                                    "icon": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "type": "string"
+                                    },
+                                    "periodicity": {
+                                        "type": "string"
+                                    },
+                                    "condition_type": {
+                                        "type": "string"
+                                    },
+                                    "condition_value": {
+                                        "type": "integer"
+                                    },
+                                    "xp_reward": {
+                                        "type": "integer"
+                                    },
+                                    "is_active": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Quest atualizada"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Admin - Quests"
+                ],
+                "summary": "Remover quest (admin)",
+                "description": "Remove uma quest do catálogo.",
+                "operationId": "edd4dff62c1c5a04af125a334894c4b0",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Quest removida"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "403": {
+                        "description": "Acesso negado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/generate-meal": {
+            "post": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Gerar plano alimentar com IA",
+                "description": "Gera um plano alimentar personalizado via IA (Groq) com base nos dados do usuário. Criado com status draft.",
+                "operationId": "2caf03a4bb99dc0454f46d66e5527668",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "goal",
+                                    "meals_per_day"
+                                ],
+                                "properties": {
+                                    "goal": {
+                                        "type": "string",
+                                        "example": "muscle_gain"
+                                    },
+                                    "restrictions": {
+                                        "type": "string",
+                                        "example": "lactose"
+                                    },
+                                    "food_preferences": {
+                                        "type": "string",
+                                        "example": "frango, arroz"
+                                    },
+                                    "food_dislikes": {
+                                        "type": "string",
+                                        "example": "peixe"
+                                    },
+                                    "meals_per_day": {
+                                        "type": "integer",
+                                        "example": 5
+                                    },
+                                    "routine_schedule": {
+                                        "type": "string",
+                                        "example": "acorda 6h, treina 18h"
+                                    },
+                                    "weight_kg": {
+                                        "type": "number",
+                                        "example": 78
+                                    },
+                                    "height_cm": {
+                                        "type": "number",
+                                        "example": 178
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 28
+                                    },
+                                    "activity_level": {
+                                        "type": "string",
+                                        "example": "moderate",
+                                        "enum": [
+                                            "sedentary",
+                                            "light",
+                                            "moderate",
+                                            "active",
+                                            "very_active"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Plano alimentar gerado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou falha na IA"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/meals": {
+            "get": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Listar planos alimentares",
+                "description": "Retorna todos os planos alimentares do usuário (versão resumida).",
+                "operationId": "d16428e289f7d3a1f59408d3d95e607d",
+                "responses": {
+                    "200": {
+                        "description": "Lista de planos alimentares"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/meals/{id}": {
+            "get": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Detalhar plano alimentar",
+                "description": "Retorna o conteúdo completo de um plano alimentar (refeições e ingredientes).",
+                "operationId": "4bbb86a1c30869e1f7b65e866ef73a4f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do plano",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do plano"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/meals/{id}/activate": {
+            "patch": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Ativar plano alimentar",
+                "description": "Marca o plano como ativo e desativa os demais planos nutricionais do usuário (status replaced).",
+                "operationId": "d611b86b300102c990a52c8f14d1b3d5",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do plano",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plano ativado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/meals/{id}/archive": {
+            "patch": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Arquivar plano alimentar",
+                "description": "Arquiva o plano alimentar do usuário (status archived).",
+                "operationId": "22c1a73c68d2b9cac7a3f87cb7085a3e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do plano",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plano arquivado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/meals/{id}/regenerate": {
+            "post": {
+                "tags": [
+                    "AI Meal Plans"
+                ],
+                "summary": "Regenerar plano alimentar com ajustes",
+                "description": "Gera uma nova versão do plano alimentar incorporando os ajustes solicitados. Cria um novo registro com status draft.",
+                "operationId": "c9db121097bd21cf02e2baea259ecdf9",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do plano original",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "adjustment_note"
+                                ],
+                                "properties": {
+                                    "adjustment_note": {
+                                        "type": "string",
+                                        "example": "Trocar frango por carne vermelha nas refeições principais."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Plano regenerado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou falha na IA"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/plans/generate-workout": {
+            "post": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "Generate a personalized AI workout plan",
+                "description": "Sends user preferences to Gemini AI and receives a structured workout plan that is saved to the database.",
+                "operationId": "2a4a8e0f25293ceacde33c8447714ec6",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "goal": {
+                                        "type": "string",
+                                        "example": "hypertrophy"
+                                    },
+                                    "muscles": {
+                                        "type": "string",
+                                        "example": "chest, triceps, shoulders"
+                                    },
+                                    "level": {
+                                        "type": "string",
+                                        "example": "intermediate"
+                                    },
+                                    "days_per_week": {
+                                        "type": "integer",
+                                        "example": 4
+                                    },
+                                    "workout_time_minutes": {
+                                        "type": "integer",
+                                        "example": 60
+                                    },
+                                    "limitations": {
+                                        "type": "string",
+                                        "example": "shoulder injury on right side"
+                                    },
+                                    "location": {
+                                        "type": "string",
+                                        "example": "home"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Workout plan generated and saved successfully"
+                    },
+                    "422": {
+                        "description": "Validation error or AI processing failure"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans": {
+            "get": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "List all plans for the authenticated user",
+                "operationId": "58b2e28271a7621513ba9a951c53dff7",
+                "responses": {
+                    "200": {
+                        "description": "List of plans"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans/{id}": {
+            "get": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "Get a specific plan by ID",
+                "operationId": "90ba177b12b1fa90d22453b1bc81d084",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plan details"
+                    },
+                    "404": {
+                        "description": "Plan not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans/{id}/activate": {
+            "patch": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "Accept and activate a draft plan",
+                "operationId": "deadbf5fb156b59e3ca18618800fd746",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plan activated"
+                    },
+                    "404": {
+                        "description": "Plan not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans/{id}/archive": {
+            "patch": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "Archive a plan",
+                "operationId": "3ad47ecfa31328d24c7ccf105dc97be1",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Plan archived"
+                    },
+                    "404": {
+                        "description": "Plan not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans/{id}/duplicate": {
+            "post": {
+                "tags": [
+                    "AI Plans"
+                ],
+                "summary": "Duplicate an existing plan as a new draft",
+                "operationId": "017c214b7a50b66b107820bb96be754c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Plan duplicated"
+                    },
+                    "404": {
+                        "description": "Plan not found"
+                    }
+                }
+            }
+        },
+        "/api/v1/measurements": {
+            "get": {
+                "tags": [
+                    "Measurements"
+                ],
+                "summary": "Listar medidas corporais",
+                "description": "Retorna o histórico de medidas corporais do usuário, ordenado por data (mais recentes primeiro).",
+                "operationId": "4f67f3ed37a44038284b8055fd55501d",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de registros (máx 365)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 30
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de medidas corporais"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Measurements"
+                ],
+                "summary": "Registrar medida corporal",
+                "description": "Cria ou atualiza a medida corporal do dia. Calcula o IMC automaticamente se a altura estiver no onboarding. Concede XP de gamificação. Endpoint idempotente via header Idempotency-Key.",
+                "operationId": "fa511a1c19e276fb5f5b3adbc017ddb6",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Chave de idempotência (opcional)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "weight_kg"
+                                ],
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-04-18"
+                                    },
+                                    "weight_kg": {
+                                        "type": "number",
+                                        "example": 78.5
+                                    },
+                                    "body_fat_pct": {
+                                        "type": "number",
+                                        "example": 18.2
+                                    },
+                                    "muscle_mass_kg": {
+                                        "type": "number",
+                                        "example": 35.4
+                                    },
+                                    "waist_circumference_cm": {
+                                        "type": "number",
+                                        "example": 82
+                                    },
+                                    "hip_circumference_cm": {
+                                        "type": "number",
+                                        "example": 95
+                                    },
+                                    "arm_circumference_cm": {
+                                        "type": "number",
+                                        "example": 36
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Medida registrada"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/measurements/{id}": {
+            "delete": {
+                "tags": [
+                    "Measurements"
+                ],
+                "summary": "Remover medida corporal",
+                "description": "Remove um registro de medida corporal do usuário.",
+                "operationId": "b3b62b86734c0348a720bba68597dd99",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da medida",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Medida removida"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/dashboard": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Dashboard consolidado do usuário",
+                "description": "Retorna dados consolidados do dia: metas, refeições, treinos da semana, hidratação, gráfico nutricional dos últimos 7 dias e gamificação.",
+                "operationId": "f34f93f5f5195ed9491ad6ac929147f2",
+                "responses": {
+                    "200": {
+                        "description": "Dados consolidados do dashboard"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/dashboard/alimentation": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Dashboard de alimentação",
+                "description": "Retorna dados detalhados de alimentação do dia: metas, consumo, macros, hidratação e refeições agrupadas por tipo.",
+                "operationId": "08a2ea5137e425dcbf00b856774dae58",
+                "responses": {
+                    "200": {
+                        "description": "Dados de alimentação do dia"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/dashboard/exercise": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Dashboard de exercícios",
+                "description": "Retorna dados detalhados de treinos: meta semanal, treinos da semana, estatísticas, treino do dia e histórico dos últimos 30 dias.",
+                "operationId": "8f7b421058ef057698621937060dd382",
+                "responses": {
+                    "200": {
+                        "description": "Dados de exercícios"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends": {
+            "get": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Listar amigos",
+                "description": "Retorna a lista paginada de amigos aceitos.",
+                "operationId": "45cdd693f9764fe3a8e55aeec7b246f0",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de amigos"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/requests": {
+            "get": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Listar solicitações de amizade",
+                "description": "Retorna a lista paginada de solicitações de amizade pendentes recebidas.",
+                "operationId": "29cef84ba56f7083a4e6a83d958130cb",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de solicitações"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/request": {
+            "post": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Enviar solicitação de amizade",
+                "description": "Envia uma solicitação de amizade para outro usuário.",
+                "operationId": "ece669891030b97c17b45d534444af65",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "username"
+                                ],
+                                "properties": {
+                                    "username": {
+                                        "type": "string",
+                                        "example": "joao_silva"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Solicitação enviada com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou solicitação já existente"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/{id}/accept": {
+            "post": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Aceitar solicitação de amizade",
+                "description": "Aceita uma solicitação de amizade pendente.",
+                "operationId": "439e4f04d333a6b8321d843068b7853b",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da amizade",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação aceita"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    },
+                    "422": {
+                        "description": "Solicitação não pode ser aceita"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Rejeitar solicitação de amizade",
+                "description": "Rejeita uma solicitação de amizade pendente.",
+                "operationId": "98a03ec7fc0601e1c8b5fdc842efbf74",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da amizade",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação rejeitada"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    },
+                    "422": {
+                        "description": "Solicitação não pode ser rejeitada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/{id}": {
+            "delete": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Remover amizade",
+                "description": "Remove uma amizade existente.",
+                "operationId": "88534517372216b85eaf3a1624749b57",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da amizade",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Amizade removida"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/friends/{id}/block": {
+            "post": {
+                "tags": [
+                    "Friends"
+                ],
+                "summary": "Bloquear usuário",
+                "description": "Bloqueia um usuário em uma amizade existente.",
+                "operationId": "3c931f632d236a95b69e2e2fb3bf7e71",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da amizade",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Usuário bloqueado"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/achievements": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Listar conquistas",
+                "description": "Retorna as conquistas desbloqueadas do usuário autenticado.",
+                "operationId": "d91fc3c00a398eb0346f79029d0af195",
+                "responses": {
+                    "200": {
+                        "description": "Lista de conquistas"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/leaderboard/weekly": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Ranking semanal",
+                "description": "Retorna o ranking de XP da semana atual.",
+                "operationId": "b9d7e27f6cd59c293625c5161db054df",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de resultados (max 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ranking semanal"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/leaderboard/monthly": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Ranking mensal",
+                "description": "Retorna o ranking de XP do mês atual.",
+                "operationId": "6805c05fe982c246a6bf1c6c1869d141",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de resultados (max 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ranking mensal"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/leaderboard/alltime": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Ranking geral",
+                "description": "Retorna o ranking de XP de todos os tempos.",
+                "operationId": "6a7e2e159adf69c01c447c06e0145473",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de resultados (max 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ranking geral"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/leaderboard/friends": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Ranking de amigos",
+                "description": "Retorna o ranking de XP entre amigos aceitos e o usuário autenticado.",
+                "operationId": "0b1314dedcf6f84460b2ae69a84388ca",
+                "parameters": [
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de resultados (max 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ranking de amigos"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/gamification/xp-history": {
+            "get": {
+                "tags": [
+                    "Gamification"
+                ],
+                "summary": "Histórico de XP",
+                "description": "Retorna o histórico paginado de transações de XP do usuário autenticado.",
+                "operationId": "2fde11cd87ba7b2307b982fc71e9f488",
+                "responses": {
+                    "200": {
+                        "description": "Histórico de XP paginado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/meals/analyze-text": {
+            "post": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Analisa e salva uma refeição a partir de texto",
+                "description": "O usuário envia o que comeu (em texto) e a IA estima macros, calorias e salva no histórico.",
+                "operationId": "4c378a1e3c612f05586da43c5e23ba58",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-15"
+                                    },
+                                    "meal_type": {
+                                        "type": "string",
+                                        "example": "lunch"
+                                    },
+                                    "text_description": {
+                                        "type": "string",
+                                        "example": "Comi 150g de frango, 200g de arroz e salada de alface."
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Refeição salva com sucesso"
+                    }
+                }
+            }
+        },
+        "/api/v1/meals/analyze-image": {
+            "post": {
+                "tags": [
+                    "Meals"
+                ],
+                "summary": "Analisa e salva uma refeição a partir de uma FOTO",
+                "description": "O usuário envia a foto do prato em base64 e a IA usa visão computacional para estimar macros, calorias e itens.",
+                "operationId": "8252733e771ab550889746bad7d9be34",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-15"
+                                    },
+                                    "meal_type": {
+                                        "type": "string",
+                                        "example": "dinner"
+                                    },
+                                    "image_base64": {
+                                        "type": "string",
+                                        "example": "base64_string_here"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Refeição computada e salva via foto"
+                    }
+                }
+            }
+        },
+        "/api/v1/plans/catalog": {
+            "get": {
+                "tags": [
+                    "Plans Catalog"
+                ],
+                "summary": "Catálogo público de planos",
+                "description": "Retorna a lista pública de planos ativos com seus preços. Endpoint público (não requer autenticação).",
+                "operationId": "74c646be27ecb2b179160e5267edbf88",
+                "responses": {
+                    "200": {
+                        "description": "Catálogo de planos"
+                    }
+                }
+            }
+        },
+        "/api/v1/posts": {
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Criar post",
+                "description": "Cria um novo post de texto.",
+                "operationId": "b996500c6caf55100cd024d3e3b49dd5",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "content",
+                                    "visibility"
+                                ],
+                                "properties": {
+                                    "content": {
+                                        "type": "string",
+                                        "example": "Treino de hoje foi incrível!",
+                                        "maxLength": 500
+                                    },
+                                    "visibility": {
+                                        "type": "string",
+                                        "example": "public",
+                                        "enum": [
+                                            "public",
+                                            "friends_only"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Post criado com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/feed": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Feed de posts",
+                "description": "Retorna posts do usuário e de amigos com paginação por cursor.",
+                "operationId": "b729c2979ed881f364d7c1b8bf7e6fdf",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de posts"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/posts/{id}": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Detalhes do post",
+                "description": "Retorna um post com comentários e contagem de likes.",
+                "operationId": "db686e4ed73ae7ca2424e0a4f740c8b2",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do post",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados do post"
+                    },
+                    "404": {
+                        "description": "Post não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Excluir post",
+                "description": "Exclui (soft delete) um post do usuário autenticado.",
+                "operationId": "82927d2153173c1a7d6ab1e9d52ff56e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do post",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post excluído"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Post não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/posts/{id}/like": {
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Curtir/descurtir post",
+                "description": "Alterna o like do usuário autenticado em um post.",
+                "operationId": "13d9ad2bf07e705e0d6f4d723528500f",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do post",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status do like atualizado"
+                    },
+                    "404": {
+                        "description": "Post não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/posts/{id}/comments": {
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Comentar em post",
+                "description": "Cria um comentário em um post.",
+                "operationId": "340c86389dee8b9b3554ed3f32012d5e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do post",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "content"
+                                ],
+                                "properties": {
+                                    "content": {
+                                        "type": "string",
+                                        "example": "Ótimo treino!",
+                                        "maxLength": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Comentário criado"
+                    },
+                    "404": {
+                        "description": "Post não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/posts/{id}/comments/{commentId}": {
+            "delete": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Excluir comentário",
+                "description": "Exclui (soft delete) um comentário do usuário autenticado.",
+                "operationId": "32e84bb376a7076d5461e1f51a006a57",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do post",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "commentId",
+                        "in": "path",
+                        "description": "ID do comentário",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comentário excluído"
+                    },
+                    "403": {
+                        "description": "Não autorizado"
+                    },
+                    "404": {
+                        "description": "Comentário não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/privacy/my-data": {
+            "get": {
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Exportar meus dados",
+                "description": "Exporta todos os dados pessoais do usuário autenticado (LGPD).",
+                "operationId": "5c175922ad381e04f779afac246be96b",
+                "responses": {
+                    "200": {
+                        "description": "Dados exportados com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/privacy/delete-account": {
+            "delete": {
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Excluir conta",
+                "description": "Exclui permanentemente a conta do usuário e todos os dados associados (LGPD).",
+                "operationId": "a717f7c3db93d5a767235182207f0116",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "password"
+                                ],
+                                "properties": {
+                                    "password": {
+                                        "type": "string",
+                                        "example": "senha1234"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Conta excluída com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Senha incorreta"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Perfil público do usuário",
+                "description": "Retorna os dados públicos de um usuário pelo username.",
+                "operationId": "321179894806795d27c295cbd761d90c",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "description": "Username do usuário",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados do perfil público"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}/achievements": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Conquistas do usuário",
+                "description": "Retorna as conquistas desbloqueadas de um usuário.",
+                "operationId": "fa9f8fd5f7b1a5db26d6998eb3884d10",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "description": "Username do usuário",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de conquistas"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}/goals": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Metas do usuário",
+                "description": "Retorna as metas públicas de um usuário.",
+                "operationId": "b0bf4856fd64bf877e4fa05298cacdf0",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "description": "Username do usuário",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dados das metas"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/quests": {
+            "get": {
+                "tags": [
+                    "Quests"
+                ],
+                "summary": "Listar quests ativas",
+                "description": "Retorna todas as quests (missões) ativas disponíveis no sistema.",
+                "operationId": "8775c73ef05845b1e77d8d94654b9d12",
+                "responses": {
+                    "200": {
+                        "description": "Lista de quests"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/quests/mine": {
+            "get": {
+                "tags": [
+                    "Quests"
+                ],
+                "summary": "Minhas quests",
+                "description": "Retorna as quests ativas com o progresso atual do usuário por período (semanal/mensal) ou avulso.",
+                "operationId": "a80571aa97bb6433389586b05263ec17",
+                "responses": {
+                    "200": {
+                        "description": "Quests e progresso do usuário"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rankings": {
+            "get": {
+                "tags": [
+                    "Rankings"
+                ],
+                "summary": "Listar ranking de usuários",
+                "description": "Retorna os top usuários do período e a posição do usuário atual. Cache de 5 minutos.",
+                "operationId": "a54a7110ae1b808b2e0d032c21c2e0f5",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "description": "Período do ranking",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "weekly",
+                            "enum": [
+                                "weekly",
+                                "monthly",
+                                "all_time"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Limite de resultados (máx 100)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 20
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ranking do período"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Período inválido"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/rankings/profile": {
+            "get": {
+                "tags": [
+                    "Rankings"
+                ],
+                "summary": "Perfil de gamificação do usuário",
+                "description": "Retorna perfil completo de gamificação: XP, nível, streak, badges conquistadas e badges ainda não notificadas. Acessível também via /api/gamification/profile.",
+                "operationId": "edb1ea67c0248668f635298f242f7676",
+                "responses": {
+                    "200": {
+                        "description": "Perfil de gamificação"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/me": {
+            "get": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Minha assinatura atual",
+                "description": "Retorna a assinatura ativa/trial do usuário. Se não houver, retorna plano free implícito.",
+                "operationId": "054070b15c2a1f9c8bd4d8ee96b07392",
+                "responses": {
+                    "200": {
+                        "description": "Assinatura atual do usuário"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Criar assinatura",
+                "description": "Cria uma assinatura para o usuário. Suporta trial se o plano tiver dias de trial. Endpoint idempotente via header Idempotency-Key.",
+                "operationId": "19c40b25c47a2cc579b4ca8c9c330b76",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Chave de idempotência",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "plan_code"
+                                ],
+                                "properties": {
+                                    "plan_code": {
+                                        "type": "string",
+                                        "example": "premium"
+                                    },
+                                    "billing_period": {
+                                        "type": "string",
+                                        "example": "monthly",
+                                        "enum": [
+                                            "monthly",
+                                            "semiannual",
+                                            "annual"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Assinatura criada"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "409": {
+                        "description": "Usuário já possui assinatura ativa"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou preço indisponível"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/cancel": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Cancelar assinatura",
+                "description": "Marca a assinatura ativa para cancelamento ao fim do período corrente. Endpoint idempotente via header Idempotency-Key.",
+                "operationId": "74fa01c028fdd2840497b72617bfec1e",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Chave de idempotência",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assinatura marcada para cancelamento"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Nenhuma assinatura ativa encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/subscriptions/resume": {
+            "post": {
+                "tags": [
+                    "Subscriptions"
+                ],
+                "summary": "Retomar assinatura cancelada",
+                "description": "Reativa uma assinatura marcada para cancelamento (antes do fim do período). Endpoint idempotente via header Idempotency-Key.",
+                "operationId": "ac2369593190a266c5c59b255a16fdd7",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Chave de idempotência",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Assinatura retomada"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Nenhuma assinatura cancelável encontrada"
+                    },
+                    "422": {
+                        "description": "Período de cobrança já encerrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/search": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Buscar usuários",
+                "description": "Pesquisa usuários por nome ou username. Exclui usuários bloqueados.",
+                "operationId": "d697607c7cd85fb8e5fc36bfdf9a93f8",
+                "parameters": [
+                    {
+                        "name": "q",
+                        "in": "query",
+                        "description": "Termo de busca (mínimo 3 caracteres)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "minLength": 3
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de usuários encontrados"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workouts/finish": {
+            "post": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Salva e analisa um treino finalizado",
+                "description": "Salva o log do treino, os exercícios realizados, e envia os dados para a IA (Gemini) calcular calorias gastas, músculos treinados e gerar um feedback motivacional.",
+                "operationId": "b4c89b08fd7ce583d5962e421278492f",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-03-15"
+                                    },
+                                    "time_start": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "14:00:00"
+                                    },
+                                    "time_end": {
+                                        "type": "string",
+                                        "format": "time",
+                                        "example": "15:30:00"
+                                    },
+                                    "plan_workout_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "example": "uuid_here"
+                                    },
+                                    "observations": {
+                                        "type": "string",
+                                        "example": "Treino muito focado, mas ombro doeu um pouco."
+                                    },
+                                    "exercises": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "exercise_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "sets": {
+                                                    "type": "integer",
+                                                    "example": 3
+                                                },
+                                                "reps": {
+                                                    "type": "integer",
+                                                    "example": 12
+                                                },
+                                                "weight_kg": {
+                                                    "type": "number",
+                                                    "example": 20.5
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Treino salvo e analisado com sucesso"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou erro na integração com a IA"
+                    }
+                }
+            }
+        },
+        "/api/register": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Registrar novo usuário",
+                "description": "Cria uma nova conta de usuário.",
+                "operationId": "8a56853624e025573120a09a4c75d468",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "name",
+                                    "last_name",
+                                    "email",
+                                    "cpf",
+                                    "password",
+                                    "password_confirmation"
+                                ],
+                                "properties": {
+                                    "name": {
+                                        "type": "string",
+                                        "example": "João",
+                                        "maxLength": 80
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "example": "Silva",
+                                        "maxLength": 120
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "joao@email.com",
+                                        "maxLength": 180
+                                    },
+                                    "cpf": {
+                                        "type": "string",
+                                        "example": "123.456.789-00",
+                                        "maxLength": 14
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "senha1234",
+                                        "minLength": 8
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "example": "senha1234"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Usuário registrado com sucesso"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                }
+            }
+        },
+        "/api/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Autenticar usuário",
+                "description": "Realiza login e retorna token de acesso.",
+                "operationId": "a3b306d14572d1f4bd6c064b3233e7b8",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email",
+                                    "password"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "joao@email.com"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "example": "senha1234"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso"
+                    },
+                    "422": {
+                        "description": "Credenciais inválidas"
+                    }
+                }
+            }
+        },
+        "/api/logout": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Logout",
+                "description": "Revoga o token de acesso atual.",
+                "operationId": "fe8f3429cd6979b3b4517e186505f9f9",
+                "responses": {
+                    "200": {
+                        "description": "Logout realizado com sucesso"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/me": {
+            "get": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Perfil do usuário autenticado",
+                "description": "Retorna os dados do usuário autenticado, incluindo onboarding e gamificação.",
+                "operationId": "9d9bc556f927575aa492a88c28fe5908",
+                "responses": {
+                    "200": {
+                        "description": "Dados do usuário"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/goals": {
+            "get": {
+                "tags": [
+                    "Goals"
+                ],
+                "summary": "Obter metas do usuário",
+                "description": "Retorna as metas ativas do usuário (calorias, macros, treinos, hidratação, peso).",
+                "operationId": "5adde0ace800e3beef2e6ad9d75e014f",
+                "responses": {
+                    "200": {
+                        "description": "Metas ativas do usuário"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/goals/exercise": {
+            "put": {
+                "tags": [
+                    "Goals"
+                ],
+                "summary": "Atualizar metas de exercício",
+                "description": "Atualiza ou cria as metas de exercício (passos diários e treinos por semana).",
+                "operationId": "a505ac59002358fdb7def54d94592409",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "goal_steps_day": {
+                                        "type": "integer",
+                                        "example": 10000
+                                    },
+                                    "goal_workouts_week": {
+                                        "type": "integer",
+                                        "example": 4
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Metas de exercício atualizadas"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/goals/alimentation": {
+            "put": {
+                "tags": [
+                    "Goals"
+                ],
+                "summary": "Atualizar metas de alimentação",
+                "description": "Atualiza ou cria metas alimentares. Se informar diet_objective sem macros, calcula automaticamente com base nos dados de onboarding (BMR Mifflin-St Jeor + fator de atividade).",
+                "operationId": "5e8c9fdb656f81ead233b7f5e832f896",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "diet_objective": {
+                                        "type": "string",
+                                        "example": "muscle_gain",
+                                        "enum": [
+                                            "weight_loss",
+                                            "maintenance",
+                                            "muscle_gain"
+                                        ]
+                                    },
+                                    "goal_calories_day": {
+                                        "type": "integer",
+                                        "example": 2200
+                                    },
+                                    "goal_protein_g": {
+                                        "type": "number",
+                                        "example": 150
+                                    },
+                                    "goal_carbs_g": {
+                                        "type": "number",
+                                        "example": 260
+                                    },
+                                    "goal_fat_g": {
+                                        "type": "number",
+                                        "example": 60
+                                    },
+                                    "goal_water_liters": {
+                                        "type": "number",
+                                        "example": 2.5
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Metas alimentares atualizadas"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/onboarding": {
+            "get": {
+                "tags": [
+                    "Onboarding"
+                ],
+                "summary": "Obter dados de onboarding",
+                "description": "Retorna os dados de onboarding do usuário autenticado.",
+                "operationId": "503081b518bc60df6e9b5762d473bc15",
+                "responses": {
+                    "200": {
+                        "description": "Dados de onboarding"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Onboarding"
+                ],
+                "summary": "Enviar dados de onboarding",
+                "description": "Salva as informações de onboarding do usuário.",
+                "operationId": "64b8193d38da8e015281344ae9756359",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "gender": {
+                                        "type": "string",
+                                        "example": "male",
+                                        "enum": [
+                                            "male",
+                                            "female",
+                                            "other",
+                                            "prefer_not_to_say"
+                                        ]
+                                    },
+                                    "age": {
+                                        "type": "integer",
+                                        "example": 25,
+                                        "maximum": 120,
+                                        "minimum": 10
+                                    },
+                                    "height_cm": {
+                                        "type": "integer",
+                                        "example": 175,
+                                        "maximum": 250,
+                                        "minimum": 100
+                                    },
+                                    "weight_kg": {
+                                        "type": "number",
+                                        "example": 75.5,
+                                        "maximum": 300,
+                                        "minimum": 30
+                                    },
+                                    "body_fat_percent": {
+                                        "type": "number",
+                                        "example": 15,
+                                        "maximum": 60,
+                                        "minimum": 3
+                                    },
+                                    "workouts_per_week": {
+                                        "type": "integer",
+                                        "example": 4,
+                                        "maximum": 7,
+                                        "minimum": 0
+                                    },
+                                    "work_style": {
+                                        "type": "string",
+                                        "example": "white_collar",
+                                        "enum": [
+                                            "white_collar",
+                                            "blue_collar",
+                                            "sedentary",
+                                            "moderate",
+                                            "active"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Onboarding salvo com sucesso"
+                    },
+                    "400": {
+                        "description": "Erro de validação"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        }
+    },
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "bearerFormat": "JWT",
+                "scheme": "bearer"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Health",
+            "description": "Health"
+        },
+        {
+            "name": "Admin - Badges",
+            "description": "Admin - Badges"
+        },
+        {
+            "name": "Admin - Exercises",
+            "description": "Admin - Exercises"
+        },
+        {
+            "name": "Admin - Quests",
+            "description": "Admin - Quests"
+        },
+        {
+            "name": "AI Meal Plans",
+            "description": "AI Meal Plans"
+        },
+        {
+            "name": "AI Plans",
+            "description": "AI Plans"
+        },
+        {
+            "name": "Measurements",
+            "description": "Measurements"
+        },
+        {
+            "name": "Dashboard",
+            "description": "Dashboard"
+        },
+        {
+            "name": "Friends",
+            "description": "Friends"
+        },
+        {
+            "name": "Gamification",
+            "description": "Gamification"
+        },
+        {
+            "name": "Meals",
+            "description": "Meals"
+        },
+        {
+            "name": "Plans Catalog",
+            "description": "Plans Catalog"
+        },
+        {
+            "name": "Posts",
+            "description": "Posts"
+        },
+        {
+            "name": "Privacy",
+            "description": "Privacy"
+        },
+        {
+            "name": "Users",
+            "description": "Users"
+        },
+        {
+            "name": "Quests",
+            "description": "Quests"
+        },
+        {
+            "name": "Rankings",
+            "description": "Rankings"
+        },
+        {
+            "name": "Subscriptions",
+            "description": "Subscriptions"
+        },
+        {
+            "name": "Workouts",
+            "description": "Workouts"
+        },
+        {
+            "name": "Auth",
+            "description": "Auth"
+        },
+        {
+            "name": "Goals",
+            "description": "Goals"
+        },
+        {
+            "name": "Onboarding",
+            "description": "Onboarding"
+        }
+    ]
+}

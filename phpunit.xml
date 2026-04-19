@@ -31,5 +31,6 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="L5_SWAGGER_OPEN_API_SPEC_VERSION" value="3.0.0"/>
     </php>
 </phpunit>

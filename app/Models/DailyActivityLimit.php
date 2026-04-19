@@ -18,7 +18,6 @@ class DailyActivityLimit extends Model
     ];
 
     protected $casts = [
-        'date' => 'date',
         'water_goal_reached' => 'boolean',
         'weight_logged' => 'boolean',
         'login_xp_granted' => 'boolean',
