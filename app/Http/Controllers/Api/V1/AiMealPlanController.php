@@ -9,6 +9,7 @@ use App\Services\GroqService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class AiMealPlanController extends Controller
 {
@@ -130,6 +131,37 @@ class AiMealPlanController extends Controller
     /**
      * POST /v1/plans/generate-meal
      */
+    #[OA\Post(
+        path: '/api/v1/plans/generate-meal',
+        summary: 'Gerar plano alimentar com IA',
+        description: 'Gera um plano alimentar personalizado via IA (Groq) com base nos dados do usuário. Criado com status draft.',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['goal', 'meals_per_day'],
+                properties: [
+                    new OA\Property(property: 'goal', type: 'string', example: 'muscle_gain'),
+                    new OA\Property(property: 'restrictions', type: 'string', example: 'lactose'),
+                    new OA\Property(property: 'food_preferences', type: 'string', example: 'frango, arroz'),
+                    new OA\Property(property: 'food_dislikes', type: 'string', example: 'peixe'),
+                    new OA\Property(property: 'meals_per_day', type: 'integer', example: 5),
+                    new OA\Property(property: 'routine_schedule', type: 'string', example: 'acorda 6h, treina 18h'),
+                    new OA\Property(property: 'weight_kg', type: 'number', example: 78),
+                    new OA\Property(property: 'height_cm', type: 'number', example: 178),
+                    new OA\Property(property: 'age', type: 'integer', example: 28),
+                    new OA\Property(property: 'activity_level', type: 'string', enum: ['sedentary', 'light', 'moderate', 'active', 'very_active'], example: 'moderate'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Plano alimentar gerado'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 422, description: 'Erro de validação ou falha na IA'),
+        ]
+    )]
     public function generateMealPlan(Request $request)
     {
         $validated = $request->validate([
@@ -181,6 +213,17 @@ class AiMealPlanController extends Controller
     /**
      * GET /v1/plans/meals
      */
+    #[OA\Get(
+        path: '/api/v1/plans/meals',
+        summary: 'Listar planos alimentares',
+        description: 'Retorna todos os planos alimentares do usuário (versão resumida).',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Lista de planos alimentares'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function index(Request $request)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -198,6 +241,21 @@ class AiMealPlanController extends Controller
     /**
      * GET /v1/plans/meals/{id}
      */
+    #[OA\Get(
+        path: '/api/v1/plans/meals/{id}',
+        summary: 'Detalhar plano alimentar',
+        description: 'Retorna o conteúdo completo de um plano alimentar (refeições e ingredientes).',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do plano', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Detalhes do plano'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 404, description: 'Não encontrado'),
+        ]
+    )]
     public function show(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -213,6 +271,21 @@ class AiMealPlanController extends Controller
     /**
      * PATCH /v1/plans/meals/{id}/activate
      */
+    #[OA\Patch(
+        path: '/api/v1/plans/meals/{id}/activate',
+        summary: 'Ativar plano alimentar',
+        description: 'Marca o plano como ativo e desativa os demais planos nutricionais do usuário (status replaced).',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do plano', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plano ativado'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 404, description: 'Não encontrado'),
+        ]
+    )]
     public function activate(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -235,6 +308,21 @@ class AiMealPlanController extends Controller
     /**
      * PATCH /v1/plans/meals/{id}/archive
      */
+    #[OA\Patch(
+        path: '/api/v1/plans/meals/{id}/archive',
+        summary: 'Arquivar plano alimentar',
+        description: 'Arquiva o plano alimentar do usuário (status archived).',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do plano', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Plano arquivado'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 404, description: 'Não encontrado'),
+        ]
+    )]
     public function archive(Request $request, string $id)
     {
         $user = $request->user() ?? \App\Models\User::first();
@@ -252,6 +340,32 @@ class AiMealPlanController extends Controller
     /**
      * POST /v1/plans/meals/{id}/regenerate
      */
+    #[OA\Post(
+        path: '/api/v1/plans/meals/{id}/regenerate',
+        summary: 'Regenerar plano alimentar com ajustes',
+        description: 'Gera uma nova versão do plano alimentar incorporando os ajustes solicitados. Cria um novo registro com status draft.',
+        tags: ['AI Meal Plans'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'ID do plano original', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['adjustment_note'],
+                properties: [
+                    new OA\Property(property: 'adjustment_note', type: 'string', example: 'Trocar frango por carne vermelha nas refeições principais.'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Plano regenerado'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 404, description: 'Não encontrado'),
+            new OA\Response(response: 422, description: 'Erro de validação ou falha na IA'),
+        ]
+    )]
     public function regenerate(Request $request, string $id)
     {
         $validated = $request->validate([

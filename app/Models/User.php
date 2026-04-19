@@ -15,10 +15,14 @@ class User extends Authenticatable
 
     protected $fillable = [
         'name', 'last_name', 'email', 'cpf', 'password_hash', 'avatar_url',
-        'nickname', 'bio', 'timezone',
+        'nickname', 'bio', 'timezone', 'is_admin',
     ];
 
     protected $hidden = ['password_hash'];
+
+    protected $casts = [
+        'is_admin' => 'boolean',
+    ];
 
     public function getAuthPassword(): string
     {

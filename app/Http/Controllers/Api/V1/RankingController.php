@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use OpenApi\Attributes as OA;
 
 class RankingController extends Controller
 {
@@ -19,6 +20,22 @@ class RankingController extends Controller
      * Returns top users + current user's position.
      * Cached for 5 minutes (RNF: max 5min delay).
      */
+    #[OA\Get(
+        path: '/api/v1/rankings',
+        summary: 'Listar ranking de usuários',
+        description: 'Retorna os top usuários do período e a posição do usuário atual. Cache de 5 minutos.',
+        tags: ['Rankings'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'period', in: 'query', required: false, description: 'Período do ranking', schema: new OA\Schema(type: 'string', enum: ['weekly', 'monthly', 'all_time'], default: 'weekly')),
+            new OA\Parameter(name: 'limit', in: 'query', required: false, description: 'Limite de resultados (máx 100)', schema: new OA\Schema(type: 'integer', default: 20)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ranking do período'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+            new OA\Response(response: 422, description: 'Período inválido'),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $period = $request->query('period', 'weekly');
@@ -51,6 +68,17 @@ class RankingController extends Controller
      *
      * Returns the current user's full gamification profile.
      */
+    #[OA\Get(
+        path: '/api/v1/rankings/profile',
+        summary: 'Perfil de gamificação do usuário',
+        description: 'Retorna perfil completo de gamificação: XP, nível, streak, badges conquistadas e badges ainda não notificadas. Acessível também via /api/gamification/profile.',
+        tags: ['Rankings'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Perfil de gamificação'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user();

@@ -21,4 +21,9 @@ class WorkoutLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function workoutLogExercises()
+    {
+        return $this->hasMany(WorkoutExerciseLog::class, 'workout_log_id');
+    }
 }

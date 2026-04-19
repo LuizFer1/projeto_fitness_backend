@@ -12,6 +12,7 @@ class DatabaseSeeder extends Seeder
             GamificationSeeder::class,
             MissionSeeder::class,
             BadgeSeeder::class,
+            PlanSeeder::class,
         ]);
     }
 }

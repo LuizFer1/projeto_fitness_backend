@@ -13,6 +13,7 @@ use App\Models\WaterLog;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 
 class DashboardController extends Controller
 {
@@ -21,6 +22,17 @@ class DashboardController extends Controller
      * Frontend expects: nutritionChart, trainingDays, suggestedWorkouts, meals,
      * macros, currentWeight, dailyCalories, protein, weeklyWorkouts, hydration
      */
+    #[OA\Get(
+        path: '/api/dashboard',
+        summary: 'Dashboard consolidado do usuário',
+        description: 'Retorna dados consolidados do dia: metas, refeições, treinos da semana, hidratação, gráfico nutricional dos últimos 7 dias e gamificação.',
+        tags: ['Dashboard'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados consolidados do dashboard'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $user  = $request->user();
@@ -115,6 +127,17 @@ class DashboardController extends Controller
      * GET /api/dashboard/alimentation
      * Frontend expects: dailyGoal, consumed, water, macros, mealGroups
      */
+    #[OA\Get(
+        path: '/api/dashboard/alimentation',
+        summary: 'Dashboard de alimentação',
+        description: 'Retorna dados detalhados de alimentação do dia: metas, consumo, macros, hidratação e refeições agrupadas por tipo.',
+        tags: ['Dashboard'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados de alimentação do dia'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function alimentation(Request $request): JsonResponse
     {
         $user  = $request->user();
@@ -176,6 +199,17 @@ class DashboardController extends Controller
      * GET /api/dashboard/exercise
      * Frontend expects: weeklyGoal, weeklyDone, stats, todayWorkout, weekDays, history
      */
+    #[OA\Get(
+        path: '/api/dashboard/exercise',
+        summary: 'Dashboard de exercícios',
+        description: 'Retorna dados detalhados de treinos: meta semanal, treinos da semana, estatísticas, treino do dia e histórico dos últimos 30 dias.',
+        tags: ['Dashboard'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados de exercícios'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function exercise(Request $request): JsonResponse
     {
         $user  = $request->user();

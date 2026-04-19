@@ -52,7 +52,7 @@ return [
         'fallback_models' => array_filter(array_map('trim', explode(',', env('GROQ_FALLBACK_MODELS', 'llama-3.1-8b-instant,gemma2-9b-it')))),
         'verify_ssl' => env('GROQ_VERIFY_SSL', true),
         'timeout_seconds' => env('GROQ_TIMEOUT_SECONDS', 20),
-        'max_tokens' => env('GROQ_MAX_TOKENS', 1800),
+        'max_tokens' => env('GROQ_MAX_TOKENS', 4096),
         'require_json_response' => env('GROQ_REQUIRE_JSON_RESPONSE', true),
     ],
 

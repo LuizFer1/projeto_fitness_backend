@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\HealthCheckController;
+use App\Http\Controllers\Api\V1\Admin\BadgeController as AdminBadgeController;
+use App\Http\Controllers\Api\V1\Admin\ExerciseController as AdminExerciseController;
+use App\Http\Controllers\Api\V1\Admin\QuestController as AdminQuestController;
 use App\Http\Controllers\Api\V1\AiMealPlanController;
 use App\Http\Controllers\Api\V1\AiPlanController;
 use App\Http\Controllers\Api\V1\BodyMeasurementController;
@@ -11,11 +14,14 @@ use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
 use App\Http\Controllers\Api\V1\MealLogController;
+use App\Http\Controllers\Api\V1\PlanCatalogController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PrivacyController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController;
 use App\Http\Controllers\Api\V1\RankingController;
 use App\Http\Controllers\Api\V1\UserSearchController;
+use App\Http\Controllers\Api\V1\WaterLogController;
 use App\Http\Controllers\Api\V1\WorkoutLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoalController;
@@ -26,6 +32,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('health', HealthCheckController::class);
+
+// Public catalog
+Route::get('v1/plans/catalog', [PlanCatalogController::class, 'index']);
 
 Route::bind('username', function (string $value) {
     return User::where('username', $value)
@@ -103,7 +112,7 @@ Route::group([], function () {
             Route::post('friends/{id}/block', [FriendController::class, 'block']);
 
             // Posts & Feed
-            Route::post('posts', [PostController::class, 'store']);
+            Route::post('posts', [PostController::class, 'store'])->middleware('idempotent');
             Route::get('feed', [PostController::class, 'feed']);
             Route::get('posts/{id}', [PostController::class, 'show']);
             Route::delete('posts/{id}', [PostController::class, 'destroy']);
@@ -126,15 +135,7 @@ Route::group([], function () {
                 return response()->json(['data' => $query->orderBy('name')->paginate(50)]);
             });
 
-            // AI Plans (workout)
-            Route::get('plans', [AiPlanController::class, 'index']);
-            Route::get('plans/{id}', [AiPlanController::class, 'show']);
-            Route::post('plans/generate-workout', [AiPlanController::class, 'generateWorkout']);
-            Route::patch('plans/{id}/activate', [AiPlanController::class, 'activate']);
-            Route::patch('plans/{id}/archive', [AiPlanController::class, 'archive']);
-            Route::post('plans/{id}/duplicate', [AiPlanController::class, 'duplicate']);
-
-            // AI Plans (meal)
+            // AI Plans (meal) — must be declared BEFORE plans/{id} to avoid collision
             Route::get('plans/meals', [AiMealPlanController::class, 'index']);
             Route::get('plans/meals/{id}', [AiMealPlanController::class, 'show']);
             Route::post('plans/generate-meal', [AiMealPlanController::class, 'generateMealPlan']);
@@ -142,12 +143,20 @@ Route::group([], function () {
             Route::patch('plans/meals/{id}/archive', [AiMealPlanController::class, 'archive']);
             Route::post('plans/meals/{id}/regenerate', [AiMealPlanController::class, 'regenerate']);
 
+            // AI Plans (workout)
+            Route::get('plans', [AiPlanController::class, 'index']);
+            Route::post('plans/generate-workout', [AiPlanController::class, 'generateWorkout']);
+            Route::get('plans/{id}', [AiPlanController::class, 'show']);
+            Route::patch('plans/{id}/activate', [AiPlanController::class, 'activate']);
+            Route::patch('plans/{id}/archive', [AiPlanController::class, 'archive']);
+            Route::post('plans/{id}/duplicate', [AiPlanController::class, 'duplicate']);
+
             // Workout logs
-            Route::post('workouts/finish', [WorkoutLogController::class, 'finish']);
+            Route::post('workouts/finish', [WorkoutLogController::class, 'finish'])->middleware('idempotent');
 
             // Meal logs
-            Route::post('meals/analyze-text', [MealLogController::class, 'analyzeText']);
-            Route::post('meals/analyze-image', [MealLogController::class, 'analyzeImage']);
+            Route::post('meals/analyze-text', [MealLogController::class, 'analyzeText'])->middleware('idempotent');
+            Route::post('meals/analyze-image', [MealLogController::class, 'analyzeImage'])->middleware('idempotent');
 
             // Rankings
             Route::get('rankings', [RankingController::class, 'index']);
@@ -155,12 +164,31 @@ Route::group([], function () {
 
             // Body measurements (weight log)
             Route::get('measurements', [BodyMeasurementController::class, 'index']);
-            Route::post('measurements', [BodyMeasurementController::class, 'store']);
+            Route::post('measurements', [BodyMeasurementController::class, 'store'])->middleware('idempotent');
             Route::delete('measurements/{id}', [BodyMeasurementController::class, 'destroy']);
+
+            // Water / hydration logs
+            Route::get('water-logs', [WaterLogController::class, 'index']);
+            Route::post('water-logs', [WaterLogController::class, 'store'])->middleware('idempotent');
+            Route::delete('water-logs/{id}', [WaterLogController::class, 'destroy']);
 
             // Quests / Missions
             Route::get('quests', [QuestController::class, 'index']);
             Route::get('quests/mine', [QuestController::class, 'mine']);
+
+            // Subscriptions
+            Route::get('subscriptions/me', [SubscriptionController::class, 'me']);
+            Route::post('subscriptions', [SubscriptionController::class, 'store'])->middleware('idempotent');
+            Route::post('subscriptions/cancel', [SubscriptionController::class, 'cancel'])->middleware('idempotent');
+            Route::post('subscriptions/resume', [SubscriptionController::class, 'resume'])->middleware('idempotent');
+
+            // Admin CRUD
+            Route::prefix('admin')->middleware('admin')->group(function () {
+                Route::apiResource('badges', AdminBadgeController::class)->except(['show']);
+                Route::apiResource('quests', AdminQuestController::class)->except(['show']);
+                Route::post('exercises/bulk', [AdminExerciseController::class, 'bulkImport']);
+                Route::apiResource('exercises', AdminExerciseController::class)->except(['show']);
+            });
         });
 
         // Privacy / LGPD
