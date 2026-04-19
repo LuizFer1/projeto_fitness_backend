@@ -9,11 +9,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('users', function (Blueprint $table) {
-            $table->id();
-            $table->uuid('uuid')->unique();
-            $table->string('name', 80);
-            $table->string('last_name', 120);
-            $table->string('email', 180)->unique();
+            $table->uuid('id')->primary();
+            $table->string('email', 255)->unique();
+            $table->string('name', 100);
+            $table->string('last_name', 100);
             $table->string('cpf', 14)->unique();
             $table->string('password_hash', 255);
             $table->text('avatar_url')->nullable();
@@ -28,7 +27,7 @@ return new class extends Migration
 
         Schema::create('sessions', function (Blueprint $table) {
             $table->string('id')->primary();
-            $table->foreignUuid('user_uuid')->nullable()->references('uuid')->on('users')->cascadeOnDelete();
+            $table->foreignUuid('user_id')->nullable()->references('id')->on('users')->cascadeOnDelete();
             $table->string('ip_address', 45)->nullable();
             $table->text('user_agent')->nullable();
             $table->longText('payload');

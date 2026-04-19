@@ -1,0 +1,148 @@
+## Codebase Patterns
+- PHP binary is at `/tmp/php` — use `export PATH="/tmp:$PATH"` before running php commands
+- Laravel 12 uses `bootstrap/app.php` for middleware/exception config (no Kernel.php)
+- API routes in `routes/api.php`, public routes go outside `auth:sanctum` middleware group
+- Controllers in `app/Http/Controllers/Api/` for API-specific controllers
+- Run `php vendor/bin/pint <files>` to auto-fix lint issues before committing
+- The l5-swagger package has a broken config — `php artisan route:list` fails; use syntax checks instead
+- Use `collect()->every()` for checking all items in a collection match a condition
+- Register global middleware in `bootstrap/app.php` via `$middleware->append()` (Laravel 12)
+- Use `Log::shareContext()` to add context (e.g., request_id) to all log entries in a request
+- Exception rendering in bootstrap/app.php: type-hinted closures with `$exceptions->render()`, return null for non-API fallthrough
+- API error format: `{ error: { code, message, fields } }` — all API exceptions follow this structure
+- User password field is `password_hash` — use `Hash::check($input, $user->getAuthPassword())` for verification
+- WorkoutExerciseLog links to WorkoutLog (not User) — delete via workout_log_id when cleaning user data
+- Feature tests use SQLite in-memory DB — MySQL-specific SQL (ENUM MODIFY, CREATE OR REPLACE VIEW, CURDATE) must be guarded with `if (DB::connection()->getDriverName() !== 'sqlite')`
+- DailyActivityLimit `date` column must NOT have a `'date'` cast — SQLite stores dates as `'Y-m-d H:i:s'` text causing `firstOrCreate` mismatches
+- Achievements table is seeded in migration — use existing records in tests instead of creating duplicates
+- When adding new ENUM values, also add them to the original migration's ENUM definition (SQLite can't ALTER CHECK constraints)
+- API routes in tests need `/api/` prefix (e.g., `/api/register`, `/api/login`)
+- AuthController `login()` method injects GamificationService — was missing import, fixed
+- l5-swagger config references `\L5Swagger\Generator::OPEN_API_DEFAULT_SPEC_VERSION` which doesn't exist — replaced with literal `'3.0.0'`
+- `RecalculateLeaderboardJob` was referenced in `routes/console.php` but didn't exist — created stub
+
+# Ralph Progress Log — prd-006-infraestrutura
+PRD: PRD-006 — Infraestrutura e NFRs: health check, logs, LGPD, API padronizada, testes
+Branch: ralph/infraestrutura-nfr
+Started: Mon Apr  6 15:56:20 PDT 2026
+---
+
+## 2026-04-06 - US-001
+- Implemented GET /health public endpoint with database and Redis connectivity checks
+- Returns JSON with status, checks (database, redis), and timestamp
+- Returns 200 when healthy, 503 when any check fails
+- Files changed:
+  - `app/Http/Controllers/Api/HealthCheckController.php` (created)
+  - `routes/api.php` (added public health route)
+- **Learnings for future iterations:**
+  - PHP binary is at `/tmp/php`, not on PATH by default
+  - `php artisan` commands fail due to l5-swagger config issue — use `php -l` for syntax checks
+  - Pint auto-fixes: blank_line_before_statement in try/catch returns, ordered_imports in routes
+  - Public routes must be placed outside the `Route::group([], function () { ... })` with `auth:sanctum`
+---
+
+## 2026-04-06 - US-002
+- Created RequestIdMiddleware that generates UUID per request
+- Adds request_id to Log shared context via `Log::shareContext()`
+- Adds X-Request-Id header to all responses
+- Configured 'json' log channel in config/logging.php using JsonFormatter
+- Registered middleware globally in bootstrap/app.php via `$middleware->append()`
+- Files changed:
+  - `app/Http/Middleware/RequestIdMiddleware.php` (created)
+  - `bootstrap/app.php` (registered middleware globally)
+  - `config/logging.php` (added json channel)
+- **Learnings for future iterations:**
+  - Laravel 12 registers global middleware via `$middleware->append()` in bootstrap/app.php
+  - `Log::shareContext()` adds context to all subsequent log entries in the request lifecycle
+  - Monolog\Formatter\JsonFormatter can be used directly in channel config via `'formatter'` key
+---
+
+## 2026-04-06 - US-003
+- Standardized all API error responses in bootstrap/app.php using `$exceptions->render()` callbacks
+- Handles: ValidationException (422), ModelNotFoundException (404), NotFoundHttpException (404), AuthenticationException (401), ThrottleRequestsException (429 with Retry-After), and generic Throwable (500)
+- Error format: `{ error: { code, message, fields } }`
+- Stack traces hidden in production (generic message for 500s)
+- Files changed:
+  - `bootstrap/app.php` (added exception rendering callbacks)
+- **Learnings for future iterations:**
+  - Laravel 12 exception rendering uses `$exceptions->render(fn (SpecificException $e, Request $request) => ...)` — type-hinted closures, most specific first
+  - Use `$exceptions->shouldRenderJsonWhen()` to force JSON responses for API routes
+  - Return `null` from render callback to fall through to default behavior (useful for non-API routes)
+  - ThrottleRequestsException headers are accessed via `$e->getHeaders()['Retry-After']`
+  - NotFoundHttpException wraps ModelNotFoundException in route model binding — handle both
+---
+
+## 2026-04-06 - US-004
+- Created PrivacyController with exportData method at `app/Http/Controllers/Api/V1/PrivacyController.php`
+- Added authenticated GET /v1/privacy/my-data route in routes/api.php
+- Exports: profile, onboarding, goals, workout logs, meal logs, XP transactions, achievements (with achievement details), gamification stats, and exported_at timestamp
+- Files changed:
+  - `app/Http/Controllers/Api/V1/PrivacyController.php` (created)
+  - `routes/api.php` (added privacy route)
+- **Learnings for future iterations:**
+  - User model has relationships for onboarding and gamification (hasOne) but not for workoutLogs, mealLogs, xpTransactions — query directly via model::where
+  - UserAchievement has `achievement()` belongsTo relationship — use `with('achievement:id,slug,name,description,category')` for enriched export
+  - Privacy routes go under `v1/privacy/` prefix, inside the auth:sanctum middleware group
+---
+
+## 2026-04-06 - US-005
+- Added DELETE /v1/privacy/delete-account endpoint with password confirmation
+- Deletes all user data across ~20 tables in a DB transaction, revokes all Sanctum tokens, then deletes the user
+- Returns 422 with standard error format if password is incorrect, 200 with confirmation on success
+- Files changed:
+  - `app/Http/Controllers/Api/V1/PrivacyController.php` (added deleteAccount method)
+  - `routes/api.php` (added DELETE route)
+- **Learnings for future iterations:**
+  - User password is stored in `password_hash` field, accessed via `getAuthPassword()` — use `Hash::check($input, $user->getAuthPassword())`
+  - WorkoutExerciseLog has no direct user_id — delete via workout_log_id from WorkoutLog
+  - Friendships table uses `requester_id` and `addressee_id` instead of `user_id` — must query both columns
+  - Full list of user-data tables: posts, post_likes, post_comments, workout_logs, workout_exercise_logs, meal_logs, xp_transactions, user_achievements, user_gamification, user_goals, onboarding, daily_activity_limits, streak_history, user_quests, ranking_snapshots, ai_feedback_triggers, ai_plans, user_restrictions, body_measurements, water_logs, friendships
+---
+
+## 2026-04-06 - US-006
+- Created feature tests for authentication endpoints (9 test cases total)
+- RegisterTest: 4 tests (success, missing fields, duplicate email, short password)
+- LoginTest: 3 tests (success, wrong password, nonexistent email)
+- LogoutTest: 2 tests (authenticated logout, unauthenticated rejection)
+- Fixed several pre-existing issues blocking test execution:
+  - l5-swagger config referencing missing class constant
+  - Missing RecalculateLeaderboardJob referenced in console.php
+  - MySQL-specific migrations (ENUM MODIFY, CREATE OR REPLACE VIEW) failing on SQLite
+  - Missing GamificationService import in AuthController
+- Files changed:
+  - `tests/Feature/Auth/RegisterTest.php` (created)
+  - `tests/Feature/Auth/LoginTest.php` (created)
+  - `tests/Feature/Auth/LogoutTest.php` (created)
+  - `app/Http/Controllers/AuthController.php` (added missing GamificationService import)
+  - `app/Jobs/RecalculateLeaderboardJob.php` (created stub)
+  - `config/l5-swagger.php` (fixed missing class constant)
+  - `database/migrations/2026_03_06_200852_z_create_fitai_views.php` (SQLite guard)
+  - `database/migrations/2026_03_20_165207_update_gamification_tables_for_new_rules.php` (SQLite guard)
+  - `phpunit.xml` (added L5_SWAGGER env var)
+- **Learnings for future iterations:**
+  - SQLite doesn't support ENUM, MODIFY COLUMN, CREATE OR REPLACE VIEW, or CURDATE() — guard with driver check
+  - API routes need `/api/` prefix in feature tests
+  - AuthController had a missing `use App\Services\GamificationService` import — login endpoint was broken
+  - Logout message ends with a period: "Logout realizado com sucesso."
+  - RecalculateLeaderboardJob was referenced but not created — needed a stub to boot the app
+---
+
+## 2026-04-06 - US-007
+- Created unit tests for GamificationService (10 test cases total)
+- grantDailyLoginXp: 2 tests (grants XP, idempotent once per day)
+- grantWorkoutCompletedXp: 2 tests (grants XP + increments count, max once per day)
+- checkLevelUp: 3 tests (promotes at threshold, no promotion below threshold, skips multiple levels)
+- awardBadge: 3 tests (creates achievement, idempotent, returns null for nonexistent slug)
+- Fixed SQLite compatibility issues:
+  - Added `daily_login`, `penalty_workout`, `penalty_calories` to original xp_transactions ENUM in migration
+  - Removed `date` cast from DailyActivityLimit to fix SQLite `firstOrCreate` mismatch
+- Files changed:
+  - `tests/Unit/Services/GamificationServiceTest.php` (created)
+  - `app/Models/DailyActivityLimit.php` (removed date cast for SQLite compat)
+  - `database/migrations/2026_03_06_200851_f_create_fitai_gamification_tables.php` (added missing ENUM values)
+- **Learnings for future iterations:**
+  - SQLite stores date columns as `'Y-m-d H:i:s'` text — Eloquent `date` cast + `firstOrCreate` causes mismatches because WHERE uses `'Y-m-d'` but stored value is `'Y-m-d H:i:s'`
+  - Achievements are seeded in the gamification migration — use existing records in tests, don't re-create
+  - When new ENUM values are added via ALTER in a separate migration (guarded for SQLite), also add them to the original CREATE migration so SQLite's CHECK constraint includes them
+  - All 21 tests pass (10 unit + 9 auth feature + 2 default)
+---

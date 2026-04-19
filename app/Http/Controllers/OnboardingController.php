@@ -2,14 +2,32 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\NutritionDaily;
-use App\Models\UserOnboarding;
+use App\Application\UseCases\Onboarding\SubmitOnboardingUseCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class OnboardingController extends Controller
 {
+    private SubmitOnboardingUseCase $submitOnboardingUseCase;
+
+    public function __construct(SubmitOnboardingUseCase $submitOnboardingUseCase)
+    {
+        $this->submitOnboardingUseCase = $submitOnboardingUseCase;
+    }
+
+    #[OA\Get(
+        path: '/api/onboarding',
+        summary: 'Obter dados de onboarding',
+        description: 'Retorna os dados de onboarding do usuário autenticado.',
+        tags: ['Onboarding'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados de onboarding'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function show(Request $request): JsonResponse
     {
         $onboarding = $request->user()->onboarding;
@@ -17,16 +35,37 @@ class OnboardingController extends Controller
         return response()->json($onboarding);
     }
 
+    #[OA\Post(
+        path: '/api/onboarding',
+        summary: 'Enviar dados de onboarding',
+        description: 'Salva as informações de onboarding do usuário.',
+        tags: ['Onboarding'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'gender', type: 'string', enum: ['male', 'female', 'other', 'prefer_not_to_say'], example: 'male'),
+                    new OA\Property(property: 'age', type: 'integer', minimum: 10, maximum: 120, example: 25),
+                    new OA\Property(property: 'height_cm', type: 'integer', minimum: 100, maximum: 250, example: 175),
+                    new OA\Property(property: 'weight_kg', type: 'number', minimum: 30, maximum: 300, example: 75.5),
+                    new OA\Property(property: 'body_fat_percent', type: 'number', minimum: 3, maximum: 60, example: 15.0),
+                    new OA\Property(property: 'workouts_per_week', type: 'integer', minimum: 0, maximum: 7, example: 4),
+                    new OA\Property(property: 'work_style', type: 'string', enum: ['white_collar', 'blue_collar', 'sedentary', 'moderate', 'active'], example: 'white_collar'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Onboarding salvo com sucesso'),
+            new OA\Response(response: 400, description: 'Erro de validação'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function store(Request $request): JsonResponse
     {
-        if ($this->UserHasOnboarding($request)) {
-            return response()->json([
-                'message' => 'Onboarding already exists for this user.',
-            ], 400);
-        }
-
         $data = $request->validate([
-            'gender'            => 'nullable|string|in:M,F',
+            'gender'            => 'nullable|string|in:male,female,other,prefer_not_to_say',
             'age'               => 'nullable|integer|min:10|max:120',
             'height_cm'         => 'nullable|integer|min:100|max:250',
             'weight_kg'         => 'nullable|numeric|min:30|max:300',
@@ -35,67 +74,13 @@ class OnboardingController extends Controller
             'work_style'        => 'nullable|string|in:white_collar,blue_collar,sedentary,moderate,active',
         ]);
 
-        $userUuid = $request->user()->uuid;
-
-
-
-        $bmr = null;
-        if (!empty($data['gender']) && !empty($data['age']) && !empty($data['weight_kg']) && !empty($data['height_cm'])) {
-            $w = (float) $data['weight_kg'];
-            $h = (int) $data['height_cm'];
-            $a = (int) $data['age'];
-            
-            if ($data['gender'] === 'M') {
-                $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) + 5;
-            } else {
-                $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) - 161;
-            }
+        try {
+            $onboarding = $this->submitOnboardingUseCase->execute($request->user()->id, $data);
+            return response()->json($onboarding, 201);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => $e->validator->errors()->first(),
+            ], 400);
         }
-
-        $tdee = null;
-        if ($bmr) {
-            $activityMultiplier = 1.2;
-            
-            $workouts = (int) ($data['workouts_per_week'] ?? 0);
-            if ($workouts >= 6) {
-                $activityMultiplier = 1.725;
-            } elseif ($workouts >= 3) {
-                $activityMultiplier = 1.55;
-            } elseif ($workouts >= 1) {
-                $activityMultiplier = 1.375;
-            }
-
-            if (($data['work_style'] ?? '') === 'active' || ($data['work_style'] ?? '') === 'blue_collar') {
-                $activityMultiplier += 0.15;
-            }
-
-            $tdee = (int) round($bmr * $activityMultiplier);
-        }
-
-        $onboarding = DB::transaction(function () use ($userUuid, $data, $bmr, $tdee) {
-            $onb = UserOnboarding::updateOrCreate(
-                ['user_uuid' => $userUuid],
-                array_merge($data, [
-                    'completed' => true,
-                    'bmr'       => $bmr ? (int) round($bmr) : null,
-                ])
-            );
-
-            if ($tdee) {
-                NutritionDaily::firstOrCreate(
-                    ['user_uuid' => $userUuid, 'day' => now()->toDateString()],
-                    ['calories_goal' => $tdee]
-                )->update(['calories_goal' => $tdee]);
-            }
-
-            return $onb;
-        });
-
-        return response()->json($onboarding, 201);
-    }
-
-    private function UserHasOnboarding(Request $request): bool
-    {
-        return UserOnboarding::where('user_uuid', $request->user()->uuid)->exists();
     }
 }

@@ -35,4 +35,25 @@ return [
         ],
     ],
 
+    'gemini' => [
+        'api_key' => env('GEMINI_API_KEY'),
+        'api_version' => env('GEMINI_API_VERSION', 'v1beta'),
+        'model' => env('GEMINI_MODEL', 'gemini-2.0-flash-lite'),
+        'fallback_models' => array_filter(array_map('trim', explode(',', env('GEMINI_FALLBACK_MODELS', 'gemini-flash-lite-latest,gemini-2.0-flash-lite-001,gemini-2.0-flash')))),
+        'verify_ssl' => env('GEMINI_VERIFY_SSL', true),
+        'timeout_seconds' => env('GEMINI_TIMEOUT_SECONDS', 12),
+    ],
+
+    'groq' => [
+        'api_key' => env('GROQ_API_KEY'),
+        'base_url' => env('GROQ_BASE_URL', 'https://api.groq.com/openai/v1'),
+        'model' => env('GROQ_MODEL', 'llama-3.1-8b-instant'),
+        'vision_model' => env('GROQ_VISION_MODEL', 'llama-3.2-11b-vision-preview'),
+        'fallback_models' => array_filter(array_map('trim', explode(',', env('GROQ_FALLBACK_MODELS', 'llama-3.1-8b-instant,gemma2-9b-it')))),
+        'verify_ssl' => env('GROQ_VERIFY_SSL', true),
+        'timeout_seconds' => env('GROQ_TIMEOUT_SECONDS', 20),
+        'max_tokens' => env('GROQ_MAX_TOKENS', 4096),
+        'require_json_response' => env('GROQ_REQUIRE_JSON_RESPONSE', true),
+    ],
+
 ];

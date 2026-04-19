@@ -1,0 +1,140 @@
+# Ralph Progress Log — prd-005-social
+PRD: PRD-005 — Módulo social: sistema de amizades, feed, posts e interações
+Branch: ralph/modulo-social
+Started: Mon Apr  6 15:41:55 PDT 2026
+
+## Codebase Patterns
+- Migrations use anonymous classes (`return new class extends Migration`)
+- All tables use UUID primary keys with `$table->uuid('id')->primary()`
+- Foreign keys use `$table->foreignUuid('col')->references('id')->on('table')->cascadeOnDelete()`
+- Models use `HasUuids` trait for UUID generation
+- No PHP runtime or Docker available in CI — cannot run migrations or artisan commands directly
+- Project uses Laravel Pint for code style, no phpstan configured
+- Soft deletes use `$table->softDeletes()` in migrations and `SoftDeletes` trait in models
+- Models use `$fillable` for mass assignment; some lightweight models use `$guarded = []`
+- Relationship pattern: `belongsTo(Model::class, 'foreign_key')` for inverse; `hasMany(Model::class)` for collections
+- PostLike has `$timestamps = false` since it only has `created_at` (no `updated_at`)
+- Controllers go in `app/Http/Controllers/Api/V1/` for v1 API endpoints
+- Routes for v1 endpoints go inside the `Route::prefix('v1')` group in `routes/api.php`
+- Use inline `$request->validate()` for validation (no FormRequest classes)
+- Friendship queries must check both directions: (requester_id, addressee_id) OR (addressee_id, requester_id)
+- Use `cursorPaginate()` for feed/timeline endpoints, `paginate()` for list endpoints
+- PostController uses `formatPost()` helper to include like_count, comment_count, is_liked_by_me in all post responses
+- Like toggle: check for existing PostLike, delete if exists, create if not — return `liked` boolean + updated count
+- Comment deletion scopes by both `post_id` and `id` to ensure comment belongs to the post
+- Gamification leaderboard controllers go in `app/Http/Controllers/Api/V1/Gamification/` namespace
+- Leaderboard response format: `{ period, rankings: [{ position, user_id, name, avatar_url, period_xp, level, total_xp }], my_position }`
+- User display name: prefer `nickname`, fallback to `name . ' ' . last_name`
+---
+
+## 2026-04-06 15:42 - US-001
+- Created migration `2026_04_06_154247_create_social_tables.php` with 4 tables:
+  - `friendships`: requester_id, addressee_id, status (pending|accepted|blocked), accepted_at, blocked_at, timestamps. Unique on (requester_id, addressee_id)
+  - `posts`: user_id, type (text|achievement|goal_completed|workout_completed|level_up), content, metadata (json), visibility (public|friends_only), timestamps, soft deletes
+  - `post_likes`: post_id, user_id, created_at. Unique on (post_id, user_id)
+  - `post_comments`: post_id, user_id, content, timestamps, soft deletes
+- Files changed: `database/migrations/2026_04_06_154247_create_social_tables.php`
+- **Learnings for future iterations:**
+  - All foreign keys cascade on delete in this codebase
+  - Enum columns are used directly in migrations (not separate tables)
+  - The `down()` method drops tables in reverse order to avoid FK constraint issues
+  - Branch was created from `dev` as required by CLAUDE.md instructions
+---
+
+## 2026-04-06 - US-002
+- Created 4 Eloquent models for social tables:
+  - `Friendship` — UUID, fillable fields, casts for datetime, scopes for pending/accepted/blocked, belongsTo requester/addressee
+  - `Post` — UUID, SoftDeletes, json cast for metadata, hasMany likes/comments, belongsTo user
+  - `PostLike` — UUID, timestamps disabled (only created_at in DB), belongsTo post/user
+  - `PostComment` — UUID, SoftDeletes, belongsTo post/user
+- Added relationships to User model: `sentFriendRequests`, `receivedFriendRequests`, `posts`
+- Files changed: `app/Models/Friendship.php`, `app/Models/Post.php`, `app/Models/PostLike.php`, `app/Models/PostComment.php`, `app/Models/User.php`
+- **Learnings for future iterations:**
+  - PostLike only has `created_at` column (no `updated_at`), so set `$timestamps = false`
+  - Friendship table uses requester_id/addressee_id pattern — User needs two separate hasMany relationships (sent/received)
+  - No PHP runtime available in CI, so typecheck is verified by syntax review only
+---
+
+## 2026-04-06 - US-003
+- Created FriendController with 7 endpoints:
+  - `GET /v1/friends` — list accepted friends with pagination
+  - `GET /v1/friends/requests` — list pending friend requests received
+  - `POST /v1/friends/request` — send friend request by username
+  - `POST /v1/friends/{id}/accept` — accept pending request
+  - `POST /v1/friends/{id}/reject` — reject pending request (deletes record)
+  - `DELETE /v1/friends/{id}` — remove friendship
+  - `POST /v1/friends/{id}/block` — block user
+- Added routes in `routes/api.php` under the v1 prefix group
+- Files changed: `app/Http/Controllers/Api/V1/FriendController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - User search route must be registered BEFORE `users/{username}` to avoid route model binding capturing "search" as a username
+- Friendship lookups must check both directions (requester↔addressee) for existing records
+  - Accept/reject should only be allowed by the addressee (the one who received the request)
+  - Block/remove can be done by either party in the friendship
+  - Use `$request->validate()` inline — no FormRequest classes are used in this project
+  - The `through()` method on paginator transforms items while keeping pagination metadata
+---
+
+## 2026-04-06 - US-004
+- Created UserSearchController as an invokable controller for `GET /v1/users/search?q=term`
+- Searches by name or username using LIKE query, minimum 3 characters enforced via validation
+- Returns id, username, name, last_name, avatar_url, is_friend, friendship_status
+- Excludes blocked users (both directions) and the authenticated user
+- Pagination limited to 20 results per page
+- Route registered before `users/{username}` to avoid route model binding conflict
+- Files changed: `app/Http/Controllers/Api/V1/UserSearchController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Static routes (e.g., `users/search`) must be registered before parameterized routes (`users/{username}`) in Laravel
+  - Use `DB::table()` for simple search queries that don't need Eloquent model features
+  - `through()` on LengthAwarePaginator works with DB query builder results too
+  - Blocked users exclusion requires checking both directions of the friendship
+---
+
+## 2026-04-06 - US-005
+- Created PostController with 4 endpoints:
+  - `POST /v1/posts` — create text post (max 500 chars, body: { content, visibility })
+  - `GET /v1/feed` — posts from friends + own, ordered by created_at DESC, cursor pagination (15 per page)
+  - `GET /v1/posts/{id}` — single post with comments and like count
+  - `DELETE /v1/posts/{id}` — soft delete own post only (403 if not owner)
+- All responses include `like_count`, `comment_count`, `is_liked_by_me`
+- Feed includes own posts + accepted friends' posts (both public and friends_only)
+- Added routes in `routes/api.php` under the v1 prefix group
+- Files changed: `app/Http/Controllers/Api/V1/PostController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - `loadCount()` is useful after creating a model to add `*_count` attributes without extra queries
+  - `cursorPaginate()` is preferred over `paginate()` for infinite-scroll feeds (better performance)
+  - `through()` on cursor paginator works the same as on length-aware paginator
+  - Feed visibility: since we already filter by friend IDs, both `public` and `friends_only` posts are visible to friends
+  - The `formatPost()` helper centralizes response formatting — reusable for future endpoints
+---
+
+## 2026-04-06 - US-006
+- Added 3 endpoints to PostController:
+  - `POST /v1/posts/{id}/like` — toggle like (creates or deletes PostLike, returns `liked` bool + `like_count`)
+  - `POST /v1/posts/{id}/comments` — create comment (validates content max 500 chars, returns 201)
+  - `DELETE /v1/posts/{id}/comments/{commentId}` — soft delete own comment (403 if not owner)
+- Added 3 routes in `routes/api.php` under the v1 prefix group
+- Files changed: `app/Http/Controllers/Api/V1/PostController.php`, `routes/api.php`
+- **Learnings for future iterations:**
+  - Toggle pattern: query for existing record, delete if found, create if not — cleaner than try/catch on unique constraint
+  - When deleting nested resources (comment on a post), scope the query by parent ID to prevent accessing comments from other posts
+  - PostLike has `$timestamps = false` but `created_at` is set automatically via `$fillable` — no manual date handling needed
+---
+
+## 2026-04-06 - US-007
+- Created `Api\V1\Gamification\LeaderboardController` with 4 endpoints:
+  - `GET /v1/gamification/leaderboard/weekly` — global weekly ranking by current_week_xp
+  - `GET /v1/gamification/leaderboard/monthly` — global monthly ranking by current_month_xp
+  - `GET /v1/gamification/leaderboard/alltime` — global all-time ranking by xp_total
+  - `GET /v1/gamification/leaderboard/friends` — friends-only ranking using real friendship data
+- Friends leaderboard queries accepted friendships (both directions) and includes the authenticated user
+- Ranks by xp_total from user_gamification table
+- Response format matches RankingController: position, user_id, name, avatar_url, period_xp, level, total_xp + my_position
+- Weekly/monthly/alltime endpoints cached for 5 minutes; friends endpoint is not cached (small dataset, personalized)
+- Files changed: `app/Http/Controllers/Api/V1/Gamification/LeaderboardController.php`
+- **Learnings for future iterations:**
+  - The Gamification controller directory didn't exist — routes in api.php referenced `Api\V1\Gamification\LeaderboardController` but it wasn't created
+  - AchievementController and XpHistoryController are also referenced in routes but don't exist yet
+  - Friends leaderboard doesn't need caching since the friend list is user-specific and typically small
+  - The `nickname` field on User is preferred for display name, falling back to `name . ' ' . last_name`
+---

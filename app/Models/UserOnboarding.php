@@ -10,28 +10,25 @@ class UserOnboarding extends Model
 {
     use HasFactory, HasUuids;
 
-    protected $table = 'user_onboarding';
+    protected $table = 'onboarding';
     
-    public function uniqueIds(): array
-    {
-        return ['uuid'];
-    }
+    // public function uniqueIds(): array { return ['uuid']; } // Removed since we use auto-increment or id already managed by HasUuids
 
     protected $fillable = [
-        'user_uuid', 'completed', 'gender', 'age', 'height_cm', 'weight_kg',
-        'body_fat_percent', 'workouts_per_week', 'work_style', 'bmr'
+        'user_id', 'gender', 'age', 'height_cm', 'weight_kg',
+        'exercise_frequency', 'work_style', 'body_fat_pct', 'bmr'
     ];
 
     protected $casts = [
-        'completed'        => 'boolean',
         'age'              => 'integer',
+        'height_cm'        => 'decimal:2',
         'weight_kg'        => 'decimal:2',
-        'body_fat_percent' => 'decimal:2',
-        'bmr'              => 'integer',
+        'body_fat_pct'     => 'decimal:1',
+        'bmr'              => 'decimal:2',
     ];
 
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_uuid', 'uuid');
+        return $this->belongsTo(User::class, 'user_id', 'id');
     }
 }

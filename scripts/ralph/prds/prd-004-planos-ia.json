@@ -1,0 +1,108 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/planos-ia-complemento",
+  "description": "PRD-003 — Complementar planos IA: comentários, checkins de execução, processamento assíncrono",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Criar migration para plan_comments",
+      "description": "As a developer, I need a table to store user comments on AI plans.",
+      "acceptanceCriteria": [
+        "Create migration for plan_comments table: id (uuid PK), ai_plan_id (foreign uuid), user_id (foreign uuid), scope (enum: plan|day|exercise|meal), target_id (uuid nullable), content (text), resolved_at (timestamp nullable), created_at, updated_at",
+        "Migration runs successfully",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Criar migration para plan_checkins",
+      "description": "As a developer, I need a table to track plan item completions.",
+      "acceptanceCriteria": [
+        "Create migration for plan_checkins table: id (uuid PK), user_id (foreign uuid), ai_plan_id (foreign uuid), checkable_type (string), checkable_id (uuid), notes (text nullable), difficulty (tinyint 1-5 nullable), completed_at (timestamp), created_at",
+        "Migration runs successfully",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Criar models PlanComment e PlanCheckin",
+      "description": "As a developer, I need Eloquent models for the new tables.",
+      "acceptanceCriteria": [
+        "Create PlanComment model with UUID, fillable, belongsTo AiPlan",
+        "Create PlanCheckin model with UUID, fillable, belongsTo AiPlan and User",
+        "Add hasMany relationships to AiPlan model",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Implementar endpoints de comentários em planos",
+      "description": "As a user, I want to comment on my AI plan to request refinements.",
+      "acceptanceCriteria": [
+        "POST /v1/plans/{planId}/comments — create comment with: content, scope, target_id",
+        "GET /v1/plans/{planId}/comments — list comments for plan",
+        "Add routes in api.php",
+        "Validate plan belongs to authenticated user",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Implementar refinamento de plano via IA com comentários",
+      "description": "As a user, I want the AI to refine my plan based on my comments.",
+      "acceptanceCriteria": [
+        "POST /v1/plans/{planId}/refine — triggers AI refinement using unresolved comments",
+        "Creates new AiPlan record with incremented version",
+        "Marks processed comments as resolved",
+        "Limit: max 3 refinements per plan per day",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Check if ai_plans table has version column. Add migration if not."
+    },
+    {
+      "id": "US-006",
+      "title": "Implementar checkins de execução nos planos",
+      "description": "As a user, I want to mark plan items as completed.",
+      "acceptanceCriteria": [
+        "POST /v1/plans/{planId}/checkin — create checkin with: checkable_type, checkable_id, notes, difficulty",
+        "GET /v1/plans/{planId}/checkins — list checkins with summary stats (total, completed, adherence %)",
+        "Prevent duplicate checkins for same item on same day",
+        "Add routes in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Converter geração de planos para processamento assíncrono",
+      "description": "As a developer, I need plan generation to be async via Laravel Queue.",
+      "acceptanceCriteria": [
+        "Create GenerateWorkoutPlanJob with logic from AiPlanController@generateWorkout",
+        "Create GenerateMealPlanJob with logic from AiMealPlanController@generateMealPlan",
+        "Controllers dispatch job and return 202 Accepted with job_id",
+        "Add GET /v1/plans/jobs/{jobId} endpoint to check job status",
+        "Jobs retry up to 3 times on failure",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": true,
+      "notes": "jobs table migration already exists."
+    }
+  ]
+}

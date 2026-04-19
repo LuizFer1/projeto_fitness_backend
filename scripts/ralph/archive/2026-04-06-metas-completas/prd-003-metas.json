@@ -1,0 +1,97 @@
+{
+  "project": "FitnessApp",
+  "branchName": "ralph/metas-completas",
+  "description": "PRD-002 — Módulo de metas completo: CRUD genérico, checkins de progresso, progresso percentual",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Criar migration para tabela goal_checkins",
+      "description": "As a developer, I need a table to store goal progress checkins.",
+      "acceptanceCriteria": [
+        "Create migration for goal_checkins table with: id (uuid PK), user_goal_id (foreign uuid to user_goals), value (decimal 10,2), notes (text nullable), recorded_at (date), created_at, updated_at",
+        "Add cascadeOnDelete on user_goal_id foreign key",
+        "Migration runs successfully with php artisan migrate",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": "Follow existing migration patterns: UUID primary keys, foreignUuid for FKs."
+    },
+    {
+      "id": "US-002",
+      "title": "Criar model GoalCheckin e atualizar UserGoal",
+      "description": "As a developer, I need Eloquent models for goal checkins.",
+      "acceptanceCriteria": [
+        "Create GoalCheckin model with UUID support, fillable fields, belongsTo UserGoal relationship",
+        "Add hasMany GoalCheckin relationship to UserGoal model",
+        "Add progress_percentage accessor to UserGoal: (current_value / target_value) * 100",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Check existing UserGoal model for current fields before modifying."
+    },
+    {
+      "id": "US-003",
+      "title": "Refatorar GoalController com CRUD completo",
+      "description": "As a user, I want to create, list, view, edit, and archive custom fitness goals.",
+      "acceptanceCriteria": [
+        "GET /v1/goals — list all user goals with optional status filter (?status=active|completed|archived)",
+        "POST /v1/goals — create goal with: title, type, target_value, deadline, unit, visibility",
+        "GET /v1/goals/{id} — show goal detail with progress_percentage",
+        "PUT /v1/goals/{id} — edit title, target_value, deadline, visibility",
+        "PUT /v1/goals/{id}/archive — set status to archived",
+        "Add routes in api.php under v1 prefix with auth middleware",
+        "Return proper HTTP status codes",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": true,
+      "notes": "Keep existing updateExercise and updateAlimentation methods."
+    },
+    {
+      "id": "US-004",
+      "title": "Implementar checkins de progresso",
+      "description": "As a user, I want to log progress checkins on my goals.",
+      "acceptanceCriteria": [
+        "POST /v1/goals/{id}/checkins — create checkin with: value, notes (optional), date (optional)",
+        "After creating checkin, update UserGoal current_value",
+        "If progress_percentage >= 100, mark goal as completed",
+        "GET /v1/goals/{id}/checkins — list checkins with pagination",
+        "Add routes in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Integrar metas com gamificação",
+      "description": "As a user, I want to earn XP when I complete goals.",
+      "acceptanceCriteria": [
+        "When goal status changes to completed, grant 100 XP via GamificationService",
+        "Add checkGoalBadges method to GamificationService",
+        "XP transaction type: goal_completed",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": true,
+      "notes": "Follow grantWorkoutCompletedXp pattern."
+    },
+    {
+      "id": "US-006",
+      "title": "Endpoint de progresso com dados para gráfico",
+      "description": "As a user, I want to see my goal progress history as chart data.",
+      "acceptanceCriteria": [
+        "GET /v1/goals/{id}/progress — returns goal info + checkin history sorted by date",
+        "Response includes: goal (title, target_value, unit), current_value, progress_percentage, checkins array",
+        "Add route in api.php",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": true,
+      "notes": ""
+    }
+  ]
+}

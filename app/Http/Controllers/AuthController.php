@@ -2,68 +2,111 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\UserGamification;
+use App\Application\UseCases\Auth\LoginUserUseCase;
+use App\Application\UseCases\Auth\RegisterUserUseCase;
+use App\Services\GamificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 
 class AuthController extends Controller
 {
+    private RegisterUserUseCase $registerUseCase;
+
+    private LoginUserUseCase $loginUseCase;
+
+    public function __construct(
+        RegisterUserUseCase $registerUseCase,
+        LoginUserUseCase $loginUseCase
+    ) {
+        $this->registerUseCase = $registerUseCase;
+        $this->loginUseCase = $loginUseCase;
+    }
+
+    #[OA\Post(
+        path: '/api/register',
+        summary: 'Registrar novo usuário',
+        description: 'Cria uma nova conta de usuário.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['name', 'last_name', 'email', 'cpf', 'password', 'password_confirmation'],
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', maxLength: 80, example: 'João'),
+                    new OA\Property(property: 'last_name', type: 'string', maxLength: 120, example: 'Silva'),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', maxLength: 180, example: 'joao@email.com'),
+                    new OA\Property(property: 'cpf', type: 'string', maxLength: 14, example: '123.456.789-00'),
+                    new OA\Property(property: 'password', type: 'string', minLength: 8, example: 'senha1234'),
+                    new OA\Property(property: 'password_confirmation', type: 'string', example: 'senha1234'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Usuário registrado com sucesso'),
+            new OA\Response(response: 422, description: 'Erro de validação'),
+        ]
+    )]
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'name'      => 'required|string|max:80',
+            'name' => 'required|string|max:80',
             'last_name' => 'required|string|max:120',
-            'email'     => 'required|email|max:180|unique:users,email',
-            'cpf'       => 'required|string|max:14|unique:users,cpf',
-            'password'  => 'required|string|min:8|confirmed',
+            'email' => 'required|email|max:180|unique:users,email',
+            'cpf' => 'required|string|max:14|unique:users,cpf',
+            'password' => 'required|string|min:8|confirmed',
         ]);
 
-        $user = User::create([
-            'name'          => $data['name'],
-            'last_name'     => $data['last_name'],
-            'email'         => $data['email'],
-            'cpf'           => $data['cpf'],
-            'password_hash' => Hash::make($data['password']),
-        ]);
+        $result = $this->registerUseCase->execute($data);
 
-        $user->refresh();
-
-        UserGamification::create(['user_uuid' => $user->uuid]);
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'user'  => $user,
-            'token' => $token,
-        ], 201);
+        return response()->json($result, 201);
     }
 
-    public function login(Request $request): JsonResponse
+    #[OA\Post(
+        path: '/api/login',
+        summary: 'Autenticar usuário',
+        description: 'Realiza login e retorna token de acesso.',
+        tags: ['Auth'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                type: 'object',
+                required: ['email', 'password'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'joao@email.com'),
+                    new OA\Property(property: 'password', type: 'string', example: 'senha1234'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Login realizado com sucesso'),
+            new OA\Response(response: 422, description: 'Credenciais inválidas'),
+        ]
+    )]
+    public function login(Request $request, GamificationService $gamification): JsonResponse
     {
-        $data = $request->validate([
-            'email'    => 'required|email',
+        $credentials = $request->validate([
+            'email' => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('email', $data['email'])->first();
+        $result = $this->loginUseCase->execute($credentials);
 
-        if (! $user || ! Hash::check($data['password'], $user->password_hash)) {
-            throw ValidationException::withMessages([
-                'email' => ['Credenciais inválidas.'],
-            ]);
-        }
-
-        $token = $user->createToken('auth-token')->plainTextToken;
-
-        return response()->json([
-            'user'  => $user,
-            'token' => $token,
-        ]);
+        return response()->json($result);
     }
 
+    #[OA\Post(
+        path: '/api/logout',
+        summary: 'Logout',
+        description: 'Revoga o token de acesso atual.',
+        tags: ['Auth'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Logout realizado com sucesso'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -71,8 +114,24 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logout realizado com sucesso.']);
     }
 
-    public function me(Request $request): JsonResponse
+    #[OA\Get(
+        path: '/api/me',
+        summary: 'Perfil do usuário autenticado',
+        description: 'Retorna os dados do usuário autenticado, incluindo onboarding e gamificação.',
+        tags: ['Auth'],
+        security: [['sanctum' => []]],
+        responses: [
+            new OA\Response(response: 200, description: 'Dados do usuário'),
+            new OA\Response(response: 401, description: 'Não autenticado'),
+        ]
+    )]
+    public function me(Request $request, GamificationService $gamification): JsonResponse
     {
-        return response()->json($request->user()->load(['onboarding', 'gamification']));
+        $user = $request->user();
+
+        // RF-01: Grant daily login XP on profile access
+        $gamification->grantDailyLoginXp($user);
+
+        return response()->json($user->load(['onboarding', 'gamification']));
     }
 }
