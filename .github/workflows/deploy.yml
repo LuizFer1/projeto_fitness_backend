@@ -140,19 +140,45 @@ jobs:
           SANCTUM_STATEFUL_DOMAINS=coreva.luizfdev.com.br,api-coreva.luizfdev.com.br
           EOF
 
-      - name: Build production caches (config / route / view)
+      - name: Clear any stale caches (do NOT pre-cache on runner)
         env:
           APP_KEY: ${{ steps.appkey.outputs.value }}
         run: |
+          # Caches geradas no runner contêm caminhos absolutos do GitHub Actions
+          # (/home/runner/work/...) e quebram o Laravel em produção. Limpamos e
+          # deixamos o servidor gerar os caches sob demanda a partir do .env.
           php artisan config:clear
           php artisan route:clear
           php artisan view:clear
-          php artisan view:cache
-          php artisan config:cache
-          php artisan route:cache || true
+          rm -f bootstrap/cache/config.php bootstrap/cache/routes-v7.php bootstrap/cache/routes.php
 
       - name: Install lftp
         run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Remove stale caches from server (bootstrap/cache)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR || '/' }}
+        run: |
+          # Apaga caches antigos que possam conter caminhos absolutos do runner
+          # (ex.: /home/runner/work/...). Ignora erro caso o arquivo não exista.
+          lftp -c "
+            set ftp:ssl-allow true;
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate no;
+            set net:max-retries 2;
+            set net:timeout 30;
+            open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
+            cd \"$FTP_SERVER_DIR\";
+            rm -f bootstrap/cache/config.php || true;
+            rm -f bootstrap/cache/routes-v7.php || true;
+            rm -f bootstrap/cache/routes.php || true;
+            rm -f bootstrap/cache/events.php || true;
+            bye
+          " || true
 
       - name: Deploy via FTP (lftp)
         env:
@@ -196,6 +222,10 @@ jobs:
               --exclude 'storage/framework/sessions/' \
               --exclude 'storage/framework/views/' \
               --exclude 'storage/framework/testing/' \
+              --exclude-glob 'bootstrap/cache/config.php' \
+              --exclude-glob 'bootstrap/cache/routes-v7.php' \
+              --exclude-glob 'bootstrap/cache/routes.php' \
+              --exclude-glob 'bootstrap/cache/events.php' \
               --exclude-glob 'database/database.sqlite' \
               --exclude-glob '.phpunit.result.cache' \
               --exclude '.phpunit.cache/' \
