@@ -158,11 +158,12 @@ jobs:
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
           port: ${{ secrets.FTP_PORT || 21 }}
-          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps' }}
+          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps-legacy' }}
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
           local-dir: ./
           dangerous-clean-slate: false
-          log-level: standard
+          log-level: verbose
+          timeout: 60000
           state-name: .ftp-deploy-sync-state.json
           exclude: |
             **/.git*
