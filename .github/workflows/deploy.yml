@@ -151,51 +151,58 @@ jobs:
           php artisan config:cache
           php artisan route:cache || true
 
-      - name: Deploy via FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          port: ${{ secrets.FTP_PORT || 21 }}
-          protocol: ${{ secrets.FTP_PROTOCOL || 'ftps-legacy' }}
-          server-dir: ${{ secrets.FTP_SERVER_DIR }}
-          local-dir: ./
-          dangerous-clean-slate: false
-          log-level: verbose
-          timeout: 60000
-          state-name: .ftp-deploy-sync-state.json
-          exclude: |
-            **/.git*
-            **/.git*/**
-            **/.github/**
-            **/node_modules/**
-            **/tests/**
-            **/.env.example
-            **/.env.backup
-            **/.env.production
-            **/.editorconfig
-            **/.gitignore
-            **/.gitattributes
-            **/phpunit.xml
-            **/phpunit.xml.dist
-            **/README.md
-            **/AGENT_INTEGRATION.md
-            **/CLAUDE.md
-            **/Makefile
-            **/docker-compose.yml
-            **/Dockerfile
-            **/docker/**
-            **/scripts/**
-            **/storage/logs/**
-            **/storage/framework/cache/**
-            **/storage/framework/sessions/**
-            **/storage/framework/views/**
-            **/storage/framework/testing/**
-            **/database/database.sqlite
-            **/.phpunit.result.cache
-            **/.phpunit.cache/**
-            **/docs/**
-            **/.idea/**
-            **/.vscode/**
-            **/memory/**
+      - name: Install lftp
+        run: sudo apt-get update && sudo apt-get install -y lftp
+
+      - name: Deploy via FTP (lftp)
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_SERVER_DIR: ${{ secrets.FTP_SERVER_DIR || '/' }}
+        run: |
+          lftp -c "
+            set ftp:ssl-allow true;
+            set ftp:ssl-force true;
+            set ftp:ssl-protect-data true;
+            set ssl:verify-certificate no;
+            set net:max-retries 3;
+            set net:reconnect-interval-base 5;
+            set net:timeout 30;
+            open -u $FTP_USERNAME,$FTP_PASSWORD $FTP_SERVER;
+            mirror -R -v --parallel=4 --only-newer \
+              --exclude-glob '.git*' \
+              --exclude '.github/' \
+              --exclude 'node_modules/' \
+              --exclude 'tests/' \
+              --exclude-glob '.env.example' \
+              --exclude-glob '.env.backup' \
+              --exclude-glob '.env.production' \
+              --exclude-glob '.editorconfig' \
+              --exclude-glob '.gitignore' \
+              --exclude-glob '.gitattributes' \
+              --exclude-glob 'phpunit.xml' \
+              --exclude-glob 'phpunit.xml.dist' \
+              --exclude-glob 'README.md' \
+              --exclude-glob 'AGENT_INTEGRATION.md' \
+              --exclude-glob 'CLAUDE.md' \
+              --exclude-glob 'Makefile' \
+              --exclude-glob 'docker-compose.yml' \
+              --exclude-glob 'Dockerfile' \
+              --exclude 'docker/' \
+              --exclude 'scripts/' \
+              --exclude 'storage/logs/' \
+              --exclude 'storage/framework/cache/' \
+              --exclude 'storage/framework/sessions/' \
+              --exclude 'storage/framework/views/' \
+              --exclude 'storage/framework/testing/' \
+              --exclude-glob 'database/database.sqlite' \
+              --exclude-glob '.phpunit.result.cache' \
+              --exclude '.phpunit.cache/' \
+              --exclude 'docs/' \
+              --exclude '.idea/' \
+              --exclude '.vscode/' \
+              --exclude 'memory/' \
+              ./ \"$FTP_SERVER_DIR\";
+            bye
+          "
