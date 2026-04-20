@@ -5,11 +5,17 @@ on:
     branches: [main]
   pull_request:
     branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   tests:
     name: Run PHPUnit tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -23,12 +29,15 @@ jobs:
           coverage: none
           tools: composer:v2
 
+      - name: Validate composer files
+        run: composer validate --strict --no-check-publish
+
       - name: Cache Composer dependencies
         uses: actions/cache@v4
         with:
           path: vendor
-          key: composer-${{ hashFiles('composer.lock') }}
-          restore-keys: composer-
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-${{ runner.os }}-
 
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress --optimize-autoloader
@@ -56,8 +65,11 @@ jobs:
   deploy:
     name: Deploy to FTP
     needs: tests
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: production
 
     steps:
       - name: Checkout
@@ -71,14 +83,73 @@ jobs:
           coverage: none
           tools: composer:v2
 
-      - name: Install production dependencies
-        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+      - name: Cache Composer (prod) dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: composer-prod-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-prod-${{ runner.os }}-
 
-      - name: Optimize Laravel for production
+      - name: Install production dependencies
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader --classmap-authoritative
+
+      - name: Resolve APP_KEY (use secret or generate)
+        id: appkey
+        run: |
+          if [ -n "${{ secrets.APP_KEY }}" ]; then
+            echo "Using APP_KEY from repository secret."
+            echo "value=${{ secrets.APP_KEY }}" >> "$GITHUB_OUTPUT"
+          else
+            KEY="base64:$(php -r 'echo base64_encode(random_bytes(32));')"
+            echo "::warning::Nenhum secret APP_KEY definido. Foi gerado automaticamente: $KEY"
+            echo "::warning::Salve este valor em Settings → Secrets → APP_KEY para mantê-lo estável entre deploys."
+            echo "value=$KEY" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build production .env
+        env:
+          APP_KEY: ${{ steps.appkey.outputs.value }}
+        run: |
+          cat > .env <<EOF
+          APP_NAME=Coreva
+          APP_ENV=production
+          APP_KEY=${APP_KEY}
+          APP_DEBUG=false
+          APP_URL=http://api-coreva.luizfdev.com.br
+          APP_LOCALE=pt_BR
+          APP_FALLBACK_LOCALE=en
+
+          LOG_CHANNEL=stack
+          LOG_LEVEL=warning
+
+          DB_CONNECTION=mysql
+          DB_HOST=${{ secrets.DB_HOST }}
+          DB_PORT=3306
+          DB_DATABASE=${{ secrets.DB_DATABASE }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+
+          SESSION_DRIVER=database
+          SESSION_LIFETIME=120
+          CACHE_STORE=database
+          QUEUE_CONNECTION=database
+          FILESYSTEM_DISK=local
+
+          BCRYPT_ROUNDS=12
+
+          SANCTUM_STATEFUL_DOMAINS=coreva.luizfdev.com.br,api-coreva.luizfdev.com.br
+          EOF
+
+      - name: Build production caches (config / route / view)
+        env:
+          APP_KEY: ${{ steps.appkey.outputs.value }}
         run: |
           php artisan config:clear
           php artisan route:clear
           php artisan view:clear
+          php artisan view:cache
+          php artisan config:cache
+          php artisan route:cache || true
 
       - name: Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -91,14 +162,17 @@ jobs:
           server-dir: ${{ secrets.FTP_SERVER_DIR }}
           local-dir: ./
           dangerous-clean-slate: false
+          log-level: standard
+          state-name: .ftp-deploy-sync-state.json
           exclude: |
             **/.git*
             **/.git*/**
             **/.github/**
             **/node_modules/**
             **/tests/**
-            **/.env
-            **/.env.*
+            **/.env.example
+            **/.env.backup
+            **/.env.production
             **/.editorconfig
             **/.gitignore
             **/.gitattributes
@@ -109,7 +183,9 @@ jobs:
             **/CLAUDE.md
             **/Makefile
             **/docker-compose.yml
+            **/Dockerfile
             **/docker/**
+            **/scripts/**
             **/storage/logs/**
             **/storage/framework/cache/**
             **/storage/framework/sessions/**
@@ -121,3 +197,4 @@ jobs:
             **/docs/**
             **/.idea/**
             **/.vscode/**
+            **/memory/**
