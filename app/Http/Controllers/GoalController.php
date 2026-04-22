@@ -127,66 +127,10 @@ class GoalController extends Controller
             'goal_water_liters' => 'nullable|numeric|min:0',
         ]);
 
-        $goalCalories = $data['goal_calories_day'] ?? null;
-        $goalProtein = $data['goal_protein_g'] ?? null;
-        $goalCarbs = $data['goal_carbs_g'] ?? null;
-        $goalFat = $data['goal_fat_g'] ?? null;
-
-        if (isset($data['diet_objective']) && (!$goalCalories || !$goalProtein || !$goalCarbs || !$goalFat)) {
-            $user = $request->user();
-            $onboarding = $user->onboarding;
-
+        if ($this->needsAutoCalculation($data)) {
+            $onboarding = $request->user()->onboarding;
             if ($onboarding) {
-                $weight = $onboarding->weight_kg;
-                $height = $onboarding->height_cm;
-                $age = $onboarding->age;
-                $gender = strtolower($onboarding->gender ?? 'masculino');
-
-                // 1. Cálculo da Manutenção BMR (Equação Mifflin-St Jeor)
-                if (in_array($gender, ['male', 'm', 'masculino', 'homem'])) {
-                    $bmr = (10 * $weight) + (6.25 * $height) - (5 * $age) + 5;
-                } else {
-                    $bmr = (10 * $weight) + (6.25 * $height) - (5 * $age) - 161;
-                }
-
-                // 2. Multiplicador de Atividade Física (Fator Atividade)
-                $workStyle = strtolower($onboarding->work_style ?? 'light');
-                $activityMultiplier = 1.2; // Sedentário / "light"
-                if (in_array($workStyle, ['moderate', 'moderado', 'moderada'])) {
-                    $activityMultiplier = 1.375;
-                } elseif (in_array($workStyle, ['active', 'ativo', 'intenso', 'intensa'])) {
-                    $activityMultiplier = 1.725;
-                }
-
-                $tdee = $bmr * $activityMultiplier;
-
-                // 3. Tratativas de acordo com as regras
-                switch ($data['diet_objective']) {
-                    case 'weight_loss':
-                        $calorias_alvo = $tdee - random_int(300, 500);
-                        $macro_prot = ($calorias_alvo * 0.35) / 4; // 35% de proteína
-                        $macro_carb = ($calorias_alvo * 0.40) / 4; // 40% carboidratos
-                        $macro_fat  = ($calorias_alvo * 0.25) / 9; // 25% gordura
-                        break;
-                    case 'muscle_gain':
-                        $calorias_alvo = $tdee + random_int(200, 400);
-                        $macro_prot = ($calorias_alvo * 0.30) / 4; // 30%
-                        $macro_carb = ($calorias_alvo * 0.50) / 4; // 50%
-                        $macro_fat  = ($calorias_alvo * 0.20) / 9; // 20%
-                        break;
-                    case 'maintenance':
-                    default:
-                        $calorias_alvo = $tdee;
-                        $macro_prot = ($calorias_alvo * 0.20) / 4; // 20%
-                        $macro_carb = ($calorias_alvo * 0.50) / 4; // 50%
-                        $macro_fat  = ($calorias_alvo * 0.30) / 9; // 30%
-                        break;
-                }
-
-                $data['goal_calories_day'] = $goalCalories ?? round($calorias_alvo);
-                $data['goal_protein_g'] = $goalProtein ?? round($macro_prot, 1);
-                $data['goal_carbs_g'] = $goalCarbs ?? round($macro_carb, 1);
-                $data['goal_fat_g'] = $goalFat ?? round($macro_fat, 1);
+                $data = $this->mergeCalculatedMacros($data, $onboarding);
             }
         }
 
@@ -199,7 +143,83 @@ class GoalController extends Controller
 
         return response()->json([
             'message' => 'Alimentation goals updated successfully.',
-            'goal' => $goal
+            'goal' => $goal,
         ]);
+    }
+
+    private function needsAutoCalculation(array $data): bool
+    {
+        if (empty($data['diet_objective'])) {
+            return false;
+        }
+
+        foreach (['goal_calories_day', 'goal_protein_g', 'goal_carbs_g', 'goal_fat_g'] as $field) {
+            if (empty($data[$field])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function mergeCalculatedMacros(array $data, $onboarding): array
+    {
+        $bmr  = $this->calculateBmr($onboarding);
+        $tdee = $bmr * $this->activityMultiplier($onboarding->work_style ?? 'light');
+        $split = $this->macroSplit($data['diet_objective'], $tdee);
+
+        $data['goal_calories_day'] ??= round($split['calories']);
+        $data['goal_protein_g']    ??= round($split['protein'], 1);
+        $data['goal_carbs_g']      ??= round($split['carbs'], 1);
+        $data['goal_fat_g']        ??= round($split['fat'], 1);
+
+        return $data;
+    }
+
+    private function calculateBmr($onboarding): float
+    {
+        $weight = $onboarding->weight_kg;
+        $height = $onboarding->height_cm;
+        $age    = $onboarding->age;
+        $gender = strtolower($onboarding->gender ?? 'masculino');
+
+        $base = (10 * $weight) + (6.25 * $height) - (5 * $age);
+        $isMale = in_array($gender, ['male', 'm', 'masculino', 'homem'], true);
+
+        return $isMale ? $base + 5 : $base - 161;
+    }
+
+    private function activityMultiplier(string $workStyle): float
+    {
+        $style = strtolower($workStyle);
+
+        if (in_array($style, ['moderate', 'moderado', 'moderada'], true)) {
+            return 1.375;
+        }
+        if (in_array($style, ['active', 'ativo', 'intenso', 'intensa'], true)) {
+            return 1.725;
+        }
+
+        return 1.2;
+    }
+
+    private function macroSplit(string $objective, float $tdee): array
+    {
+        $splits = [
+            'weight_loss' => ['delta' => -random_int(300, 500), 'pct' => [0.35, 0.40, 0.25]],
+            'muscle_gain' => ['delta' =>  random_int(200, 400), 'pct' => [0.30, 0.50, 0.20]],
+            'maintenance' => ['delta' => 0,                      'pct' => [0.20, 0.50, 0.30]],
+        ];
+
+        $config = $splits[$objective] ?? $splits['maintenance'];
+        $calories = $tdee + $config['delta'];
+        [$protPct, $carbPct, $fatPct] = $config['pct'];
+
+        return [
+            'calories' => $calories,
+            'protein'  => ($calories * $protPct) / 4,
+            'carbs'    => ($calories * $carbPct) / 4,
+            'fat'      => ($calories * $fatPct) / 9,
+        ];
     }
 }

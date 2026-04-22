@@ -49,39 +49,44 @@ class MealLogController extends Controller
         ]);
 
         $user = $request->user() ?? \App\Models\User::first();
-
-        $prompt = "Você é um Nutricionista especialista. O usuário inseriu a seguinte refeição/texto:\n"
-            . "{$validated['text_description']}\n\n"
-            . "Calcule o valor nutricional total dessa refeição.\n"
-            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em um formato JSON válido, sem marcações markdown. Estrutura exigida:\n"
-            . "{\"calorias_totais\": 520, \"macros_totais\": {\"proteinas_g\": 35.5, \"carboidratos_g\": 45.0, \"gorduras_g\": 20.2}, \"feedback_breve\": \"texto\", \"itens_detalhados\": [{\"nome\": \"Frango\", \"quantidadeDada\": \"100g\", \"calorias\": 165}]}";
+        $prompt = $this->buildTextPrompt($validated['text_description']);
 
         try {
             $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
-
-            $mealLog = MealLog::create([
-                'user_id' => $user->id,
-                'date' => $validated['date'],
-                'meal_type' => $validated['meal_type'],
-                'calories_consumed' => $aiResponse['calorias_totais'] ?? 0,
-                'protein_g' => $aiResponse['macros_totais']['proteinas_g'] ?? 0,
-                'carbs_g' => $aiResponse['macros_totais']['carboidratos_g'] ?? 0,
-                'fat_g' => $aiResponse['macros_totais']['gorduras_g'] ?? 0,
-                'user_note' => $validated['text_description'],
-                'ai_feedback' => $aiResponse['feedback_breve'] ?? null,
-                'items_json' => $aiResponse['itens_detalhados'] ?? [],
-            ]);
-
-            // RF-01: Grant meal XP
+            $mealLog = $this->persistMealFromText($user, $validated, $aiResponse);
             $this->gamificationService->grantMealLoggedXp($user);
 
-            return response()->json([
-                'message' => 'Refeição registrada via IA.',
-                'log' => $mealLog
-            ], 201);
+            return response()->json(['message' => 'Refeição registrada via IA.', 'log' => $mealLog], 201);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Falha na IA: ' . $e->getMessage()], 422);
         }
+    }
+
+    private function buildTextPrompt(string $description): string
+    {
+        return "Você é um Nutricionista especialista. O usuário inseriu a seguinte refeição/texto:\n"
+            . "{$description}\n\n"
+            . "Calcule o valor nutricional total dessa refeição.\n"
+            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em um formato JSON válido, sem marcações markdown. Estrutura exigida:\n"
+            . "{\"calorias_totais\": 520, \"macros_totais\": {\"proteinas_g\": 35.5, \"carboidratos_g\": 45.0, \"gorduras_g\": 20.2}, \"feedback_breve\": \"texto\", \"itens_detalhados\": [{\"nome\": \"Frango\", \"quantidadeDada\": \"100g\", \"calorias\": 165}]}";
+    }
+
+    private function persistMealFromText($user, array $validated, array $aiResponse): MealLog
+    {
+        $macros = $aiResponse['macros_totais'] ?? [];
+
+        return MealLog::create([
+            'user_id'           => $user->id,
+            'date'              => $validated['date'],
+            'meal_type'         => $validated['meal_type'],
+            'calories_consumed' => $aiResponse['calorias_totais'] ?? 0,
+            'protein_g'         => $macros['proteinas_g'] ?? 0,
+            'carbs_g'           => $macros['carboidratos_g'] ?? 0,
+            'fat_g'             => $macros['gorduras_g'] ?? 0,
+            'user_note'         => $validated['text_description'],
+            'ai_feedback'       => $aiResponse['feedback_breve'] ?? null,
+            'items_json'        => $aiResponse['itens_detalhados'] ?? [],
+        ]);
     }
 
     #[OA\Post(
@@ -113,40 +118,43 @@ class MealLogController extends Controller
         ]);
 
         $user = $request->user() ?? \App\Models\User::first();
-
-        // Strip data:image/jpeg;base64, if it exists
         $base64 = preg_replace('#^data:image/[^;]+;base64,#', '', $validated['image_base64']);
-
-        $prompt = "Você é um Nutricionista especialista com visão computacional. Analise a imagem desta refeição rigorosamente.\n"
-            . "Identifique os alimentos, estime sua porção, calorias e macronutrientes totais.\n"
-            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em formato JSON, sem marcações markdown. Estrutura exigida:\n"
-            . "{\"calorias_totais_estimadas\": 600, \"macros_estimados\": {\"proteinas_g\": 40, \"carboidratos_g\": 60, \"gorduras_g\": 25}, \"feedback_breve\": \"Analise visual curta\", \"itens_identificados\": [{\"nome_estimado\": \"Arroz\", \"quantidade_estimada_gramas\": 150, \"calorias_estimadas\": 170}]}";
+        $prompt = $this->buildImagePrompt();
 
         try {
             $aiResponse = $this->groqService->generateVisionResponse(null, $prompt, $base64);
-
-            $mealLog = MealLog::create([
-                'user_id' => $user->id,
-                'date' => $validated['date'],
-                'meal_type' => $validated['meal_type'],
-                'calories_consumed' => $aiResponse['calorias_totais_estimadas'] ?? 0,
-                'protein_g' => $aiResponse['macros_estimados']['proteinas_g'] ?? 0,
-                'carbs_g' => $aiResponse['macros_estimados']['carboidratos_g'] ?? 0,
-                'fat_g' => $aiResponse['macros_estimados']['gorduras_g'] ?? 0,
-                'user_note' => 'Identificacao via foto',
-                'ai_feedback' => $aiResponse['feedback_breve'] ?? null,
-                'items_json' => $aiResponse['itens_identificados'] ?? [],
-            ]);
-
-            // RF-01: Grant meal XP
+            $mealLog = $this->persistMealFromImage($user, $validated, $aiResponse);
             $this->gamificationService->grantMealLoggedXp($user);
 
-            return response()->json([
-                'message' => 'Refeição registrada por imagem via IA.',
-                'log' => $mealLog
-            ], 201);
+            return response()->json(['message' => 'Refeição registrada por imagem via IA.', 'log' => $mealLog], 201);
         } catch (\Exception $e) {
             return response()->json(['error' => 'Falha na IA Vision: ' . $e->getMessage()], 422);
         }
+    }
+
+    private function buildImagePrompt(): string
+    {
+        return "Você é um Nutricionista especialista com visão computacional. Analise a imagem desta refeição rigorosamente.\n"
+            . "Identifique os alimentos, estime sua porção, calorias e macronutrientes totais.\n"
+            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em formato JSON, sem marcações markdown. Estrutura exigida:\n"
+            . "{\"calorias_totais_estimadas\": 600, \"macros_estimados\": {\"proteinas_g\": 40, \"carboidratos_g\": 60, \"gorduras_g\": 25}, \"feedback_breve\": \"Analise visual curta\", \"itens_identificados\": [{\"nome_estimado\": \"Arroz\", \"quantidade_estimada_gramas\": 150, \"calorias_estimadas\": 170}]}";
+    }
+
+    private function persistMealFromImage($user, array $validated, array $aiResponse): MealLog
+    {
+        $macros = $aiResponse['macros_estimados'] ?? [];
+
+        return MealLog::create([
+            'user_id'           => $user->id,
+            'date'              => $validated['date'],
+            'meal_type'         => $validated['meal_type'],
+            'calories_consumed' => $aiResponse['calorias_totais_estimadas'] ?? 0,
+            'protein_g'         => $macros['proteinas_g'] ?? 0,
+            'carbs_g'           => $macros['carboidratos_g'] ?? 0,
+            'fat_g'             => $macros['gorduras_g'] ?? 0,
+            'user_note'         => 'Identificacao via foto',
+            'ai_feedback'       => $aiResponse['feedback_breve'] ?? null,
+            'items_json'        => $aiResponse['itens_identificados'] ?? [],
+        ]);
     }
 }

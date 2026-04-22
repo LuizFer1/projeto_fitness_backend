@@ -176,29 +176,47 @@ class GroqService
      */
     private function extractJsonFromResponse(?array $decoded): ?array
     {
-        $finishReason = $decoded['choices'][0]['finish_reason'] ?? null;
-        if ($finishReason === 'length') {
-            throw new Exception('Groq response was truncated before completing JSON. Reduce prompt size or increase GROQ_MAX_TOKENS.');
+        $this->assertNotTruncated($decoded);
+        $content = $this->extractContent($decoded);
+        $textResponse = trim(str_replace(['```json', '```'], '', $content));
+
+        $parsed = $this->parseJsonPayload($textResponse);
+        if (!is_array($parsed)) {
+            throw new Exception('Groq response is not valid JSON. Raw text: ' . substr($textResponse, 0, 500));
         }
 
+        return $parsed;
+    }
+
+    private function assertNotTruncated(?array $decoded): void
+    {
+        if (($decoded['choices'][0]['finish_reason'] ?? null) === 'length') {
+            throw new Exception('Groq response was truncated before completing JSON. Reduce prompt size or increase GROQ_MAX_TOKENS.');
+        }
+    }
+
+    private function extractContent(?array $decoded): string
+    {
         $content = $decoded['choices'][0]['message']['content'] ?? null;
         if (!is_string($content) || trim($content) === '') {
             Log::error('Unexpected Groq Response Structure', ['response' => $decoded]);
             throw new Exception('Could not parse response from Groq.');
         }
 
-        $textResponse = str_replace(['```json', '```'], '', $content);
-        $textResponse = trim($textResponse);
+        return $content;
+    }
 
-        $parsed = json_decode($textResponse, true);
-        if (!is_array($parsed) && preg_match('/\{.*\}/s', $textResponse, $matches)) {
+    private function parseJsonPayload(string $text): ?array
+    {
+        $parsed = json_decode($text, true);
+        if (is_array($parsed)) {
+            return $parsed;
+        }
+
+        if (preg_match('/\{.*\}/s', $text, $matches)) {
             $parsed = json_decode($matches[0], true);
         }
 
-        if (!is_array($parsed)) {
-            throw new Exception('Groq response is not valid JSON. Raw text: ' . substr($textResponse, 0, 500));
-        }
-
-        return $parsed;
+        return is_array($parsed) ? $parsed : null;
     }
 }
