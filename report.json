@@ -1,0 +1,1226 @@
+{
+  "languages": {
+    "javascript": 23,
+    "typescript": 1,
+    "python": 5,
+    "ruby": 2
+  },
+  "sections": [
+    {
+      "name": "Complexidade ciclomática (lizard)",
+      "ran": true,
+      "skipped_reason": "",
+      "summary": "18 funções acima do limite (CCN>10)",
+      "findings": [
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Application\\UseCases\\Onboarding\\CalculateDailyCaloriesUseCase.php",
+          "line": 13,
+          "message": "CalculateDailyCaloriesUseCase::execute has 40 NLOC, 17 CCN, 278 token, 1 PARAM, 47 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\AiMealPlanController.php",
+          "line": 28,
+          "message": "AiMealPlanController::formatPlanForList has 17 NLOC, 13 CCN, 97 token, 1 PARAM, 18 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\AiMealPlanController.php",
+          "line": 50,
+          "message": "AiMealPlanController::formatPlanForDetail has 25 NLOC, 21 CCN, 212 token, 1 PARAM, 30 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\AiMealPlanController.php",
+          "line": 83,
+          "message": "AiMealPlanController::buildGeneratePrompt has 45 NLOC, 17 CCN, 243 token, 1 PARAM, 45 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\AiPlanController.php",
+          "line": 52,
+          "message": "AiPlanController::generateWorkout has 97 NLOC, 37 CCN, 585 token, 1 PARAM, 113 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\DashboardController.php",
+          "line": 36,
+          "message": "DashboardController::index has 71 NLOC, 21 CCN, 597 token, 1 PARAM, 89 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\DashboardController.php",
+          "line": 141,
+          "message": "DashboardController::alimentation has 49 NLOC, 13 CCN, 406 token, 1 PARAM, 56 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\MealLogController.php",
+          "line": 43,
+          "message": "MealLogController::analyzeText has 36 NLOC, 16 CCN, 242 token, 1 PARAM, 43 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\MealLogController.php",
+          "line": 107,
+          "message": "MealLogController::analyzeImage has 36 NLOC, 16 CCN, 253 token, 1 PARAM, 45 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\QuestController.php",
+          "line": 42,
+          "message": "QuestController::mine has 34 NLOC, 16 CCN, 243 token, 1 PARAM, 39 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\Api\\V1\\WorkoutLogController.php",
+          "line": 61,
+          "message": "WorkoutLogController::finish has 59 NLOC, 17 CCN, 370 token, 1 PARAM, 70 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Controllers\\GoalController.php",
+          "line": 119,
+          "message": "GoalController::updateAlimentation has 72 NLOC, 33 CCN, 569 token, 1 PARAM, 86 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Middleware\\IdempotencyMiddleware.php",
+          "line": 19,
+          "message": "IdempotencyMiddleware::handle has 79 NLOC, 15 CCN, 473 token, 1 PARAM, 88 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Resources\\AlimentationResource.php",
+          "line": 10,
+          "message": "AlimentationResource::toArray has 70 NLOC, 19 CCN, 487 token, 1 PARAM, 82 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Resources\\DashboardResource.php",
+          "line": 9,
+          "message": "DashboardResource::toArray has 151 NLOC, 50 CCN, 1017 token, 1 PARAM, 185 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Http\\Resources\\ExerciseResource.php",
+          "line": 10,
+          "message": "ExerciseResource::toArray has 78 NLOC, 21 CCN, 511 token, 1 PARAM, 89 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\app\\Services\\GroqService.php",
+          "line": 177,
+          "message": "GroqService::extractJsonFromResponse has 22 NLOC, 13 CCN, 188 token, 1 PARAM, 27 length, 0 ND"
+        },
+        {
+          "tool": "lizard",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\bootstrap\\app.php",
+          "line": 34,
+          "message": "(anonymous) has 80 NLOC, 20 CCN, 519 token, 1 PARAM, 95 length, 0 ND"
+        }
+      ]
+    },
+    {
+      "name": "Duplicação de código (built-in)",
+      "ran": true,
+      "skipped_reason": "",
+      "summary": "66 blocos duplicados (>= 6 linhas)",
+      "findings": [
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\nunomaduro\\collision\\tests\\LaravelApp\\vite.config.js",
+          "line": 3,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vite.config.js:4)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\nunomaduro\\collision\\tests\\LaravelApp\\vite.config.js",
+          "line": 4,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vite.config.js:5)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 118,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py:86)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 1,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:1)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 2,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:2)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 3,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:3)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 4,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:4)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 5,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:5)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 6,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:6)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 7,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:7)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 8,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:8)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 9,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:9)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 10,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:10)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 11,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:11)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 12,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:12)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\custom.js",
+          "line": 13,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\custom.js:13)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 1,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:1)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 2,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:2)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 3,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:3)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 4,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:4)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 5,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:5)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 6,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:6)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 9,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:9)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 10,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:10)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 11,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:11)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 12,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:12)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 13,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:13)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 14,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:14)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 15,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:15)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 16,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:16)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 17,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:17)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 21,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:21)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 22,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:22)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 23,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:23)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 24,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:24)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 25,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:25)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 26,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:26)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 27,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:27)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 28,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:28)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 29,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:29)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 30,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:30)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 31,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:31)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 32,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:32)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 33,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:33)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 34,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:34)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 38,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:38)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 39,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:39)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 40,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:40)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 41,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:41)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 42,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:42)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 43,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:43)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 44,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:44)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 45,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:45)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 46,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:46)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 47,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:47)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 48,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:48)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 49,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:49)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 50,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:50)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 51,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:51)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 52,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:52)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 53,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:53)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 54,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:54)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 55,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:55)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 56,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:56)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 57,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:57)"
+        },
+        {
+          "tool": "dup",
+          "severity": "info",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_plugins\\versions.rb",
+          "line": 58,
+          "message": "bloco duplicado (originado em D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_plugins\\versions.rb:58)"
+        }
+      ]
+    },
+    {
+      "name": "Lint (Python / flake8)",
+      "ran": true,
+      "skipped_reason": "",
+      "summary": "72 issues",
+      "findings": [
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 1,
+          "message": "F401 'sys' imported but unused"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 1,
+          "message": "F401 'os' imported but unused"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 1,
+          "message": "E401 multiple imports on one line"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 23,
+          "message": "E266 too many leading '#' for block comment"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 25,
+          "message": "E402 module level import not at top of file"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\guzzlehttp\\guzzle\\docs\\conf.py",
+          "line": 63,
+          "message": "E501 line too long (83 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 15,
+          "message": "F401 'sys' imported but unused"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 21,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 26,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 43,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 63,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 67,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 69,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 77,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 80,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 84,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 88,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 94,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 97,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 109,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 112,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 117,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 127,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 131,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 135,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 138,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 142,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 145,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 148,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 151,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 154,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 157,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 160,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 165,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 168,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 177,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 178,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 178,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 180,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 181,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 181,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 183,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 184,
+          "message": "E122 continuation line missing indentation or outdented"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 184,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 197,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 201,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 204,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 207,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 210,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 213,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 226,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 236,
+          "message": "E501 line too long (111 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 241,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 244,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 247,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 250,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 253,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 253,
+          "message": "E501 line too long (97 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 263,
+          "message": "E402 module level import not at top of file"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\mockery\\mockery\\docs\\conf.py",
+          "line": 264,
+          "message": "E402 module level import not at top of file"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\psy\\psysh\\test\\tools\\gen_unvis_fixtures.py",
+          "line": 30,
+          "message": "E501 line too long (80 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\psy\\psysh\\test\\tools\\gen_unvis_fixtures.py",
+          "line": 53,
+          "message": "E501 line too long (80 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\psy\\psysh\\test\\tools\\vis.py",
+          "line": 15,
+          "message": "W605 invalid escape sequence '\\d'"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\psy\\psysh\\test\\tools\\vis.py",
+          "line": 16,
+          "message": "W605 invalid escape sequence '\\['"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\psy\\psysh\\test\\tools\\vis.py",
+          "line": 57,
+          "message": "E265 block comment should start with '# '"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 14,
+          "message": "F401 'sphinx_rtd_theme' imported but unused"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 15,
+          "message": "F401 'sys' imported but unused"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 22,
+          "message": "E302 expected 2 blank lines, found 1"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 26,
+          "message": "E501 line too long (91 > 79 characters)"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 38,
+          "message": "E251 unexpected spaces around keyword / parameter equals"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 38,
+          "message": "E251 unexpected spaces around keyword / parameter equals"
+        },
+        {
+          "tool": "flake8",
+          "severity": "warning",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 38,
+          "message": "E501 line too long (89 > 79 characters)"
+        }
+      ]
+    },
+    {
+      "name": "Segurança (Python / bandit)",
+      "ran": true,
+      "skipped_reason": "",
+      "summary": "3 issues",
+      "findings": [
+        {
+          "tool": "bandit",
+          "severity": "low",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 20,
+          "message": "B404 Consider possible security implications associated with the subprocess module."
+        },
+        {
+          "tool": "bandit",
+          "severity": "low",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 26,
+          "message": "B607 Starting a process with a partial executable path"
+        },
+        {
+          "tool": "bandit",
+          "severity": "low",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\ramsey\\uuid\\docs\\conf.py",
+          "line": 26,
+          "message": "B602 subprocess call with shell=True seems safe, but may be changed in the future, consider rewriting without shell"
+        }
+      ]
+    },
+    {
+      "name": "Secrets / credenciais (built-in)",
+      "ran": true,
+      "skipped_reason": "",
+      "summary": "8 possíveis credenciais",
+      "findings": [
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\symfony\\mime\\Tests\\Crypto\\DkimSignerTest.php",
+          "line": 29,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\symfony\\mailer\\Tests\\EventListener\\DkimSignedMessageListenerTest.php",
+          "line": 32,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\flysystem\\test_files\\sftp\\id_rsa",
+          "line": 1,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\flysystem\\test_files\\sftp\\ssh_host_ed25519_key",
+          "line": 1,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\flysystem\\test_files\\sftp\\ssh_host_rsa_key",
+          "line": 1,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\flysystem\\test_files\\sftp\\unknown.key",
+          "line": 1,
+          "message": "possível private-key-block exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\config\\docs\\_layouts\\default.html",
+          "line": 186,
+          "message": "possível generic-api-key exposto"
+        },
+        {
+          "tool": "secrets",
+          "severity": "high",
+          "file": "D:\\Projetos Pessoais\\projeto_fitness_backend\\vendor\\league\\commonmark\\docs\\_layouts\\default.html",
+          "line": 186,
+          "message": "possível generic-api-key exposto"
+        }
+      ]
+    },
+    {
+      "name": "Segurança multi-linguagem (semgrep)",
+      "ran": false,
+      "skipped_reason": "semgrep instalado mas executável não encontrado no PATH",
+      "summary": "",
+      "findings": []
+    }
+  ]
+}

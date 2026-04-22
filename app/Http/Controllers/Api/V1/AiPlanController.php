@@ -62,21 +62,41 @@ class AiPlanController extends Controller
         ]);
 
         $user = $request->user() ?? \App\Models\User::first();
-        $locationRule = $validated['location'] === 'home'
+        $prompt = $this->buildWorkoutPrompt($validated);
+
+        try {
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
+            $plan = DB::transaction(fn () => $this->persistWorkoutPlan($user, $validated, $aiResponse, $prompt));
+
+            return response()->json([
+                'message' => 'Workout plan generated successfully!',
+                'plan' => $plan,
+            ], 201);
+        } catch (\Throwable $e) {
+            return $this->failureResponse($e, 'Failed to generate workout plan');
+        }
+    }
+
+    private function buildWorkoutPrompt(array $v): string
+    {
+        $locationRule = $v['location'] === 'home'
             ? 'Home training: consider NO equipment (bodyweight only). Do not include machines, barbells, dumbbells, or cables.'
             : 'Gym training: you may include standard gym equipment and machines when appropriate.';
 
-        $prompt = "You are an experienced Master Personal Trainer and an Expert in Workout Protocol Creation.\n"
+        $muscles     = $v['muscles'] ?? 'balanced / full body';
+        $limitations = $v['limitations'] ?? 'none';
+
+        return "You are an experienced Master Personal Trainer and an Expert in Workout Protocol Creation.\n"
             . "Create a complete workout plan for the user based on the following data:\n"
-            . "- Primary Goal: {$validated['goal']}\n"
-            . "- Focus Muscles: " . ($validated['muscles'] ?? 'balanced / full body') . "\n"
-            . "- Experience Level: {$validated['level']}\n"
-            . "- Training Days per Week: {$validated['days_per_week']} days\n"
-            . "- Available Time per Workout: {$validated['workout_time_minutes']} minutes\n"
-            . "- Physical Limitations / Injuries: " . ($validated['limitations'] ?? 'none') . "\n"
-            . "- Training Location: {$validated['location']} (home or gym)\n\n"
-            . "Given the available time is {$validated['workout_time_minutes']} minutes, choose the number of exercises, sets, and repetitions wisely to ensure an effective workout within this time limit. "
-            . "Consider hypertrophy and appropriate progression for a {$validated['level']} level. Adapt exercise selection to the training location.\n\n"
+            . "- Primary Goal: {$v['goal']}\n"
+            . "- Focus Muscles: {$muscles}\n"
+            . "- Experience Level: {$v['level']}\n"
+            . "- Training Days per Week: {$v['days_per_week']} days\n"
+            . "- Available Time per Workout: {$v['workout_time_minutes']} minutes\n"
+            . "- Physical Limitations / Injuries: {$limitations}\n"
+            . "- Training Location: {$v['location']} (home or gym)\n\n"
+            . "Given the available time is {$v['workout_time_minutes']} minutes, choose the number of exercises, sets, and repetitions wisely to ensure an effective workout within this time limit. "
+            . "Consider hypertrophy and appropriate progression for a {$v['level']} level. Adapt exercise selection to the training location.\n\n"
             . "LOCATION CONSTRAINT:\n"
             . "- {$locationRule}\n\n"
             . "IMPORTANT LANGUAGE RULES:\n"
@@ -86,81 +106,80 @@ class AiPlanController extends Controller
             . "You MUST return the response EXCLUSIVELY in a valid JSON format, without markdown formatting. The structure MUST be exactly this:\n"
             . "{\"plan_name\": \"string\", \"plan_goal\": \"string\", \"days_per_week\": number, \"workouts\": [{\"day_of_week\": number, \"workout_name\": \"string\", \"workout_observations\": \"string\", \"exercises\": [{\"exercise_name\": \"string\", \"sets\": number, \"repetitions\": number, \"rest_seconds\": number, \"ai_observations\": \"string\", \"suggested_weight_kg\": number}]}]}\n\n"
             . "Note for \"day_of_week\": 0=Sunday, 1=Monday, 2=Tuesday, etc. If the plan is ABC (sequential, no fixed days), you can number them from 1 to N.";
+    }
 
-        try {
-            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
+    private function persistWorkoutPlan($user, array $validated, array $aiResponse, string $prompt): AiPlan
+    {
+        $aiPlan = AiPlan::create([
+            'user_id' => $user->id,
+            'type' => 'workout',
+            'version' => 1,
+            'status' => 'draft',
+            'content_json' => $aiResponse,
+            'generation_reason' => "Goal: {$validated['goal']}, Level: {$validated['level']}, Days: {$validated['days_per_week']}",
+            'context_prompt' => $prompt,
+            'valid_from' => Carbon::today(),
+            'valid_until' => Carbon::today()->addWeeks(8),
+        ]);
 
-            // Save the plan inside a transaction
-            $plan = DB::transaction(function () use ($user, $validated, $aiResponse, $prompt) {
+        foreach ($aiResponse['workouts'] ?? [] as $workoutData) {
+            $this->persistWorkoutDay($aiPlan, $workoutData);
+        }
 
-                $aiPlan = AiPlan::create([
-                    'user_id' => $user->id,
-                    'type' => 'workout',
-                    'version' => 1,
-                    'status' => 'draft',
-                    'content_json' => $aiResponse,
-                    'generation_reason' => "Goal: {$validated['goal']}, Level: {$validated['level']}, Days: {$validated['days_per_week']}",
-                    'context_prompt' => $prompt,
-                    'valid_from' => Carbon::today(),
-                    'valid_until' => Carbon::today()->addWeeks(8),
-                ]);
+        return $aiPlan->load('planWorkouts.exercises');
+    }
 
-                // Create plan_workouts and plan_workout_exercises
-                foreach ($aiResponse['workouts'] ?? [] as $workoutData) {
-                    $planWorkout = PlanWorkout::create([
-                        'ai_plan_id' => $aiPlan->id,
-                        'day_of_week' => $workoutData['day_of_week'] ?? 0,
-                        'workout_name' => $workoutData['workout_name'] ?? null,
-                        'ai_observations' => $workoutData['workout_observations'] ?? null,
-                    ]);
+    private function persistWorkoutDay(AiPlan $aiPlan, array $workoutData): void
+    {
+        $planWorkout = PlanWorkout::create([
+            'ai_plan_id' => $aiPlan->id,
+            'day_of_week' => $workoutData['day_of_week'] ?? 0,
+            'workout_name' => $workoutData['workout_name'] ?? null,
+            'ai_observations' => $workoutData['workout_observations'] ?? null,
+        ]);
 
-                    foreach ($workoutData['exercises'] ?? [] as $order => $exerciseData) {
-                        $exerciseName = trim((string) ($exerciseData['exercise_name'] ?? ''));
-                        if ($exerciseName === '') {
-                            continue;
-                        }
-
-                        // Try to match a catalog exercise; create one if it's new.
-                        $exercise = Exercise::where('name', 'LIKE', '%' . $exerciseName . '%')->first();
-                        if (!$exercise) {
-                            $exercise = Exercise::create([
-                                'id' => (string) Str::uuid(),
-                                'name' => Str::limit($exerciseName, 150, ''),
-                                'category' => 'strength',
-                                'difficulty' => 'beginner',
-                                'is_active' => true,
-                            ]);
-                        }
-
-                        PlanWorkoutExercise::create([
-                            'plan_workout_id' => $planWorkout->id,
-                            'exercise_id' => $exercise->id,
-                            'order' => $order + 1,
-                            'rec_sets' => $exerciseData['sets'] ?? null,
-                            'rec_reps' => $exerciseData['repetitions'] ?? null,
-                            'rec_weight_kg' => $exerciseData['suggested_weight_kg'] ?? null,
-                            'rest_sec' => $exerciseData['rest_seconds'] ?? null,
-                            'ai_notes' => $exerciseData['ai_observations'] ?? null,
-                        ]);
-                    }
-                }
-
-                return $aiPlan->load('planWorkouts.exercises');
-            });
-
-            return response()->json([
-                'message' => 'Workout plan generated successfully!',
-                'plan' => $plan,
-            ], 201);
-
-        } catch (\Throwable $e) {
-            $status = (int) $e->getCode();
-            if ($status < 400 || $status > 599) {
-                $status = 422;
+        foreach ($workoutData['exercises'] ?? [] as $order => $exerciseData) {
+            $name = trim((string) ($exerciseData['exercise_name'] ?? ''));
+            if ($name === '') {
+                continue;
             }
 
-            return response()->json(['error' => 'Failed to generate workout plan: ' . $e->getMessage()], $status);
+            $exercise = $this->resolveCatalogExercise($name);
+
+            PlanWorkoutExercise::create([
+                'plan_workout_id' => $planWorkout->id,
+                'exercise_id' => $exercise->id,
+                'order' => $order + 1,
+                'rec_sets' => $exerciseData['sets'] ?? null,
+                'rec_reps' => $exerciseData['repetitions'] ?? null,
+                'rec_weight_kg' => $exerciseData['suggested_weight_kg'] ?? null,
+                'rest_sec' => $exerciseData['rest_seconds'] ?? null,
+                'ai_notes' => $exerciseData['ai_observations'] ?? null,
+            ]);
         }
+    }
+
+    private function resolveCatalogExercise(string $name): Exercise
+    {
+        $exercise = Exercise::where('name', 'LIKE', '%' . $name . '%')->first();
+
+        return $exercise ?? Exercise::create([
+            'id' => (string) Str::uuid(),
+            'name' => Str::limit($name, 150, ''),
+            'category' => 'strength',
+            'difficulty' => 'beginner',
+            'is_active' => true,
+        ]);
+    }
+
+    private function failureResponse(\Throwable $e, string $message)
+    {
+        $status = (int) $e->getCode();
+        if ($status < 400 || $status > 599) {
+            $status = 422;
+        }
+
+        return response()->json(['error' => $message . ': ' . $e->getMessage()], $status);
     }
 
     #[OA\Get(

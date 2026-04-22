@@ -73,59 +73,72 @@ class WorkoutLogController extends Controller
             'exercises.*.weight_kg' => 'required|numeric',
         ]);
 
-        $user = $request->user() ?? \App\Models\User::first(); // Fallback if auth is ignored for now
-
-        $timeStart = Carbon::createFromFormat('H:i:s', $validated['time_start']);
-        $timeEnd = Carbon::createFromFormat('H:i:s', $validated['time_end']);
-        $durationMin = $timeEnd->diffInMinutes($timeStart);
-
-        // Prepare data for Gemini
-        $exercisesJson = json_encode($validated['exercises']);
-        $prompt = "Você é um Personal Trainer especialista e analista de dados esportivos. O usuário acabou de finalizar um treino.\n"
-            . "Analise os seguintes dados fornecidos:\n"
-            . "- Horário de início: {$validated['time_start']}\n"
-            . "- Horário de término: {$validated['time_end']}\n"
-            . "- Exercícios realizados (lista em json): {$exercisesJson}\n"
-            . "- Comentários do usuário sobre a execução/dificuldade: {$validated['observations']}\n\n"
-            . "Sua tarefa é calcular e estimar as métricas deste treino.\n"
-            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em um formato JSON válido, com nenhuma marcação markdown. Estrutura exigida:\n"
-            . "{\"informacoes_treino\": \"paragrafo motivacional/analise\", \"musculos_treinados\": [\"Peito\"], \"calorias_gastas_estimadas\": 450, \"tempo_medio_por_exercicio_minutos\": 4.5}";
+        $user = $request->user() ?? \App\Models\User::first();
+        $durationMin = $this->computeDuration($validated['time_start'], $validated['time_end']);
+        $prompt = $this->buildAnalysisPrompt($validated);
 
         try {
             $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
-            
-            $workoutLog = WorkoutLog::create([
-                'user_id' => $user->id,
-                'plan_workout_id' => $validated['plan_workout_id'] ?? null,
-                'date' => $validated['date'],
-                'duration_min' => $durationMin,
-                'calories_burned' => $aiResponse['calorias_gastas_estimadas'] ?? null,
-                'observations' => $validated['observations'] ?? null,
-                'ai_feedback' => $aiResponse['informacoes_treino'] ?? null,
-                'muscles_trained' => $aiResponse['musculos_treinados'] ?? [],
-            ]);
+            $workoutLog = $this->persistWorkout($user, $validated, $aiResponse, $durationMin);
+            $this->persistExercises($workoutLog->id, $validated['exercises']);
 
-            foreach ($validated['exercises'] as $ex) {
-                WorkoutExerciseLog::create([
-                    'workout_log_id' => $workoutLog->id,
-                    'exercise_id' => $ex['exercise_id'],
-                    'sets' => $ex['sets'],
-                    'reps' => $ex['reps'],
-                    'weight_kg' => $ex['weight_kg'],
-                ]);
-            }
-
-            // RF-01: Grant workout XP + RF-08: Check workout badges
             $this->gamificationService->grantWorkoutCompletedXp($user, $workoutLog->id);
             $this->gamificationService->checkWorkoutBadges($user);
 
             return response()->json([
                 'message' => 'Treino finalizado com sucesso!',
-                'log' => $workoutLog->load('workoutLogExercises') ?? $workoutLog
+                'log' => $workoutLog->load('workoutLogExercises') ?? $workoutLog,
             ], 201);
-
         } catch (\Exception $e) {
             return response()->json(['error' => 'Falha ao processar treino com IA: ' . $e->getMessage()], 422);
+        }
+    }
+
+    private function computeDuration(string $start, string $end): int
+    {
+        return Carbon::createFromFormat('H:i:s', $end)
+            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $start));
+    }
+
+    private function buildAnalysisPrompt(array $v): string
+    {
+        $exercisesJson = json_encode($v['exercises']);
+
+        return "Você é um Personal Trainer especialista e analista de dados esportivos. O usuário acabou de finalizar um treino.\n"
+            . "Analise os seguintes dados fornecidos:\n"
+            . "- Horário de início: {$v['time_start']}\n"
+            . "- Horário de término: {$v['time_end']}\n"
+            . "- Exercícios realizados (lista em json): {$exercisesJson}\n"
+            . "- Comentários do usuário sobre a execução/dificuldade: {$v['observations']}\n\n"
+            . "Sua tarefa é calcular e estimar as métricas deste treino.\n"
+            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em um formato JSON válido, com nenhuma marcação markdown. Estrutura exigida:\n"
+            . "{\"informacoes_treino\": \"paragrafo motivacional/analise\", \"musculos_treinados\": [\"Peito\"], \"calorias_gastas_estimadas\": 450, \"tempo_medio_por_exercicio_minutos\": 4.5}";
+    }
+
+    private function persistWorkout($user, array $validated, array $aiResponse, int $durationMin): WorkoutLog
+    {
+        return WorkoutLog::create([
+            'user_id'         => $user->id,
+            'plan_workout_id' => $validated['plan_workout_id'] ?? null,
+            'date'            => $validated['date'],
+            'duration_min'    => $durationMin,
+            'calories_burned' => $aiResponse['calorias_gastas_estimadas'] ?? null,
+            'observations'    => $validated['observations'] ?? null,
+            'ai_feedback'     => $aiResponse['informacoes_treino'] ?? null,
+            'muscles_trained' => $aiResponse['musculos_treinados'] ?? [],
+        ]);
+    }
+
+    private function persistExercises($workoutLogId, array $exercises): void
+    {
+        foreach ($exercises as $ex) {
+            WorkoutExerciseLog::create([
+                'workout_log_id' => $workoutLogId,
+                'exercise_id'    => $ex['exercise_id'],
+                'sets'           => $ex['sets'],
+                'reps'           => $ex['reps'],
+                'weight_kg'      => $ex['weight_kg'],
+            ]);
         }
     }
 }

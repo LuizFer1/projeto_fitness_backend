@@ -42,40 +42,43 @@ class QuestController extends Controller
     public function mine(Request $request): JsonResponse
     {
         $user = $request->user();
-
         $quests = Quest::where('is_active', true)->get();
-        $refPeriods = [
-            'weekly'  => now()->format('o-\WW'),
-            'monthly' => now()->format('Y-m'),
-        ];
 
-        $data = $quests->map(function (Quest $quest) use ($user, $refPeriods) {
-            $refPeriod = match ($quest->periodicity) {
-                'weekly'  => $refPeriods['weekly'],
-                'monthly' => $refPeriods['monthly'],
-                default   => null,
-            };
-
-            $userQuest = UserQuest::where('user_id', $user->id)
-                ->where('quest_id', $quest->id)
-                ->where(function ($q) use ($refPeriod) {
-                    $refPeriod === null
-                        ? $q->whereNull('ref_period')
-                        : $q->where('ref_period', $refPeriod);
-                })
-                ->first();
-
-            return [
-                'quest'      => $quest,
-                'status'     => $userQuest?->status ?? 'not_started',
-                'progress'   => $userQuest?->current_progress ?? 0,
-                'target'     => $userQuest?->target_progress ?? $quest->condition_value,
-                'xp_received'=> $userQuest?->xp_received ?? 0,
-                'completed_at' => $userQuest?->completed_at,
-                'ref_period' => $refPeriod,
-            ];
-        });
+        $data = $quests->map(fn (Quest $quest) => $this->formatQuestProgress($quest, $user->id));
 
         return response()->json(['data' => $data]);
+    }
+
+    private function formatQuestProgress(Quest $quest, $userId): array
+    {
+        $refPeriod = $this->resolveRefPeriod($quest->periodicity);
+        $userQuest = $this->findUserQuest($userId, $quest->id, $refPeriod);
+
+        return [
+            'quest'        => $quest,
+            'status'       => $userQuest?->status ?? 'not_started',
+            'progress'     => $userQuest?->current_progress ?? 0,
+            'target'       => $userQuest?->target_progress ?? $quest->condition_value,
+            'xp_received'  => $userQuest?->xp_received ?? 0,
+            'completed_at' => $userQuest?->completed_at,
+            'ref_period'   => $refPeriod,
+        ];
+    }
+
+    private function resolveRefPeriod(?string $periodicity): ?string
+    {
+        return match ($periodicity) {
+            'weekly'  => now()->format('o-\WW'),
+            'monthly' => now()->format('Y-m'),
+            default   => null,
+        };
+    }
+
+    private function findUserQuest($userId, $questId, ?string $refPeriod): ?UserQuest
+    {
+        return UserQuest::where('user_id', $userId)
+            ->where('quest_id', $questId)
+            ->where(fn ($q) => $refPeriod === null ? $q->whereNull('ref_period') : $q->where('ref_period', $refPeriod))
+            ->first();
     }
 }

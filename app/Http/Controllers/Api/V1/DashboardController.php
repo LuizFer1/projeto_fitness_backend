@@ -43,43 +43,16 @@ class DashboardController extends Controller
         $gam  = UserGamification::where('user_id', $user->id)->first();
         $onboarding = UserOnboarding::where('user_id', $user->id)->first();
 
-        // Today's meals
-        $mealsToday = MealLog::where('user_id', $user->id)
-            ->where('date', $today->toDateString())
-            ->orderBy('created_at')
-            ->get();
-
-        $caloriesConsumed = $mealsToday->sum('calories_consumed');
-        $proteinConsumed  = $mealsToday->sum('protein_g');
-        $carbsConsumed    = $mealsToday->sum('carbs_g');
-        $fatConsumed      = $mealsToday->sum('fat_g');
-
-        // Weekly workouts
+        $mealsToday = $this->mealsOn($user->id, $today->toDateString());
         $weeklyWorkouts = WorkoutLog::where('user_id', $user->id)
             ->whereBetween('date', [$weekStart->toDateString(), $today->toDateString()])
             ->get();
-
-        // Training days this week (which days had workouts)
         $trainingDays = $weeklyWorkouts->pluck('date')->unique()->values();
 
-        // Today's workouts
-        $workoutsToday = $weeklyWorkouts->where('date', $today->toDateString());
-
-        // Suggested workouts from active plan
-        $activePlan = AiPlan::where('user_id', $user->id)
-            ->where('type', 'workout')
-            ->where('status', 'active')
-            ->with('planWorkouts.exercises')
-            ->first();
-
-        $suggestedWorkouts = $activePlan?->planWorkouts ?? [];
-
-        // Hydration (water logs)
-        $waterToday = WaterLog::where('user_id', $user->id)
+        $waterToday = (float) WaterLog::where('user_id', $user->id)
             ->where('date', $today->toDateString())
             ->sum('liters');
 
-        // Nutrition chart (last 7 days)
         $last7Days = MealLog::where('user_id', $user->id)
             ->where('date', '>=', $today->copy()->subDays(6)->toDateString())
             ->selectRaw('date, SUM(calories_consumed) as calories, SUM(protein_g) as protein, SUM(carbs_g) as carbs, SUM(fat_g) as fat')
@@ -88,39 +61,60 @@ class DashboardController extends Controller
             ->get();
 
         return response()->json([
-            'today' => $today->toDateString(),
-            'dailyCalories' => [
-                'consumed' => round($caloriesConsumed),
-                'goal'     => $goal->goal_calories_day ?? null,
-            ],
-            'protein' => [
-                'consumed' => round($proteinConsumed, 1),
-                'goal'     => $goal->goal_protein_g ?? null,
-            ],
-            'macros' => [
-                'protein' => ['consumed' => round($proteinConsumed, 1), 'goal' => $goal->goal_protein_g ?? null],
-                'carbs'   => ['consumed' => round($carbsConsumed, 1), 'goal' => $goal->goal_carbs_g ?? null],
-                'fat'     => ['consumed' => round($fatConsumed, 1), 'goal' => $goal->goal_fat_g ?? null],
-            ],
-            'currentWeight' => $onboarding->weight_kg ?? null,
-            'meals'         => $mealsToday,
-            'trainingDays'  => $trainingDays,
-            'weeklyWorkouts' => [
-                'done' => $trainingDays->count(),
-                'goal' => $goal->goal_workouts_week ?? null,
-            ],
-            'suggestedWorkouts' => $suggestedWorkouts,
-            'hydration' => [
-                'consumed' => round((float) $waterToday, 2),
-                'goal'     => $goal->goal_water_liters ?? 2.0,
-            ],
-            'nutritionChart' => $last7Days,
-            'gamification'   => $gam ? [
-                'xp_total'       => $gam->xp_total,
-                'current_level'  => $gam->current_level,
-                'current_streak' => $gam->current_streak,
-            ] : null,
+            'today'           => $today->toDateString(),
+            'dailyCalories'   => ['consumed' => round($mealsToday->sum('calories_consumed')), 'goal' => $goal->goal_calories_day ?? null],
+            'protein'         => ['consumed' => round($mealsToday->sum('protein_g'), 1), 'goal' => $goal->goal_protein_g ?? null],
+            'macros'          => $this->macrosWithGoals($mealsToday, $goal),
+            'currentWeight'   => $onboarding->weight_kg ?? null,
+            'meals'           => $mealsToday,
+            'trainingDays'    => $trainingDays,
+            'weeklyWorkouts'  => ['done' => $trainingDays->count(), 'goal' => $goal->goal_workouts_week ?? null],
+            'suggestedWorkouts' => $this->activeWorkoutSuggestions($user->id),
+            'hydration'       => ['consumed' => round($waterToday, 2), 'goal' => $goal->goal_water_liters ?? 2.0],
+            'nutritionChart'  => $last7Days,
+            'gamification'    => $this->formatGamification($gam),
         ]);
+    }
+
+    private function mealsOn($userId, string $date)
+    {
+        return MealLog::where('user_id', $userId)
+            ->where('date', $date)
+            ->orderBy('created_at')
+            ->get();
+    }
+
+    private function macrosWithGoals($meals, $goal): array
+    {
+        return [
+            'protein' => ['consumed' => round($meals->sum('protein_g'), 1), 'goal' => $goal->goal_protein_g ?? null],
+            'carbs'   => ['consumed' => round($meals->sum('carbs_g'), 1),   'goal' => $goal->goal_carbs_g ?? null],
+            'fat'     => ['consumed' => round($meals->sum('fat_g'), 1),     'goal' => $goal->goal_fat_g ?? null],
+        ];
+    }
+
+    private function activeWorkoutSuggestions($userId)
+    {
+        $activePlan = AiPlan::where('user_id', $userId)
+            ->where('type', 'workout')
+            ->where('status', 'active')
+            ->with('planWorkouts.exercises')
+            ->first();
+
+        return $activePlan?->planWorkouts ?? [];
+    }
+
+    private function formatGamification($gam): ?array
+    {
+        if (!$gam) {
+            return null;
+        }
+
+        return [
+            'xp_total'       => $gam->xp_total,
+            'current_level'  => $gam->current_level,
+            'current_streak' => $gam->current_streak,
+        ];
     }
 
     /**
@@ -143,56 +137,63 @@ class DashboardController extends Controller
         $user  = $request->user();
         $today = Carbon::today()->toDateString();
 
-        $goal = UserGoal::where('user_id', $user->id)->where('is_active', true)->first();
+        $goal  = UserGoal::where('user_id', $user->id)->where('is_active', true)->first();
+        $meals = $this->mealsOn($user->id, $today);
 
-        $meals = MealLog::where('user_id', $user->id)
-            ->where('date', $today)
-            ->orderBy('created_at')
-            ->get();
-
-        // Water consumed today
-        $waterConsumed = WaterLog::where('user_id', $user->id)
+        $waterConsumed = (float) WaterLog::where('user_id', $user->id)
             ->where('date', $today)
             ->sum('liters');
 
-        // Group meals by type
-        $mealGroups = $meals->groupBy('meal_type')->map(function ($group, $type) {
-            return [
-                'type'     => $type,
-                'meals'    => $group->values(),
-                'calories' => round($group->sum('calories_consumed')),
-                'protein'  => round($group->sum('protein_g'), 1),
-                'carbs'    => round($group->sum('carbs_g'), 1),
-                'fat'      => round($group->sum('fat_g'), 1),
-            ];
-        })->values();
-
         return response()->json([
-            'date' => $today,
-            'dailyGoal' => [
-                'calories'     => $goal->goal_calories_day ?? null,
-                'protein_g'    => $goal->goal_protein_g ?? null,
-                'carbs_g'      => $goal->goal_carbs_g ?? null,
-                'fat_g'        => $goal->goal_fat_g ?? null,
-                'water_liters' => $goal->goal_water_liters ?? 2.0,
-            ],
-            'consumed' => [
-                'calories'  => round($meals->sum('calories_consumed')),
-                'protein_g' => round($meals->sum('protein_g'), 1),
-                'carbs_g'   => round($meals->sum('carbs_g'), 1),
-                'fat_g'     => round($meals->sum('fat_g'), 1),
-            ],
-            'macros' => [
-                'protein' => round($meals->sum('protein_g'), 1),
-                'carbs'   => round($meals->sum('carbs_g'), 1),
-                'fat'     => round($meals->sum('fat_g'), 1),
-            ],
-            'water' => [
-                'consumed' => round((float) $waterConsumed, 2),
-                'goal'     => $goal->goal_water_liters ?? 2.0,
-            ],
-            'mealGroups' => $mealGroups,
+            'date'       => $today,
+            'dailyGoal'  => $this->alimentationGoal($goal),
+            'consumed'   => $this->alimentationConsumed($meals),
+            'macros'     => $this->macroTotals($meals),
+            'water'      => ['consumed' => round($waterConsumed, 2), 'goal' => $goal->goal_water_liters ?? 2.0],
+            'mealGroups' => $this->groupMealsByType($meals),
         ]);
+    }
+
+    private function alimentationGoal($goal): array
+    {
+        return [
+            'calories'     => $goal->goal_calories_day ?? null,
+            'protein_g'    => $goal->goal_protein_g ?? null,
+            'carbs_g'      => $goal->goal_carbs_g ?? null,
+            'fat_g'        => $goal->goal_fat_g ?? null,
+            'water_liters' => $goal->goal_water_liters ?? 2.0,
+        ];
+    }
+
+    private function alimentationConsumed($meals): array
+    {
+        return [
+            'calories'  => round($meals->sum('calories_consumed')),
+            'protein_g' => round($meals->sum('protein_g'), 1),
+            'carbs_g'   => round($meals->sum('carbs_g'), 1),
+            'fat_g'     => round($meals->sum('fat_g'), 1),
+        ];
+    }
+
+    private function macroTotals($meals): array
+    {
+        return [
+            'protein' => round($meals->sum('protein_g'), 1),
+            'carbs'   => round($meals->sum('carbs_g'), 1),
+            'fat'     => round($meals->sum('fat_g'), 1),
+        ];
+    }
+
+    private function groupMealsByType($meals)
+    {
+        return $meals->groupBy('meal_type')->map(fn ($group, $type) => [
+            'type'     => $type,
+            'meals'    => $group->values(),
+            'calories' => round($group->sum('calories_consumed')),
+            'protein'  => round($group->sum('protein_g'), 1),
+            'carbs'    => round($group->sum('carbs_g'), 1),
+            'fat'      => round($group->sum('fat_g'), 1),
+        ])->values();
     }
 
     /**

@@ -3,191 +3,242 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Collection;
 
 class DashboardResource extends JsonResource
 {
+    private const DEFAULT_CARBS_GOAL = 250;
+    private const DEFAULT_PROTEIN_GOAL = 150;
+    private const DEFAULT_FAT_GOAL = 70;
+    private const DEFAULT_CALORIES_GOAL = 2500;
+    private const DEFAULT_WATER_GOAL_ML = 2000;
+    private const DEFAULT_WEEKLY_SESSIONS = 5;
+    private const GLASS_SIZE_ML = 250;
+    private const KCAL_PER_GRAM_CARB = 4;
+    private const KCAL_PER_GRAM_PROTEIN = 4;
+    private const KCAL_PER_GRAM_FAT = 9;
+
     public function toArray(Request $request): array
     {
         $nutrition = $this['nutrition'] ?? null;
         $exercise  = $this['exercise'] ?? null;
         $weightLog = $this['weight'] ?? null;
-        
-        $consumedCarbs_g   = 0;
-        $consumedProtein_g = 0;
-        $consumedFat_g     = 0;
 
-        $carbsGoal   = 250;
-        $proteinGoal = 150;
-        $fatGoal     = 70;
+        $macros = $this->resolveMacros($nutrition);
+        $kcal = $this->calculateKcalBreakdown($macros);
+        $hydration = $this->resolveHydration($nutrition);
+        $weekly = $this->buildWeeklyActivity($this['recentNutrition'] ?? collect(), $this['recentWorkouts'] ?? collect());
 
-        if ($nutrition && $nutrition->relationLoaded('macros')) {
-            $carbsMacro   = $nutrition->macros->firstWhere('label', 'Carbo');
-            $proteinMacro = $nutrition->macros->firstWhere('label', 'Proteína');
-            $fatMacro     = $nutrition->macros->firstWhere('label', 'Gordura');
+        return [
+            'dailyCalories' => [
+                'goal'     => $nutrition && $nutrition->calories_goal ? $nutrition->calories_goal : self::DEFAULT_CALORIES_GOAL,
+                'consumed' => $kcal['total'],
+            ],
+            'protein' => [
+                'goal'    => $macros['proteinGoal'],
+                'current' => $macros['protein'],
+            ],
+            'weeklyWorkouts' => [
+                'goal' => $exercise ? $exercise->goal_sessions : self::DEFAULT_WEEKLY_SESSIONS,
+                'done' => $exercise ? $exercise->done_sessions : 0,
+            ],
+            'hydration' => [
+                'current' => $hydration['current_ml'] / 1000,
+                'glasses' => $hydration['glasses'],
+            ],
+            'activityChart' => $weekly['chart'],
+            'trainingDays'  => $weekly['trainingDays'],
+            'activeDays'    => $weekly['activeDays'],
+            'weekDays'      => $weekly['weekDays'],
+            'currentWeight' => [
+                'value'        => $weightLog ? (float) $weightLog->weight_kg : 0,
+                'weeklyChange' => 0,
+            ],
+            'meals'             => $this->formatMeals($this['meals'] ?? collect()),
+            'suggestedWorkouts' => $this->formatSuggestedWorkouts($this['suggestedWorkouts'] ?? collect()),
+            'userGoals'         => $this['goals'] ?? collect(),
+            'macros'            => $this->formatMacros($macros, $kcal),
+        ];
+    }
 
-            $consumedCarbs_g   = $carbsMacro ? $carbsMacro->current_value : 0;
-            $consumedProtein_g = $proteinMacro ? $proteinMacro->current_value : 0;
-            $consumedFat_g     = $fatMacro ? $fatMacro->current_value : 0;
+    private function resolveMacros($nutrition): array
+    {
+        $defaults = [
+            'carbs'       => 0,
+            'protein'     => 0,
+            'fat'         => 0,
+            'carbsGoal'   => self::DEFAULT_CARBS_GOAL,
+            'proteinGoal' => self::DEFAULT_PROTEIN_GOAL,
+            'fatGoal'     => self::DEFAULT_FAT_GOAL,
+        ];
 
-            $carbsGoal   = $carbsMacro && $carbsMacro->goal_value > 0 ? $carbsMacro->goal_value : $carbsGoal;
-            $proteinGoal = $proteinMacro && $proteinMacro->goal_value > 0 ? $proteinMacro->goal_value : $proteinGoal;
-            $fatGoal     = $fatMacro && $fatMacro->goal_value > 0 ? $fatMacro->goal_value : $fatGoal;
+        if (!$nutrition || !$nutrition->relationLoaded('macros')) {
+            return $defaults;
         }
 
-        // 2. Convertendo o que foi comido em Calorias
-        $kcalFromCarbs   = $consumedCarbs_g * 4;
-        $kcalFromProtein = $consumedProtein_g * 4;
-        $kcalFromFat     = $consumedFat_g * 9;
+        $carbs   = $nutrition->macros->firstWhere('label', 'Carbo');
+        $protein = $nutrition->macros->firstWhere('label', 'Proteína');
+        $fat     = $nutrition->macros->firstWhere('label', 'Gordura');
 
-        // 3. Descobrindo o TOTAL real de calorias consumidas com base nos macros
-        $totalKcalConsumed = $kcalFromCarbs + $kcalFromProtein + $kcalFromFat;
+        return [
+            'carbs'       => $carbs ? $carbs->current_value : 0,
+            'protein'     => $protein ? $protein->current_value : 0,
+            'fat'         => $fat ? $fat->current_value : 0,
+            'carbsGoal'   => $this->goalOrDefault($carbs, self::DEFAULT_CARBS_GOAL),
+            'proteinGoal' => $this->goalOrDefault($protein, self::DEFAULT_PROTEIN_GOAL),
+            'fatGoal'     => $this->goalOrDefault($fat, self::DEFAULT_FAT_GOAL),
+        ];
+    }
 
-        // 4. Calculando a fatia/porcentagem de cada um na dieta de hoje
-        $carbsPercentage   = $totalKcalConsumed > 0 ? ($kcalFromCarbs / $totalKcalConsumed) * 100 : 0;
-        $proteinPercentage = $totalKcalConsumed > 0 ? ($kcalFromProtein / $totalKcalConsumed) * 100 : 0;
-        $fatPercentage     = $totalKcalConsumed > 0 ? ($kcalFromFat / $totalKcalConsumed) * 100 : 0;
+    private function goalOrDefault($macro, int $default): int|float
+    {
+        return $macro && $macro->goal_value > 0 ? $macro->goal_value : $default;
+    }
 
-        // 5. Hidratação (Convertendo mililitros em array de copos de 250ml)
-        $waterGoal_ml = $nutrition && $nutrition->water_goal > 0 ? $nutrition->water_goal : 2000;
-        $waterCurrent_ml = $nutrition ? $nutrition->water_current : 0;
-        $glassSize_ml = 250;
-        
-        $totalGlasses = ceil($waterGoal_ml / $glassSize_ml);
-        $drunkGlasses = floor($waterCurrent_ml / $glassSize_ml);
-        
-        $glassesArray = [];
-        for ($i = 0; $i < max($totalGlasses, $drunkGlasses); $i++) {
-            $glassesArray[] = $i < $drunkGlasses;
+    private function calculateKcalBreakdown(array $macros): array
+    {
+        $fromCarbs   = $macros['carbs']   * self::KCAL_PER_GRAM_CARB;
+        $fromProtein = $macros['protein'] * self::KCAL_PER_GRAM_PROTEIN;
+        $fromFat     = $macros['fat']     * self::KCAL_PER_GRAM_FAT;
+        $total       = $fromCarbs + $fromProtein + $fromFat;
+
+        return [
+            'fromCarbs'   => $fromCarbs,
+            'fromProtein' => $fromProtein,
+            'fromFat'     => $fromFat,
+            'total'       => $total,
+            'carbsPct'    => $total > 0 ? ($fromCarbs / $total) * 100 : 0,
+            'proteinPct'  => $total > 0 ? ($fromProtein / $total) * 100 : 0,
+            'fatPct'      => $total > 0 ? ($fromFat / $total) * 100 : 0,
+        ];
+    }
+
+    private function resolveHydration($nutrition): array
+    {
+        $goalMl    = $nutrition && $nutrition->water_goal > 0 ? $nutrition->water_goal : self::DEFAULT_WATER_GOAL_ML;
+        $currentMl = $nutrition ? $nutrition->water_current : 0;
+
+        $total = (int) ceil($goalMl / self::GLASS_SIZE_ML);
+        $drunk = (int) floor($currentMl / self::GLASS_SIZE_ML);
+
+        $glasses = [];
+        for ($i = 0; $i < max($total, $drunk); $i++) {
+            $glasses[] = $i < $drunk;
         }
 
-        $meals             = $this['meals'] ?? collect();
-        $recentNutrition   = $this['recentNutrition'] ?? collect();
-        $recentWorkouts    = $this['recentWorkouts'] ?? collect();
-        $suggestedWorkouts = $this['suggestedWorkouts'] ?? collect();
-        $goals             = $this['goals'] ?? collect();
+        return ['current_ml' => $currentMl, 'glasses' => $glasses];
+    }
 
-        // 6. Atividade Semanal (Últimos 7 dias)
-        $activityChart = [];
+    private function buildWeeklyActivity(Collection $recentNutrition, Collection $recentWorkouts): array
+    {
+        $chart = [];
         $trainingDays = [];
         $activeDays = [];
         $weekDays = [];
-        
-        $todayStr = now()->toDateString();
-        $startOfWeek = now()->startOfWeek();
 
         for ($i = 6; $i >= 0; $i--) {
             $date = now()->subDays($i);
             $dateStr = $date->toDateString();
-            
+
             $dayNutrition = $recentNutrition->firstWhere('day', $dateStr);
             $dayWorkout   = $recentWorkouts->firstWhere('workout_date', $dateStr);
 
-            // Cálculo do "fg" (foreground): Se a meta de kcal foi batida (50%), ou bebeu água (+25%) ou treinou (+25%)
-            $fg = 0;
-            if ($dayNutrition) {
-                if ($dayNutrition->calories_goal > 0 && $dayNutrition->calories_total >= $dayNutrition->calories_goal * 0.8) {
-                    $fg += 50;
-                } elseif ($dayNutrition->calories_total > 0) {
-                    $fg += 25;
-                }
-
-                if ($dayNutrition->water_goal > 0 && $dayNutrition->water_current >= $dayNutrition->water_goal) {
-                    $fg += 25;
-                }
-            }
+            $fg = $this->scoreDay($dayNutrition, $dayWorkout);
 
             if ($dayWorkout) {
-                $fg += 25;
-                $trainingDays[] = substr($date->locale('pt_BR')->dayName, 0, 1); // ex 'S', 'T'
+                $trainingDays[] = substr($date->locale('pt_BR')->dayName, 0, 1);
             }
 
-            if ($fg > 100) $fg = 100;
-            
-            $activityChart[] = ['bg' => 100, 'fg' => $fg];
-            $weekDays[] = ucfirst(substr($date->locale('pt_BR')->dayName, 0, 3)); // ex 'Seg'
-            
-            // Tratando dia ativo (qualquer pontuação de atividade marca como dia ativo)
+            $chart[]    = ['bg' => 100, 'fg' => $fg];
+            $weekDays[] = ucfirst(substr($date->locale('pt_BR')->dayName, 0, 3));
+
             if ($fg >= 25) {
-                $activeDays[] = 6 - $i; // Mapeia o índice do array de 0 a 6
+                $activeDays[] = 6 - $i;
             }
         }
 
-        // Mapear Meals
-        $formattedMeals = $meals->map(function ($meal) {
-            return [
-                'id'       => (string) $meal->id,
-                'name'     => $meal->name,
-                'detail'   => $meal->detail,
-                'calories' => $meal->kcal,
-                'image'    => $meal->img_url
-            ];
-        })->values()->all();
+        return compact('chart', 'trainingDays', 'activeDays', 'weekDays');
+    }
 
-        // Mapear Treinos Sugeridos
-        $formattedSuggested = $suggestedWorkouts->map(function ($wk) {
-            return [
-                'id'       => (string) $wk->id,
-                'name'     => $wk->name,
-                'duration' => $wk->duration_min,
-                'level'    => $wk->level,
-                'category' => $wk->category,
-                'image'    => $wk->img_url
-            ];
-        })->values()->all();
+    private function scoreDay($dayNutrition, $dayWorkout): int
+    {
+        $fg = 0;
 
+        if ($dayNutrition) {
+            $fg += $this->scoreCalories($dayNutrition);
+            $fg += $this->scoreHydration($dayNutrition);
+        }
+
+        if ($dayWorkout) {
+            $fg += 25;
+        }
+
+        return min($fg, 100);
+    }
+
+    private function scoreCalories($dayNutrition): int
+    {
+        if ($dayNutrition->calories_goal > 0 && $dayNutrition->calories_total >= $dayNutrition->calories_goal * 0.8) {
+            return 50;
+        }
+
+        return $dayNutrition->calories_total > 0 ? 25 : 0;
+    }
+
+    private function scoreHydration($dayNutrition): int
+    {
+        return $dayNutrition->water_goal > 0 && $dayNutrition->water_current >= $dayNutrition->water_goal ? 25 : 0;
+    }
+
+    private function formatMeals(Collection $meals): array
+    {
+        return $meals->map(fn ($meal) => [
+            'id'       => (string) $meal->id,
+            'name'     => $meal->name,
+            'detail'   => $meal->detail,
+            'calories' => $meal->kcal,
+            'image'    => $meal->img_url,
+        ])->values()->all();
+    }
+
+    private function formatSuggestedWorkouts(Collection $workouts): array
+    {
+        return $workouts->map(fn ($wk) => [
+            'id'       => (string) $wk->id,
+            'name'     => $wk->name,
+            'duration' => $wk->duration_min,
+            'level'    => $wk->level,
+            'category' => $wk->category,
+            'image'    => $wk->img_url,
+        ])->values()->all();
+    }
+
+    private function formatMacros(array $macros, array $kcal): array
+    {
         return [
-            'dailyCalories' => [
-                'goal'     => $nutrition && $nutrition->calories_goal ? $nutrition->calories_goal : 2500,
-                'consumed' => $totalKcalConsumed, // Ou $nutrition->calories_total
+            [
+                'name'       => 'Carbo',
+                'current'    => $macros['carbs'],
+                'goal'       => $macros['carbsGoal'],
+                'percentage' => round($kcal['carbsPct'], 1),
+                'color'      => '#3b82f6',
+                'unit'       => 'g',
             ],
-            'protein' => [
-                'goal'    => $proteinGoal,
-                'current' => $consumedProtein_g,
+            [
+                'name'       => 'Proteína',
+                'current'    => $macros['protein'],
+                'goal'       => $macros['proteinGoal'],
+                'percentage' => round($kcal['proteinPct'], 1),
+                'color'      => '#ef4444',
+                'unit'       => 'g',
             ],
-            'weeklyWorkouts' => [
-                'goal' => $exercise ? $exercise->goal_sessions : 5,
-                'done' => $exercise ? $exercise->done_sessions : 0,
-            ],
-            'hydration' => [
-                'current' => $waterCurrent_ml / 1000, // Enviando em Litros pro Front
-                'glasses' => $glassesArray
-            ],
-            'activityChart' => $activityChart,
-            'trainingDays'  => $trainingDays,
-            'activeDays'    => $activeDays,
-            'weekDays'      => $weekDays,
-            'currentWeight' => [
-                'value'        => $weightLog ? (float) $weightLog->weight_kg : 0,
-                'weeklyChange' => 0, // Poderia ser (PesoAtual - PesoSemanaPassada)
-            ],
-            'meals'             => $formattedMeals,
-            'suggestedWorkouts' => $formattedSuggested,
-            'userGoals'         => $goals,
-            'macros' => [
-                [
-                    'name' => 'Carbo', 
-                    'current' => $consumedCarbs_g, 
-                    'goal' => $carbsGoal, 
-                    'percentage' => round($carbsPercentage, 1), 
-                    'color' => '#3b82f6', 
-                    'unit' => 'g'
-                ],
-                [
-                    'name' => 'Proteína', 
-                    'current' => $consumedProtein_g, 
-                    'goal' => $proteinGoal, 
-                    'percentage' => round($proteinPercentage, 1), 
-                    'color' => '#ef4444', 
-                    'unit' => 'g'
-                ],
-                [
-                    'name' => 'Gordura', 
-                    'current' => $consumedFat_g, 
-                    'goal' => $fatGoal, 
-                    'percentage' => round($fatPercentage, 1), 
-                    'color' => '#eab308', 
-                    'unit' => 'g'
-                ],
+            [
+                'name'       => 'Gordura',
+                'current'    => $macros['fat'],
+                'goal'       => $macros['fatGoal'],
+                'percentage' => round($kcal['fatPct'], 1),
+                'color'      => '#eab308',
+                'unit'       => 'g',
             ],
         ];
     }

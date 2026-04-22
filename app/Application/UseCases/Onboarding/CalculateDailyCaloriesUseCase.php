@@ -4,57 +4,53 @@ namespace App\Application\UseCases\Onboarding;
 
 class CalculateDailyCaloriesUseCase
 {
-    /**
-     * Calculates the Basal Metabolic Rate (BMR) and Total Daily Energy Expenditure (TDEE).
-     *
-     * @param array $data
-     * @return array Contains 'bmr' and 'tdee' keys, which might be null if data is insufficient.
-     */
     public function execute(array $data): array
     {
-        $bmr = null;
-        $tdee = null;
+        $bmr = $this->calculateBmr($data);
+        if ($bmr === null) {
+            return ['bmr' => null, 'tdee' => null];
+        }
 
-        if (
-            !empty($data['gender']) && 
-            !empty($data['age']) && 
-            !empty($data['weight_kg']) && 
-            !empty($data['height_cm'])
-        ) {
-            $w = (float) $data['weight_kg'];
-            $h = (int) $data['height_cm'];
-            $a = (int) $data['age'];
-            
-            if ($data['gender'] === 'male') {
-                $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) + 5;
-            } else {
-                $bmr = (10 * $w) + (6.25 * $h) - (5 * $a) - 161;
+        $tdee = (int) round($bmr * $this->activityMultiplier($data));
+
+        return ['bmr' => (int) round($bmr), 'tdee' => $tdee];
+    }
+
+    private function calculateBmr(array $data): ?float
+    {
+        foreach (['gender', 'age', 'weight_kg', 'height_cm'] as $required) {
+            if (empty($data[$required])) {
+                return null;
             }
         }
 
-        if ($bmr) {
-            $activityMultiplier = 1.2;
-            
-            $workouts = (int) ($data['workouts_per_week'] ?? 0);
-            if ($workouts >= 6) {
-                $activityMultiplier = 1.725;
-            } elseif ($workouts >= 3) {
-                $activityMultiplier = 1.55;
-            } elseif ($workouts >= 1) {
-                $activityMultiplier = 1.375;
-            }
+        $weight = (float) $data['weight_kg'];
+        $height = (int) $data['height_cm'];
+        $age    = (int) $data['age'];
 
-            $workStyle = $data['work_style'] ?? '';
-            if ($workStyle === 'active' || $workStyle === 'blue_collar') {
-                $activityMultiplier += 0.15;
-            }
+        $base = (10 * $weight) + (6.25 * $height) - (5 * $age);
 
-            $tdee = (int) round($bmr * $activityMultiplier);
+        return $data['gender'] === 'male' ? $base + 5 : $base - 161;
+    }
+
+    private function activityMultiplier(array $data): float
+    {
+        $multiplier = $this->workoutMultiplier((int) ($data['workouts_per_week'] ?? 0));
+
+        if (in_array($data['work_style'] ?? '', ['active', 'blue_collar'], true)) {
+            $multiplier += 0.15;
         }
 
-        return [
-            'bmr' => $bmr ? (int) round($bmr) : null,
-            'tdee' => $tdee
-        ];
+        return $multiplier;
+    }
+
+    private function workoutMultiplier(int $workouts): float
+    {
+        return match (true) {
+            $workouts >= 6 => 1.725,
+            $workouts >= 3 => 1.55,
+            $workouts >= 1 => 1.375,
+            default        => 1.2,
+        };
     }
 }

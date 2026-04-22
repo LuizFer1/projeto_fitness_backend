@@ -20,11 +20,19 @@ class AiMealPlanController extends Controller
         $this->groqService = $groqService;
     }
 
-    // ─── helpers ────────────────────────────────────────────────────
+    private const DEFAULT_DISCLAIMER = 'Este plano alimentar é sugestivo e não substitui orientação de um nutricionista profissional.';
 
-    /**
-     * Format a plan for the LIST endpoint (lightweight).
-     */
+    private const PROMPT_DEFAULTS = [
+        'restrictions'     => 'none',
+        'food_preferences' => 'no preference',
+        'food_dislikes'    => 'none',
+        'routine_schedule' => 'not specified',
+        'weight_kg'        => 'not specified',
+        'height_cm'        => 'not specified',
+        'age'              => 'not specified',
+        'activity_level'   => 'moderate',
+    ];
+
     private function formatPlanForList(AiPlan $plan): array
     {
         $c = $plan->content_json ?? [];
@@ -44,56 +52,60 @@ class AiMealPlanController extends Controller
         ];
     }
 
-    /**
-     * Format a plan for the DETAIL endpoint (full meals + ingredients).
-     */
     private function formatPlanForDetail(AiPlan $plan): array
     {
         $c = $plan->content_json ?? [];
-
-        // Ensure every meal and ingredient has an id
-        $meals = collect($c['meals'] ?? [])->map(function ($meal) {
-            $meal['id'] = $meal['id'] ?? (string) Str::uuid();
-
-            $meal['ingredients'] = collect($meal['ingredients'] ?? [])->map(function ($ing) {
-                $ing['id'] = $ing['id'] ?? (string) Str::uuid();
-                return $ing;
-            })->values()->all();
-
-            return $meal;
-        })->values()->all();
 
         return [
             'id'           => $plan->id,
             'status'       => $plan->status,
             'created_at'   => $plan->created_at,
             'content_json' => [
-                'plan_goal'    => $c['plan_goal'] ?? null,
-                'description'  => $c['description'] ?? null,
-                'total_kcal'   => $c['total_kcal'] ?? null,
-                'macros'       => $c['macros'] ?? null,
-                'meals'        => $meals,
-                'disclaimer'   => $c['disclaimer'] ?? 'Este plano alimentar é sugestivo e não substitui orientação de um nutricionista profissional.',
+                'plan_goal'   => $c['plan_goal'] ?? null,
+                'description' => $c['description'] ?? null,
+                'total_kcal'  => $c['total_kcal'] ?? null,
+                'macros'      => $c['macros'] ?? null,
+                'meals'       => $this->normalizeMeals($c['meals'] ?? []),
+                'disclaimer'  => $c['disclaimer'] ?? self::DEFAULT_DISCLAIMER,
             ],
         ];
     }
 
-    // ─── prompt builder ─────────────────────────────────────────────
+    private function normalizeMeals(array $meals): array
+    {
+        return collect($meals)
+            ->map(fn ($meal) => $this->normalizeMeal($meal))
+            ->values()
+            ->all();
+    }
+
+    private function normalizeMeal(array $meal): array
+    {
+        $meal['id'] = $meal['id'] ?? (string) Str::uuid();
+        $meal['ingredients'] = collect($meal['ingredients'] ?? [])
+            ->map(fn ($ing) => $ing + ['id' => (string) Str::uuid()])
+            ->values()
+            ->all();
+
+        return $meal;
+    }
 
     private function buildGeneratePrompt(array $validated): string
     {
+        $v = array_merge(self::PROMPT_DEFAULTS, array_filter($validated, fn ($x) => $x !== null && $x !== ''));
+
         return "You are an expert Sports Nutritionist specialized in creating personalized meal plans.\n"
             . "Create a complete daily meal plan for the user based on the following data:\n"
             . "- Primary Goal: {$validated['goal']}\n"
-            . "- Dietary Restrictions / Allergies: " . ($validated['restrictions'] ?? 'none') . "\n"
-            . "- Food Preferences (likes): " . ($validated['food_preferences'] ?? 'no preference') . "\n"
-            . "- Food Dislikes: " . ($validated['food_dislikes'] ?? 'none') . "\n"
+            . "- Dietary Restrictions / Allergies: {$v['restrictions']}\n"
+            . "- Food Preferences (likes): {$v['food_preferences']}\n"
+            . "- Food Dislikes: {$v['food_dislikes']}\n"
             . "- Meals per Day: {$validated['meals_per_day']}\n"
-            . "- Daily Routine / Schedule: " . ($validated['routine_schedule'] ?? 'not specified') . "\n"
-            . "- Weight: " . ($validated['weight_kg'] ?? 'not specified') . " kg\n"
-            . "- Height: " . ($validated['height_cm'] ?? 'not specified') . " cm\n"
-            . "- Age: " . ($validated['age'] ?? 'not specified') . "\n"
-            . "- Activity Level: " . ($validated['activity_level'] ?? 'moderate') . "\n\n"
+            . "- Daily Routine / Schedule: {$v['routine_schedule']}\n"
+            . "- Weight: {$v['weight_kg']} kg\n"
+            . "- Height: {$v['height_cm']} cm\n"
+            . "- Age: {$v['age']}\n"
+            . "- Activity Level: {$v['activity_level']}\n\n"
             . "Based on this data, calculate an appropriate daily calorie target and macro distribution.\n"
             . "Then create {$validated['meals_per_day']} meals distributed throughout the day with suggested times.\n"
             . "For each meal, list the food items (ingredients) with their quantities and individual macro/calorie counts.\n\n"
@@ -102,28 +114,29 @@ class AiMealPlanController extends Controller
             . "- Do NOT use English names.\n\n"
             . "IMPORTANT DISCLAIMER: Always include a note that this plan is suggestive and does NOT replace professional nutritionist guidance.\n\n"
             . "You MUST return the response EXCLUSIVELY in a valid JSON object. The structure MUST be exactly this:\n"
-            . json_encode([
-                'plan_goal'  => 'string',
-                'description' => 'Uma breve descrição do plano alimentar',
-                'total_kcal' => 'number',
-                'macros'     => ['p' => 'number (protein_g)', 'c' => 'number (carbs_g)', 'f' => 'number (fat_g)'],
-                'meals'      => [
-                    [
-                        'time'        => '08:00',
-                        'name'        => 'Café da Manhã Energético',
-                        'type'        => 'breakfast (breakfast|lunch|snack|dinner)',
-                        'ingredients' => [
-                            [
-                                'name'   => 'Ovos mexidos',
-                                'amount' => '2 unidades',
-                                'kcal'   => 140,
-                                'macros' => ['p' => 12, 'c' => 2, 'f' => 10],
-                            ],
-                        ],
-                    ],
-                ],
-                'disclaimer' => 'Este plano alimentar é sugestivo e não substitui orientação de um nutricionista profissional.',
-            ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+            . $this->promptJsonSchema();
+    }
+
+    private function promptJsonSchema(): string
+    {
+        return json_encode([
+            'plan_goal'   => 'string',
+            'description' => 'Uma breve descrição do plano alimentar',
+            'total_kcal'  => 'number',
+            'macros'      => ['p' => 'number (protein_g)', 'c' => 'number (carbs_g)', 'f' => 'number (fat_g)'],
+            'meals'       => [[
+                'time'        => '08:00',
+                'name'        => 'Café da Manhã Energético',
+                'type'        => 'breakfast (breakfast|lunch|snack|dinner)',
+                'ingredients' => [[
+                    'name'   => 'Ovos mexidos',
+                    'amount' => '2 unidades',
+                    'kcal'   => 140,
+                    'macros' => ['p' => 12, 'c' => 2, 'f' => 10],
+                ]],
+            ]],
+            'disclaimer'  => self::DEFAULT_DISCLAIMER,
+        ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
     // ─── endpoints ──────────────────────────────────────────────────
