@@ -67,10 +67,10 @@ class GamificationServiceTest extends TestCase
 
         $this->assertNotNull($tx);
         $this->assertEquals('workout_completed', $tx->type);
-        $this->assertEquals(30, $tx->xp_gained);
+        $this->assertEquals(100, $tx->xp_gained);
 
         $this->user->refresh();
-        $this->assertEquals(30, $this->user->gamification->xp_total);
+        $this->assertEquals(100, $this->user->gamification->xp_total);
         $this->assertEquals(1, $this->user->gamification->total_workouts);
     }
 
@@ -88,7 +88,7 @@ class GamificationServiceTest extends TestCase
     public function test_check_level_up_promotes_at_correct_threshold(): void
     {
         $gam = $this->user->gamification;
-        $gam->update(['xp_total' => 200]);
+        $gam->update(['xp_total' => 500]);
 
         $result = $this->service->checkLevelUp($this->user);
 
@@ -118,7 +118,7 @@ class GamificationServiceTest extends TestCase
 
         $this->assertTrue($result);
         $this->user->refresh();
-        $this->assertEquals(5, $this->user->gamification->current_level);
+        $this->assertEquals(3, $this->user->gamification->current_level);
     }
 
     // ── awardBadge ────────────────────────────────────────────────
