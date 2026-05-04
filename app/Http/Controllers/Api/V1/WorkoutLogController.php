@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Services\Workout\ProgressiveOverloadService;
 use Illuminate\Http\Request;
 use App\Models\WorkoutLog;
 use App\Models\WorkoutExerciseLog;
@@ -15,17 +16,22 @@ class WorkoutLogController extends Controller
 {
     private $groqService;
     private $gamificationService;
+    private ProgressiveOverloadService $overload;
 
-    public function __construct(GroqService $groqService, GamificationService $gamificationService)
-    {
-        $this->groqService = $groqService;
+    public function __construct(
+        GroqService $groqService,
+        GamificationService $gamificationService,
+        ProgressiveOverloadService $overload
+    ) {
+        $this->groqService         = $groqService;
         $this->gamificationService = $gamificationService;
+        $this->overload            = $overload;
     }
 
     #[OA\Post(
         path: '/api/v1/workouts/finish',
         summary: 'Salva e analisa um treino finalizado',
-        description: 'Salva o log do treino, os exercícios realizados, e envia os dados para a IA (Gemini) calcular calorias gastas, músculos treinados e gerar um feedback motivacional.',
+        description: 'Salva o log do treino, os exercícios realizados, e envia os dados para a IA calcular calorias gastas, músculos treinados e gerar um feedback motivacional.',
         tags: ['Workouts'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -84,6 +90,17 @@ class WorkoutLogController extends Controller
 
             $this->gamificationService->grantWorkoutCompletedXp($user, $workoutLog->id);
             $this->gamificationService->checkWorkoutBadges($user);
+
+            // Check for personal records on each exercise (SRS RF-08)
+            foreach ($validated['exercises'] as $ex) {
+                $this->overload->recordPotentialPR(
+                    $user,
+                    $ex['exercise_id'],
+                    (float) $ex['weight_kg'],
+                    (int) $ex['reps'],
+                    $workoutLog->id
+                );
+            }
 
             return response()->json([
                 'message' => 'Treino finalizado com sucesso!',

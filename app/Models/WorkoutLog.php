@@ -13,8 +13,9 @@ class WorkoutLog extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'date' => 'date',
-        'muscles_trained' => 'array',
+        'date'           => 'date',
+        'muscles_trained'=> 'array',
+        'modality'       => 'string',
     ];
 
     public function user()
