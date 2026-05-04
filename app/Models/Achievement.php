@@ -14,7 +14,7 @@ class Achievement extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'slug', 'name', 'description', 'icon', 'category',
+        'slug', 'name', 'description', 'icon', 'category', 'tier',
         'xp_reward', 'condition_type', 'condition_value',
         'is_hidden', 'is_active',
     ];
