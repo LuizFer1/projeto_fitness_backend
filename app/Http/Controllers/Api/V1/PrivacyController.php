@@ -8,6 +8,7 @@ use App\Models\UserAchievement;
 use App\Models\UserGoal;
 use App\Models\WorkoutLog;
 use App\Models\XpTransaction;
+use App\Services\AuditLogger;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ use OpenApi\Attributes as OA;
 
 class PrivacyController extends Controller
 {
+    public function __construct(private AuditLogger $audit) {}
     #[OA\Get(
         path: '/api/v1/privacy/my-data',
         summary: 'Exportar meus dados',
@@ -52,6 +54,8 @@ class PrivacyController extends Controller
             ->get();
 
         $gamification = $user->gamification;
+
+        $this->audit->log('data_export', $user->id, $user->id, 'User');
 
         return response()->json([
             'profile' => $profile,
@@ -106,6 +110,8 @@ class PrivacyController extends Controller
             ], 422);
         }
 
+        $this->audit->log('account_deleted', $user->id, $user->id, 'User', ['email' => $user->email]);
+
         DB::transaction(function () use ($user) {
             $userId = $user->id;
 
@@ -141,6 +147,23 @@ class PrivacyController extends Controller
             DB::table('friendships')
                 ->where('requester_id', $userId)
                 ->orWhere('addressee_id', $userId)
+                ->delete();
+
+            // Phase 1–3 tables
+            DB::table('progress_photos')->where('user_id', $userId)->delete();
+            DB::table('user_devices')->where('user_id', $userId)->delete();
+            DB::table('notification_preferences')->where('user_id', $userId)->delete();
+            DB::table('user_privacy_settings')->where('user_id', $userId)->delete();
+            DB::table('diet_adjustments')->where('user_id', $userId)->delete();
+            DB::table('exercise_personal_records')->where('user_id', $userId)->delete();
+            DB::table('victory_assets')->where('user_id', $userId)->delete();
+            DB::table('biweekly_reports')->where('user_id', $userId)->delete();
+            DB::table('nutrition_exports')->where('user_id', $userId)->delete();
+            DB::table('external_oauth_tokens')->where('user_id', $userId)->delete();
+            DB::table('external_activities')->where('user_id', $userId)->delete();
+            DB::table('followers')
+                ->where('follower_id', $userId)
+                ->orWhere('followee_id', $userId)
                 ->delete();
 
             // Revoke all Sanctum tokens
