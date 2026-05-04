@@ -37,7 +37,7 @@ class GroqService
     }
 
     /**
-     * Sends a text prompt to the Gemini API and expects a JSON response.
+     * Sends a text prompt to the Groq API and expects a JSON response.
      */
     public function generateTextResponse(?string $model, string $prompt): ?array
     {
@@ -67,7 +67,7 @@ class GroqService
     }
 
     /**
-     * Sends an image and a text prompt to the Gemini API and expects a JSON response.
+     * Sends an image and a text prompt to the Groq API and expects a JSON response.
      */
     public function generateVisionResponse(?string $model, string $prompt, string $imageBase64, string $mimeType = 'image/jpeg'): ?array
     {

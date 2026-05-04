@@ -6,8 +6,22 @@ use App\Http\Controllers\Api\V1\Admin\ExerciseController as AdminExerciseControl
 use App\Http\Controllers\Api\V1\Admin\QuestController as AdminQuestController;
 use App\Http\Controllers\Api\V1\AiMealPlanController;
 use App\Http\Controllers\Api\V1\AiPlanController;
+use App\Http\Controllers\Api\V1\BiweeklyReportController;
 use App\Http\Controllers\Api\V1\BodyMeasurementController;
+use App\Http\Controllers\Api\V1\CardioWorkoutController;
 use App\Http\Controllers\Api\V1\DashboardController;
+use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\FollowController;
+use App\Http\Controllers\Api\V1\FoodController;
+use App\Http\Controllers\Api\V1\IntegrationController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
+use App\Http\Controllers\Api\V1\NutritionController;
+use App\Http\Controllers\Api\V1\NutritionExportController;
+use App\Http\Controllers\Api\V1\PrivacySettingsController;
+use App\Http\Controllers\Api\V1\TdeeConfigController;
+use App\Http\Controllers\Api\V1\VictoryAssetController;
+use App\Http\Controllers\Api\V1\PersonalRecordController;
+use App\Http\Controllers\Api\V1\ProgressPhotoController;
 use App\Http\Controllers\Api\V1\QuestController;
 use App\Http\Controllers\Api\V1\FriendController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
@@ -44,7 +58,7 @@ Route::bind('username', function (string $value) {
 
 Route::group([], function () {
     Route::post('register', [AuthController::class, 'register']);
-    Route::post('login', [AuthController::class, 'login']);
+    Route::post('login', [AuthController::class, 'login'])->middleware('throttle:login');
 
     Route::middleware('auth:sanctum')->group(function () {
 
@@ -74,6 +88,15 @@ Route::group([], function () {
             Route::get('users/{username}', [PublicProfileController::class, 'show']);
             Route::get('users/{username}/achievements', [PublicProfileController::class, 'achievements']);
             Route::get('users/{username}/goals', [PublicProfileController::class, 'goals']);
+
+            // Followers (RF-18)
+            Route::post('users/{username}/follow', [FollowController::class, 'follow']);
+            Route::delete('users/{username}/follow', [FollowController::class, 'unfollow']);
+            Route::get('users/{username}/followers', [FollowController::class, 'followers']);
+            Route::get('users/{username}/following', [FollowController::class, 'following']);
+            Route::get('follow-requests', [FollowController::class, 'requests']);
+            Route::post('follow-requests/{id}/accept', [FollowController::class, 'accept']);
+            Route::post('follow-requests/{id}/reject', [FollowController::class, 'reject']);
 
             // User profile by ID (for leaderboard modal)
             Route::get('users/{userId}/profile', function (string $userId) {
@@ -153,10 +176,49 @@ Route::group([], function () {
 
             // Workout logs
             Route::post('workouts/finish', [WorkoutLogController::class, 'finish'])->middleware('idempotent');
+            Route::post('workouts/cardio', [CardioWorkoutController::class, 'store'])->middleware('idempotent');
+
+            // Victory assets (RF-16, RF-17)
+            Route::post('workouts/{uuid}/victory-asset', [VictoryAssetController::class, 'enqueue']);
+            Route::get('workouts/{uuid}/victory-asset', [VictoryAssetController::class, 'show']);
+
+            // Personal records & progressive overload
+            Route::get('workouts/personal-records', [PersonalRecordController::class, 'index']);
+            Route::get('workouts/exercises/{exercise_id}/suggest-load', [PersonalRecordController::class, 'suggestLoad']);
+            Route::get('workouts/exercises/{exercise_id}/history', [PersonalRecordController::class, 'history']);
 
             // Meal logs
             Route::post('meals/analyze-text', [MealLogController::class, 'analyzeText'])->middleware('idempotent');
             Route::post('meals/analyze-image', [MealLogController::class, 'analyzeImage'])->middleware('idempotent');
+
+            // Nutrition daily summary & adjustments
+            Route::get('nutrition/today', [NutritionController::class, 'today']);
+            Route::get('diet-adjustments', [NutritionController::class, 'adjustments']);
+
+            // Nutrition history export (RF-06)
+            Route::get('nutrition/export', [NutritionExportController::class, 'export']);
+            Route::get('nutrition/export/status/{id}', [NutritionExportController::class, 'status']);
+
+            // Progress photos (private diary)
+            Route::post('progress-photos', [ProgressPhotoController::class, 'store']);
+            Route::get('progress-photos', [ProgressPhotoController::class, 'index']);
+            Route::get('progress-photos/{uuid}', [ProgressPhotoController::class, 'show']);
+            Route::delete('progress-photos/{uuid}', [ProgressPhotoController::class, 'destroy']);
+
+            // Push notification devices
+            Route::post('devices', [DeviceController::class, 'store']);
+            Route::delete('devices/{uuid}', [DeviceController::class, 'destroy']);
+
+            // Notification preferences
+            Route::get('notification-preferences', [NotificationPreferenceController::class, 'show']);
+            Route::put('notification-preferences', [NotificationPreferenceController::class, 'update']);
+
+            // External integrations (wearables)
+            Route::get('integrations', [IntegrationController::class, 'index']);
+            Route::post('integrations/healthkit/sync', [IntegrationController::class, 'syncHealthKit']);
+            Route::get('integrations/googlefit/authorize', [IntegrationController::class, 'authorizeGoogleFit']);
+            Route::get('integrations/googlefit/callback', [IntegrationController::class, 'callbackGoogleFit']);
+            Route::delete('integrations/{provider}', [IntegrationController::class, 'disconnect']);
 
             // Rankings
             Route::get('rankings', [RankingController::class, 'index']);
@@ -181,6 +243,21 @@ Route::group([], function () {
             Route::post('subscriptions', [SubscriptionController::class, 'store'])->middleware('idempotent');
             Route::post('subscriptions/cancel', [SubscriptionController::class, 'cancel'])->middleware('idempotent');
             Route::post('subscriptions/resume', [SubscriptionController::class, 'resume'])->middleware('idempotent');
+
+            // Biweekly reports (RF-25)
+            Route::get('reports/biweekly', [BiweeklyReportController::class, 'index']);
+            Route::get('reports/biweekly/{id}', [BiweeklyReportController::class, 'show']);
+            Route::post('reports/biweekly/generate', [BiweeklyReportController::class, 'generate']);
+
+            // TDEE formula config (RF-05)
+            Route::put('onboarding/tdee-config', [TdeeConfigController::class, 'update']);
+
+            // Privacy settings per metric (RF-26)
+            Route::get('privacy-settings', [PrivacySettingsController::class, 'show']);
+            Route::put('privacy-settings', [PrivacySettingsController::class, 'update']);
+
+            // Food barcode lookup (RF-04)
+            Route::get('foods/lookup', [FoodController::class, 'lookup']);
 
             // Admin CRUD
             Route::prefix('admin')->middleware('admin')->group(function () {

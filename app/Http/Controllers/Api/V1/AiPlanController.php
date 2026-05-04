@@ -27,7 +27,7 @@ class AiPlanController extends Controller
     #[OA\Post(
         path: '/api/v1/plans/generate-workout',
         summary: 'Generate a personalized AI workout plan',
-        description: 'Sends user preferences to Gemini AI and receives a structured workout plan that is saved to the database.',
+        description: 'Sends user preferences to Groq AI and receives a structured workout plan that is saved to the database.',
         tags: ['AI Plans'],
         requestBody: new OA\RequestBody(
             required: true,
