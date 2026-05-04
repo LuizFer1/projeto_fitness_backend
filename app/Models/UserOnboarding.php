@@ -16,7 +16,8 @@ class UserOnboarding extends Model
 
     protected $fillable = [
         'user_id', 'gender', 'age', 'height_cm', 'weight_kg',
-        'exercise_frequency', 'work_style', 'body_fat_pct', 'bmr'
+        'exercise_frequency', 'work_style', 'body_fat_pct', 'bmr',
+        'tdee_formula', 'activity_factor',
     ];
 
     protected $casts = [

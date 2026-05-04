@@ -185,15 +185,21 @@ class ExerciseController extends Controller
     public function bulkImport(Request $request)
     {
         $data = $request->validate([
-            'exercises'                  => ['required', 'array', 'min:1'],
-            'exercises.*.name'           => ['required', 'string', 'max:150'],
-            'exercises.*.muscle_group'   => ['nullable', 'string', 'max:80'],
-            'exercises.*.category'       => ['nullable', Rule::in(self::CATEGORIES)],
-            'exercises.*.difficulty'     => ['nullable', Rule::in(self::DIFFICULTIES)],
-            'exercises.*.equipment'      => ['nullable', 'string', 'max:100'],
-            'exercises.*.description'    => ['nullable', 'string'],
-            'exercises.*.calories_per_min' => ['nullable', 'numeric'],
-            'exercises.*.is_active'      => ['nullable', 'boolean'],
+            'exercises'                        => ['required', 'array', 'min:1'],
+            'exercises.*.name'                 => ['required', 'string', 'max:150'],
+            'exercises.*.muscle_group'         => ['nullable', 'string', 'max:80'],
+            'exercises.*.category'             => ['nullable', Rule::in(self::CATEGORIES)],
+            'exercises.*.difficulty'           => ['nullable', Rule::in(self::DIFFICULTIES)],
+            'exercises.*.equipment'            => ['nullable', 'string', 'max:100'],
+            'exercises.*.description'          => ['nullable', 'string'],
+            'exercises.*.calories_per_min'     => ['nullable', 'numeric'],
+            'exercises.*.is_active'            => ['nullable', 'boolean'],
+            'exercises.*.video_url'            => ['nullable', 'url', 'max:500'],
+            'exercises.*.thumbnail_url'        => ['nullable', 'url', 'max:500'],
+            'exercises.*.parent_exercise_id'   => ['nullable', 'uuid', 'exists:exercises,id'],
+            'exercises.*.body_zones'           => ['nullable', 'array'],
+            'exercises.*.body_zones.*.zone'    => ['required_with:exercises.*.body_zones', 'string'],
+            'exercises.*.body_zones.*.type'    => ['required_with:exercises.*.body_zones', 'in:primary,secondary'],
         ]);
 
         $created = collect($data['exercises'])->map(fn ($e) => Exercise::create($e));
@@ -205,14 +211,20 @@ class ExerciseController extends Controller
     {
         $sometimes = $partial ? 'sometimes' : 'required';
         return $request->validate([
-            'name'             => [$sometimes, 'string', 'max:150'],
-            'muscle_group'     => ['nullable', 'string', 'max:80'],
-            'category'         => ['nullable', Rule::in(self::CATEGORIES)],
-            'difficulty'       => ['nullable', Rule::in(self::DIFFICULTIES)],
-            'equipment'        => ['nullable', 'string', 'max:100'],
-            'description'      => ['nullable', 'string'],
-            'calories_per_min' => ['nullable', 'numeric'],
-            'is_active'        => ['nullable', 'boolean'],
+            'name'               => [$sometimes, 'string', 'max:150'],
+            'muscle_group'       => ['nullable', 'string', 'max:80'],
+            'category'           => ['nullable', Rule::in(self::CATEGORIES)],
+            'difficulty'         => ['nullable', Rule::in(self::DIFFICULTIES)],
+            'equipment'          => ['nullable', 'string', 'max:100'],
+            'description'        => ['nullable', 'string'],
+            'calories_per_min'   => ['nullable', 'numeric'],
+            'is_active'          => ['nullable', 'boolean'],
+            'video_url'          => ['nullable', 'url', 'max:500'],
+            'thumbnail_url'      => ['nullable', 'url', 'max:500'],
+            'parent_exercise_id' => ['nullable', 'uuid', 'exists:exercises,id'],
+            'body_zones'         => ['nullable', 'array'],
+            'body_zones.*.zone'  => ['required_with:body_zones', 'string'],
+            'body_zones.*.type'  => ['required_with:body_zones', 'in:primary,secondary'],
         ]);
     }
 }
