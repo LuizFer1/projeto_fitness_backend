@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Application\UseCases\Nutrition\RedistributeMacrosUseCase;
 use App\Http\Controllers\Controller;
+use App\Services\Diet\DietEngineService;
 use Illuminate\Http\Request;
 use App\Models\MealLog;
 use App\Services\GroqService;
@@ -13,11 +15,19 @@ class MealLogController extends Controller
 {
     private $groqService;
     private $gamificationService;
+    private DietEngineService $dietEngine;
+    private RedistributeMacrosUseCase $redistributeMacros;
 
-    public function __construct(GroqService $groqService, GamificationService $gamificationService)
-    {
-        $this->groqService = $groqService;
-        $this->gamificationService = $gamificationService;
+    public function __construct(
+        GroqService $groqService,
+        GamificationService $gamificationService,
+        DietEngineService $dietEngine,
+        RedistributeMacrosUseCase $redistributeMacros
+    ) {
+        $this->groqService          = $groqService;
+        $this->gamificationService  = $gamificationService;
+        $this->dietEngine           = $dietEngine;
+        $this->redistributeMacros   = $redistributeMacros;
     }
 
     #[OA\Post(
@@ -55,6 +65,8 @@ class MealLogController extends Controller
             $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
             $mealLog = $this->persistMealFromText($user, $validated, $aiResponse);
             $this->gamificationService->grantMealLoggedXp($user);
+            $this->dietEngine->recalculateAfterMeal($user, $mealLog);
+            $this->redistributeMacros->execute($user, $mealLog);
 
             return response()->json(['message' => 'Refeição registrada via IA.', 'log' => $mealLog], 201);
         } catch (\Exception $e) {
@@ -125,6 +137,8 @@ class MealLogController extends Controller
             $aiResponse = $this->groqService->generateVisionResponse(null, $prompt, $base64);
             $mealLog = $this->persistMealFromImage($user, $validated, $aiResponse);
             $this->gamificationService->grantMealLoggedXp($user);
+            $this->dietEngine->recalculateAfterMeal($user, $mealLog);
+            $this->redistributeMacros->execute($user, $mealLog);
 
             return response()->json(['message' => 'Refeição registrada por imagem via IA.', 'log' => $mealLog], 201);
         } catch (\Exception $e) {
