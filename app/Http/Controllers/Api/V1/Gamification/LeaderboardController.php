@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1\Gamification;
 use App\Http\Controllers\Controller;
 use App\Models\Friendship;
 use App\Models\UserGamification;
+use App\Services\Ranking\RedisRankingService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -156,8 +157,9 @@ class LeaderboardController extends Controller
 
     private function leaderboard(Request $request, string $period): JsonResponse
     {
-        $user  = $request->user();
-        $limit = min((int) $request->query('limit', 20), 100);
+        $user   = $request->user();
+        $limit  = min((int) $request->query('limit', 20), 100);
+        $redis  = app(RedisRankingService::class);
 
         $column = match ($period) {
             'weekly'   => 'current_week_xp',
@@ -165,6 +167,50 @@ class LeaderboardController extends Controller
             'all_time' => 'xp_total',
         };
 
+        $redisKey  = $redis->keyForPeriod($period);
+        $redisTop  = $redis->topN($redisKey, $limit);
+
+        if (!empty($redisTop)) {
+            $userIds = array_column($redisTop, 'user_id');
+            $gamRows = UserGamification::select(['user_id', 'current_level', 'xp_total'])
+                ->with(['user:id,name,last_name,nickname,avatar_url'])
+                ->whereIn('user_id', $userIds)
+                ->get()
+                ->keyBy('user_id');
+
+            $rankings = array_map(function (array $entry, int $index) use ($gamRows) {
+                $g = $gamRows[$entry['user_id']] ?? null;
+                $u = $g?->user;
+                return [
+                    'position'   => $index + 1,
+                    'user_id'    => $entry['user_id'],
+                    'name'       => $u ? ($u->nickname ?? ($u->name . ' ' . $u->last_name)) : 'Unknown',
+                    'avatar_url' => $u?->avatar_url,
+                    'period_xp'  => $entry['score'],
+                    'level'      => $g?->current_level,
+                    'total_xp'   => $g?->xp_total,
+                ];
+            }, $redisTop, array_keys($redisTop));
+
+            $myRank  = $redis->userRank($redisKey, (string) $user->id);
+            $myScore = $redis->userScore($redisKey, (string) $user->id);
+            $myGam   = $user->gamification;
+
+            $myPosition = $myRank ? [
+                'position'  => $myRank,
+                'period_xp' => $myScore ?? 0,
+                'level'     => $myGam?->current_level,
+                'total_xp'  => $myGam?->xp_total,
+            ] : null;
+
+            return response()->json([
+                'period'      => $period,
+                'rankings'    => $rankings,
+                'my_position' => $myPosition,
+            ]);
+        }
+
+        // Fallback: Redis unavailable or empty — read from DB with short cache
         $cacheKey = "leaderboard_{$period}_top{$limit}";
 
         $rankings = Cache::remember($cacheKey, 300, function () use ($column, $limit) {
@@ -192,12 +238,11 @@ class LeaderboardController extends Controller
                 ->toArray();
         });
 
-        // Current user's position (fresh)
-        $gam = UserGamification::where('user_id', $user->id)->first();
+        $gam        = UserGamification::where('user_id', $user->id)->first();
         $myPosition = null;
 
         if ($gam) {
-            $myXp = $gam->{$column};
+            $myXp     = $gam->{$column};
             $position = UserGamification::where($column, '>', $myXp)->count() + 1;
 
             $myPosition = [

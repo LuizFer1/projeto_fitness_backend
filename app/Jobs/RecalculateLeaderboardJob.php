@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\UserGamification;
+use App\Services\Ranking\RedisRankingService;
 use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,6 +38,9 @@ class RecalculateLeaderboardJob implements ShouldQueue
             Cache::forget("leaderboard_{$type}_top20");
             Cache::forget("leaderboard_{$type}_top100");
         }
+
+        // Rebuild Redis sorted sets as a nightly guardrail (RNF-10)
+        app(RedisRankingService::class)->rebuild();
     }
 
     private function recalculateFor(string $type, string $column, string $refPeriod): void

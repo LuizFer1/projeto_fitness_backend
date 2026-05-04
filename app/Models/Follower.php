@@ -1,0 +1,37 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Model;
+
+class Follower extends Model
+{
+    use HasUuids;
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'accepted_at' => 'datetime',
+    ];
+
+    public function follower()
+    {
+        return $this->belongsTo(User::class, 'follower_id', 'id');
+    }
+
+    public function followee()
+    {
+        return $this->belongsTo(User::class, 'followee_id', 'id');
+    }
+
+    public function scopeAccepted($query)
+    {
+        return $query->where('status', 'accepted');
+    }
+
+    public function scopePending($query)
+    {
+        return $query->where('status', 'pending');
+    }
+}

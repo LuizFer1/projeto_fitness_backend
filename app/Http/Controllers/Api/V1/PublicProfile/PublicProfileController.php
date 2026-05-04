@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\V1\PublicProfile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Follower;
 use App\Models\User;
+use App\Models\UserPrivacySetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class PublicProfileController extends Controller
@@ -23,18 +26,47 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function show(User $username): JsonResponse
+    public function show(Request $request, User $username): JsonResponse
     {
-        $user = $username;
+        $user    = $username;
+        $viewer  = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $gam     = $user->gamification;
 
-        return response()->json([
-            'id' => $user->id,
-            'username' => $user->username,
-            'name' => $user->name,
-            'last_name' => $user->last_name,
+        $isPrivate = $user->profile_visibility === 'private';
+        $isSelf    = $viewer && $viewer->id === $user->id;
+        $isFollowing = !$isSelf && $viewer && Follower::accepted()
+            ->where('follower_id', $viewer->id)
+            ->where('followee_id', $user->id)
+            ->exists();
+
+        if ($isPrivate && !$isSelf && !$isFollowing) {
+            return response()->json([
+                'id'       => $user->id,
+                'username' => $user->username,
+                'name'     => $user->name,
+                'last_name'=> $user->last_name,
+                'avatar_url'=> $user->avatar_url,
+                'is_private'=> true,
+            ]);
+        }
+
+        $profile = [
+            'id'         => $user->id,
+            'username'   => $user->username,
+            'name'       => $user->name,
+            'last_name'  => $user->last_name,
             'avatar_url' => $user->avatar_url,
-            'bio' => $user->bio,
-        ]);
+            'bio'        => $user->bio,
+            'level'      => $gam?->current_level,
+            'is_private' => $isPrivate,
+        ];
+
+        if ($isSelf || $privacy->share_streak) {
+            $profile['streak'] = $gam?->current_streak;
+        }
+
+        return response()->json($profile);
     }
 
     #[OA\Get(
@@ -51,18 +83,25 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function achievements(User $username): JsonResponse
+    public function achievements(Request $request, User $username): JsonResponse
     {
-        $user = $username;
+        $user    = $username;
+        $viewer  = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $isSelf  = $viewer && $viewer->id === $user->id;
+
+        if (!$isSelf && !$privacy->share_achievements) {
+            return response()->json(['data' => [], 'hidden' => true]);
+        }
 
         $achievements = $user->achievements()
             ->with('achievement')
             ->get()
             ->map(fn ($ua) => [
-                'id' => $ua->achievement->id,
-                'name' => $ua->achievement->name,
+                'id'          => $ua->achievement->id,
+                'name'        => $ua->achievement->name,
                 'description' => $ua->achievement->description,
-                'icon' => $ua->achievement->icon,
+                'icon'        => $ua->achievement->icon,
                 'unlocked_at' => $ua->unlocked_at,
             ]);
 
@@ -83,9 +122,16 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function goals(User $username): JsonResponse
+    public function goals(Request $request, User $username): JsonResponse
     {
-        $user = $username;
+        $user    = $username;
+        $viewer  = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $isSelf  = $viewer && $viewer->id === $user->id;
+
+        if (!$isSelf && !$privacy->share_macros) {
+            return response()->json(['data' => null, 'hidden' => true]);
+        }
 
         $goal = $user->goal;
 
