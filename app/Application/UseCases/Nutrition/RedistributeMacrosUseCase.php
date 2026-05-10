@@ -5,6 +5,7 @@ namespace App\Application\UseCases\Nutrition;
 use App\Models\AiPlan;
 use App\Models\MealLog;
 use App\Models\User;
+use Carbon\Carbon;
 
 class RedistributeMacrosUseCase
 {
@@ -23,7 +24,7 @@ class RedistributeMacrosUseCase
             return;
         }
 
-        $date = $mealLog->date instanceof \Carbon\Carbon
+        $date = $mealLog->date instanceof Carbon
             ? $mealLog->date->toDateString()
             : (string) $mealLog->date;
 
@@ -37,7 +38,7 @@ class RedistributeMacrosUseCase
         }
 
         // Calories consumed today across all meal logs
-        $consumedToday = \App\Models\MealLog::where('user_id', $user->id)
+        $consumedToday = MealLog::where('user_id', $user->id)
             ->where('date', $date)
             ->sum('calories_consumed');
 

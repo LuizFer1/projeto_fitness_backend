@@ -25,7 +25,7 @@ class AppLogger implements LoggerInterface
     public function error(string $message, array $context = []): void
     {
         Log::error($message, $context);
-        
+
         // Em um cenário real com Sentry instalado via composer:
         // Se a lib Sentry estiver disponível:
         if (function_exists('app') && app()->bound('sentry')) {

@@ -18,7 +18,7 @@ class ProgressPhoto extends Model
     ];
 
     protected $casts = [
-        'taken_at'  => 'date',
+        'taken_at' => 'date',
         'weight_kg' => 'decimal:2',
     ];
 

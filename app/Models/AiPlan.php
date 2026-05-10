@@ -11,6 +11,7 @@ class AiPlan extends Model
     use HasFactory, HasUuids;
 
     protected $guarded = [];
+
     public $timestamps = false;
 
     protected $casts = [

@@ -16,10 +16,10 @@ class StreakAtRiskNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type'        => 'streak_at_risk',
+            'type' => 'streak_at_risk',
             'streak_days' => $this->streakDays,
-            'title'       => 'Sua sequência está em risco!',
-            'body'        => "Você tem uma sequência de {$this->streakDays} dias. Faça uma atividade hoje para não perder!",
+            'title' => 'Sua sequência está em risco!',
+            'body' => "Você tem uma sequência de {$this->streakDays} dias. Faça uma atividade hoje para não perder!",
         ];
     }
 }

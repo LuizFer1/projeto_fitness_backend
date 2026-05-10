@@ -25,12 +25,13 @@ class EvaluateStreakAtRiskJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;
+    public int $tries = 1;
+
     public int $timeout = 120;
 
     public function handle(): void
     {
-        $policy = new QuietHoursPolicy();
+        $policy = new QuietHoursPolicy;
 
         $usersAtRisk = UserGamification::where('current_streak', '>', 0)
             ->with('user')

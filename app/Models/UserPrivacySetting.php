@@ -12,12 +12,12 @@ class UserPrivacySetting extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'share_weight'       => 'boolean',
-        'share_macros'       => 'boolean',
-        'share_one_rm'       => 'boolean',
-        'share_streak'       => 'boolean',
+        'share_weight' => 'boolean',
+        'share_macros' => 'boolean',
+        'share_one_rm' => 'boolean',
+        'share_streak' => 'boolean',
         'share_achievements' => 'boolean',
-        'share_workouts'     => 'boolean',
+        'share_workouts' => 'boolean',
     ];
 
     public function user()
@@ -33,12 +33,12 @@ class UserPrivacySetting extends Model
         return static::firstOrCreate(
             ['user_id' => $user->id],
             [
-                'share_weight'       => false,
-                'share_macros'       => false,
-                'share_one_rm'       => true,
-                'share_streak'       => true,
+                'share_weight' => false,
+                'share_macros' => false,
+                'share_one_rm' => true,
+                'share_streak' => true,
                 'share_achievements' => true,
-                'share_workouts'     => true,
+                'share_workouts' => true,
             ]
         );
     }

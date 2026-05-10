@@ -11,6 +11,7 @@ class PlanWorkoutExercise extends Model
     use HasFactory, HasUuids;
 
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function planWorkout()

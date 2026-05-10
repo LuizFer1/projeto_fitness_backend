@@ -14,7 +14,7 @@ class Plan extends Model
 
     protected $casts = [
         'trial_days' => 'integer',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function prices()

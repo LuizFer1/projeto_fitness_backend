@@ -15,6 +15,7 @@ class UserGoal extends Model
     protected $fillable = [
         'user_id',
         'main_goal',
+        'diet_objective',
         'goal_calories_day',
         'goal_steps_day',
         'goal_weight_kg',

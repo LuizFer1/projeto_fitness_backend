@@ -18,8 +18,8 @@ class ExercisePersonalRecord extends Model
     ];
 
     protected $casts = [
-        'one_rm_kg'   => 'decimal:2',
-        'weight_kg'   => 'decimal:2',
+        'one_rm_kg' => 'decimal:2',
+        'weight_kg' => 'decimal:2',
         'achieved_at' => 'date',
     ];
 

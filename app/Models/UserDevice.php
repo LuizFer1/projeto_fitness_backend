@@ -17,7 +17,7 @@ class UserDevice extends Model
 
     protected $casts = [
         'last_seen_at' => 'datetime',
-        'revoked_at'   => 'datetime',
+        'revoked_at' => 'datetime',
     ];
 
     protected $hidden = ['push_token'];

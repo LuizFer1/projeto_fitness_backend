@@ -5,12 +5,13 @@ namespace App\Services\Assets;
 use App\Models\User;
 use App\Models\WorkoutLog;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class StrengthVictoryAssetService
 {
-    private const WIDTH  = 1080;
+    private const WIDTH = 1080;
+
     private const HEIGHT = 1080;
 
     /**
@@ -19,8 +20,8 @@ class StrengthVictoryAssetService
      */
     public function generate(User $user, WorkoutLog $log): string
     {
-        $manager = new ImageManager(new Driver());
-        $image   = $manager->create(self::WIDTH, self::HEIGHT);
+        $manager = new ImageManager(new Driver);
+        $image = $manager->create(self::WIDTH, self::HEIGHT);
 
         // Background gradient (dark slate)
         $image->fill('#171717');
@@ -32,13 +33,13 @@ class StrengthVictoryAssetService
         $top3 = $exercises
             ->sortByDesc(fn ($e) => ($e->sets ?? 0) * ($e->reps ?? 0) * ($e->weight_kg ?? 0))
             ->take(3)
-            ->map(fn ($e) => ($e->exercise?->name ?? 'Exercício') . ' · ' . $e->sets . 'x' . $e->reps . ' @ ' . $e->weight_kg . 'kg')
+            ->map(fn ($e) => ($e->exercise?->name ?? 'Exercício').' · '.$e->sets.'x'.$e->reps.' @ '.$e->weight_kg.'kg')
             ->values();
 
-        $dateStr     = $log->date?->format('d/m/Y') ?? now()->format('d/m/Y');
-        $durationStr = $log->duration_min ? $log->duration_min . ' min' : '';
-        $caloriesStr = $log->calories_burned ? $log->calories_burned . ' kcal' : '';
-        $volumeStr   = number_format($totalVolume, 0, ',', '.') . ' kg vol.';
+        $dateStr = $log->date?->format('d/m/Y') ?? now()->format('d/m/Y');
+        $durationStr = $log->duration_min ? $log->duration_min.' min' : '';
+        $caloriesStr = $log->calories_burned ? $log->calories_burned.' kcal' : '';
+        $volumeStr = number_format($totalVolume, 0, ',', '.').' kg vol.';
 
         // Draw text blocks
         $image->text('TREINO CONCLUÍDO', self::WIDTH / 2, 160, function ($font) {
@@ -101,7 +102,7 @@ class StrengthVictoryAssetService
         });
 
         $pngData = $image->toPng()->toString();
-        $s3Key   = "victory-assets/strength/{$user->id}/{$log->id}.png";
+        $s3Key = "victory-assets/strength/{$user->id}/{$log->id}.png";
 
         Storage::disk('s3')->put($s3Key, $pngData, 'public');
 

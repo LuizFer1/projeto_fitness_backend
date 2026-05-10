@@ -18,9 +18,9 @@ class UserQuest extends Model
     ];
 
     protected $casts = [
-        'started_at'   => 'date',
+        'started_at' => 'date',
         'completed_at' => 'datetime',
-        'is_notified'  => 'boolean',
+        'is_notified' => 'boolean',
     ];
 
     public function user()

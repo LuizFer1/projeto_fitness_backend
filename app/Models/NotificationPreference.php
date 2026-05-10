@@ -16,11 +16,11 @@ class NotificationPreference extends Model
     ];
 
     protected $casts = [
-        'streak_at_risk'       => 'boolean',
-        'rank_drop'            => 'boolean',
-        'achievement_close'    => 'boolean',
+        'streak_at_risk' => 'boolean',
+        'rank_drop' => 'boolean',
+        'achievement_close' => 'boolean',
         'achievement_unlocked' => 'boolean',
-        'daily_summary'        => 'boolean',
+        'daily_summary' => 'boolean',
     ];
 
     public function user(): BelongsTo

@@ -16,13 +16,13 @@ class Food extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'calories_100g'      => 'decimal:2',
-        'protein_g'          => 'decimal:2',
-        'carbs_g'            => 'decimal:2',
-        'fat_g'              => 'decimal:2',
-        'fiber_g'            => 'decimal:2',
-        'sodium_mg'          => 'decimal:2',
+        'calories_100g' => 'decimal:2',
+        'protein_g' => 'decimal:2',
+        'carbs_g' => 'decimal:2',
+        'fat_g' => 'decimal:2',
+        'fiber_g' => 'decimal:2',
+        'sodium_mg' => 'decimal:2',
         'standard_portion_g' => 'decimal:2',
-        'is_active'          => 'boolean',
+        'is_active' => 'boolean',
     ];
 }

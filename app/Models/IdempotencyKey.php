@@ -10,6 +10,7 @@ class IdempotencyKey extends Model
     use HasUuids;
 
     public const STATUS_PROCESSING = 'processing';
+
     public const STATUS_COMPLETED = 'completed';
 
     public const UPDATED_AT = null;
@@ -21,6 +22,6 @@ class IdempotencyKey extends Model
 
     protected $casts = [
         'response_body' => 'array',
-        'expires_at'    => 'datetime',
+        'expires_at' => 'datetime',
     ];
 }

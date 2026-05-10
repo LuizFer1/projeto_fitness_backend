@@ -16,7 +16,7 @@ class Exercise extends Model
 
     protected $casts = [
         'body_zones' => 'array',
-        'is_active'  => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function parent()

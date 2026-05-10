@@ -2,7 +2,6 @@
 
 namespace App\Jobs;
 
-use App\Models\MealLog;
 use App\Models\NutritionDaily;
 use App\Models\NutritionExport;
 use Illuminate\Bus\Queueable;
@@ -23,7 +22,7 @@ class NutritionExportJob implements ShouldQueue
     public function handle(): void
     {
         $export = NutritionExport::findOrFail($this->exportId);
-        $user   = $export->user;
+        $user = $export->user;
 
         $export->update(['status' => 'generating']);
 
@@ -33,19 +32,19 @@ class NutritionExportJob implements ShouldQueue
                 ->orderBy('date')
                 ->get();
 
-            $csv     = $this->buildCsv($rows);
-            $s3Key   = "nutrition-exports/{$user->id}/{$export->id}.csv";
+            $csv = $this->buildCsv($rows);
+            $s3Key = "nutrition-exports/{$user->id}/{$export->id}.csv";
 
             Storage::disk('s3')->put($s3Key, $csv);
 
             $export->update([
-                'status'       => 'ready',
-                's3_key'       => $s3Key,
+                'status' => 'ready',
+                's3_key' => $s3Key,
                 'generated_at' => now(),
             ]);
         } catch (\Throwable $e) {
             $export->update([
-                'status'        => 'failed',
+                'status' => 'failed',
                 'error_message' => substr($e->getMessage(), 0, 500),
             ]);
             throw $e;

@@ -12,21 +12,20 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class RecalculateLeaderboardJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(private ?string $onlyType = null)
-    {
-    }
+    public function __construct(private ?string $onlyType = null) {}
 
     public function handle(): void
     {
         $now = Carbon::now();
         $periods = [
-            'weekly'   => ['column' => 'current_week_xp',  'ref' => $now->format('o-\WW')],
-            'monthly'  => ['column' => 'current_month_xp', 'ref' => $now->format('Y-m')],
+            'weekly' => ['column' => 'current_week_xp',  'ref' => $now->format('o-\WW')],
+            'monthly' => ['column' => 'current_month_xp', 'ref' => $now->format('Y-m')],
             'all_time' => ['column' => 'xp_total',         'ref' => 'all'],
         ];
 
@@ -45,7 +44,7 @@ class RecalculateLeaderboardJob implements ShouldQueue
 
     private function recalculateFor(string $type, string $column, string $refPeriod): void
     {
-        $rows = UserGamification::select(['user_id', $column . ' as period_xp'])
+        $rows = UserGamification::select(['user_id', $column.' as period_xp'])
             ->where($column, '>', 0)
             ->orderByDesc($column)
             ->get();
@@ -71,16 +70,16 @@ class RecalculateLeaderboardJob implements ShouldQueue
 
             DB::table('ranking_snapshots')->updateOrInsert(
                 [
-                    'user_id'    => $row->user_id,
-                    'type'       => $type,
+                    'user_id' => $row->user_id,
+                    'type' => $type,
                     'ref_period' => $refPeriod,
                 ],
                 [
-                    'id'                 => $existing->id ?? (string) \Illuminate\Support\Str::uuid(),
-                    'period_xp'          => $currentXp,
-                    'position'           => $tiedRank,
-                    'previous_position'  => $existing->position ?? null,
-                    'updated_at'         => $now,
+                    'id' => $existing->id ?? (string) Str::uuid(),
+                    'period_xp' => $currentXp,
+                    'position' => $tiedRank,
+                    'previous_position' => $existing->position ?? null,
+                    'updated_at' => $now,
                 ]
             );
         }

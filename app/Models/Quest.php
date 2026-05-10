@@ -20,9 +20,9 @@ class Quest extends Model
     ];
 
     protected $casts = [
-        'is_active'       => 'boolean',
+        'is_active' => 'boolean',
         'condition_value' => 'integer',
-        'xp_reward'       => 'integer',
+        'xp_reward' => 'integer',
     ];
 
     public function userQuests()

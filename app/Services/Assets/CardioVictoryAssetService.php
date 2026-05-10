@@ -6,12 +6,13 @@ use App\Models\User;
 use App\Models\WorkoutLog;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
-use Intervention\Image\ImageManager;
 use Intervention\Image\Drivers\Gd\Driver;
+use Intervention\Image\ImageManager;
 
 class CardioVictoryAssetService
 {
-    private const WIDTH  = 1080;
+    private const WIDTH = 1080;
+
     private const HEIGHT = 1080;
 
     /**
@@ -20,8 +21,8 @@ class CardioVictoryAssetService
      */
     public function generate(User $user, WorkoutLog $log): string
     {
-        $manager = new ImageManager(new Driver());
-        $image   = $manager->create(self::WIDTH, self::HEIGHT);
+        $manager = new ImageManager(new Driver);
+        $image = $manager->create(self::WIDTH, self::HEIGHT);
         $image->fill('#0f172a');
 
         $mapImage = $this->fetchMapImage($log);
@@ -35,9 +36,9 @@ class CardioVictoryAssetService
         }
 
         $paceStr = $this->formatPace($log->pace_seconds_per_km);
-        $distStr = $log->distance_m ? number_format($log->distance_m / 1000, 2, ',', '.') . ' km' : '';
-        $elevStr = $log->elevation_gain_m ? '↑ ' . $log->elevation_gain_m . ' m' : '';
-        $hrStr   = $log->avg_hr ? $log->avg_hr . ' bpm' : '';
+        $distStr = $log->distance_m ? number_format($log->distance_m / 1000, 2, ',', '.').' km' : '';
+        $elevStr = $log->elevation_gain_m ? '↑ '.$log->elevation_gain_m.' m' : '';
+        $hrStr = $log->avg_hr ? $log->avg_hr.' bpm' : '';
         $dateStr = $log->date?->format('d/m/Y') ?? now()->format('d/m/Y');
 
         $image->text('CÁRDIO CONCLUÍDO', self::WIDTH / 2, 730, function ($font) {
@@ -60,9 +61,9 @@ class CardioVictoryAssetService
             });
         }
 
-        $statsY  = 960;
+        $statsY = 960;
         $statParts = array_filter([$paceStr, $hrStr, $elevStr]);
-        $statStr   = implode('  ·  ', $statParts);
+        $statStr = implode('  ·  ', $statParts);
         if ($statStr) {
             $image->text($statStr, self::WIDTH / 2, $statsY, function ($font) {
                 $font->color('f59e0b');
@@ -78,7 +79,7 @@ class CardioVictoryAssetService
         });
 
         $pngData = $image->toPng()->toString();
-        $s3Key   = "victory-assets/cardio/{$user->id}/{$log->id}.png";
+        $s3Key = "victory-assets/cardio/{$user->id}/{$log->id}.png";
 
         Storage::disk('s3')->put($s3Key, $pngData, 'public');
 
@@ -88,15 +89,15 @@ class CardioVictoryAssetService
     private function fetchMapImage(WorkoutLog $log): ?string
     {
         $polyline = $log->route_polyline;
-        $token    = config('services.mapbox.token');
+        $token = config('services.mapbox.token');
 
-        if (!$polyline || !$token) {
+        if (! $polyline || ! $token) {
             return null;
         }
 
         try {
-            $encoded  = rawurlencode($polyline);
-            $url      = "https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/path-3+22c55e-0.8({$encoded})/auto/1080x680@2x?access_token={$token}";
+            $encoded = rawurlencode($polyline);
+            $url = "https://api.mapbox.com/styles/v1/mapbox/dark-v11/static/path-3+22c55e-0.8({$encoded})/auto/1080x680@2x?access_token={$token}";
             $response = Http::timeout(8)->get($url);
 
             return $response->successful() ? $response->body() : null;
@@ -107,11 +108,12 @@ class CardioVictoryAssetService
 
     private function formatPace(?int $secondsPerKm): string
     {
-        if (!$secondsPerKm) {
+        if (! $secondsPerKm) {
             return '';
         }
         $min = intdiv($secondsPerKm, 60);
         $sec = $secondsPerKm % 60;
+
         return sprintf("%d'%02d\"/km", $min, $sec);
     }
 }

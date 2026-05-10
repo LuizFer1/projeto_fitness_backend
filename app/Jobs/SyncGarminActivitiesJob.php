@@ -26,7 +26,8 @@ class SyncGarminActivitiesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 30;
 
     public function __construct(private User $user) {}
@@ -37,33 +38,34 @@ class SyncGarminActivitiesJob implements ShouldQueue
             ->where('provider', 'garmin')
             ->first();
 
-        if (!$tokenRecord) {
+        if (! $tokenRecord) {
             return;
         }
 
         // Garmin Connect Activity Summary endpoint
         $startDate = now()->subDays(7)->format('Y-m-d');
-        $endDate   = now()->format('Y-m-d');
+        $endDate = now()->format('Y-m-d');
 
         $response = Http::timeout(5)
-            ->withHeaders(['Authorization' => 'Bearer ' . $tokenRecord->access_token])
+            ->withHeaders(['Authorization' => 'Bearer '.$tokenRecord->access_token])
             ->get('https://apis.garmin.com/wellness-api/rest/activities', [
                 'uploadStartTimeInSeconds' => now()->subDays(7)->timestamp,
-                'uploadEndTimeInSeconds'   => now()->timestamp,
+                'uploadEndTimeInSeconds' => now()->timestamp,
             ]);
 
-        if (!$response->successful()) {
-            Log::warning("SyncGarmin: API error for user {$this->user->id}: " . $response->body());
+        if (! $response->successful()) {
+            Log::warning("SyncGarmin: API error for user {$this->user->id}: ".$response->body());
+
             return;
         }
 
         $activities = $response->json('activityDetails', $response->json([], []));
-        $synced     = 0;
+        $synced = 0;
 
         foreach ($activities as $activity) {
             $externalId = (string) ($activity['activityId'] ?? $activity['summaryId'] ?? null);
 
-            if (!$externalId) {
+            if (! $externalId) {
                 continue;
             }
 
@@ -77,29 +79,29 @@ class SyncGarminActivitiesJob implements ShouldQueue
 
             DB::transaction(function () use ($activity, $externalId, $gamification, &$synced) {
                 ExternalActivity::create([
-                    'user_id'              => $this->user->id,
-                    'provider'             => 'garmin',
+                    'user_id' => $this->user->id,
+                    'provider' => 'garmin',
                     'provider_activity_id' => $externalId,
-                    'payload_json'         => $activity,
+                    'payload_json' => $activity,
                 ]);
 
                 $activityType = strtolower($activity['activityType'] ?? 'cardio');
-                $modality     = str_contains($activityType, 'cycling') || str_contains($activityType, 'running')
+                $modality = str_contains($activityType, 'cycling') || str_contains($activityType, 'running')
                     ? 'cardio' : 'strength';
 
                 $log = WorkoutLog::create([
-                    'user_id'             => $this->user->id,
-                    'date'                => date('Y-m-d', $activity['startTimeInSeconds'] ?? time()),
-                    'modality'            => $modality,
-                    'duration_min'        => isset($activity['durationInSeconds']) ? (int) ($activity['durationInSeconds'] / 60) : null,
-                    'calories_burned'     => $activity['activeKilocalories'] ?? null,
-                    'distance_m'          => isset($activity['distanceInMeters']) ? (int) $activity['distanceInMeters'] : null,
-                    'avg_hr'              => $activity['averageHeartRateInBeatsPerMinute'] ?? null,
-                    'max_hr'              => $activity['maxHeartRateInBeatsPerMinute'] ?? null,
-                    'elevation_gain_m'    => $activity['totalElevationGainInMeters'] ?? null,
-                    'external_source'     => 'garmin',
-                    'external_id'         => $externalId,
-                    'mood'                => 'neutral',
+                    'user_id' => $this->user->id,
+                    'date' => date('Y-m-d', $activity['startTimeInSeconds'] ?? time()),
+                    'modality' => $modality,
+                    'duration_min' => isset($activity['durationInSeconds']) ? (int) ($activity['durationInSeconds'] / 60) : null,
+                    'calories_burned' => $activity['activeKilocalories'] ?? null,
+                    'distance_m' => isset($activity['distanceInMeters']) ? (int) $activity['distanceInMeters'] : null,
+                    'avg_hr' => $activity['averageHeartRateInBeatsPerMinute'] ?? null,
+                    'max_hr' => $activity['maxHeartRateInBeatsPerMinute'] ?? null,
+                    'elevation_gain_m' => $activity['totalElevationGainInMeters'] ?? null,
+                    'external_source' => 'garmin',
+                    'external_id' => $externalId,
+                    'mood' => 'neutral',
                 ]);
 
                 if ($modality === 'cardio') {

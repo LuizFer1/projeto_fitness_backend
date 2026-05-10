@@ -12,8 +12,8 @@ class NutritionExport extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'date_from'    => 'date',
-        'date_to'      => 'date',
+        'date_from' => 'date',
+        'date_to' => 'date',
         'generated_at' => 'datetime',
     ];
 

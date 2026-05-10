@@ -20,7 +20,7 @@ class DietAdjustment extends Model
 
     protected $casts = [
         'target_date' => 'date',
-        'applied_at'  => 'datetime',
+        'applied_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

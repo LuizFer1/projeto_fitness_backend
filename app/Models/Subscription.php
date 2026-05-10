@@ -11,8 +11,11 @@ class Subscription extends Model
     use HasFactory, HasUuids;
 
     public const STATUS_TRIALING = 'trialing';
+
     public const STATUS_ACTIVE = 'active';
+
     public const STATUS_CANCELED = 'canceled';
+
     public const STATUS_EXPIRED = 'expired';
 
     protected $fillable = [
@@ -22,11 +25,11 @@ class Subscription extends Model
     ];
 
     protected $casts = [
-        'started_at'            => 'datetime',
-        'trial_ends_at'         => 'datetime',
-        'current_period_end'    => 'datetime',
-        'canceled_at'           => 'datetime',
-        'cancel_at_period_end'  => 'boolean',
+        'started_at' => 'datetime',
+        'trial_ends_at' => 'datetime',
+        'current_period_end' => 'datetime',
+        'canceled_at' => 'datetime',
+        'cancel_at_period_end' => 'boolean',
     ];
 
     public function user()

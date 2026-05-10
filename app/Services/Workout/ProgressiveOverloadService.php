@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Models\WorkoutExerciseLog;
 use App\Services\GamificationService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class ProgressiveOverloadService
@@ -34,23 +35,23 @@ class ProgressiveOverloadService
         }
 
         $lastWeight = (float) $last14Days->first()->weight_kg;
-        $lastReps   = (int) $last14Days->first()->reps;
+        $lastReps = (int) $last14Days->first()->reps;
 
         // Check if last 2 sessions had the same load (stable performance)
         $isStable = $last14Days->count() >= 2
             && $last14Days[0]->weight_kg == $last14Days[1]->weight_kg;
 
         $incrementPct = $isStable ? 0.025 : 0.0; // 2.5% when stable
-        $suggested    = $isStable
+        $suggested = $isStable
             ? round($lastWeight * (1 + $incrementPct) / 2.5) * 2.5 // round to nearest 2.5kg
             : $lastWeight;
 
         return [
-            'last_weight_kg'     => $lastWeight,
-            'last_reps'          => $lastReps,
-            'suggested_weight_kg'=> $suggested,
-            'increment_pct'      => $incrementPct * 100,
-            'reason'             => $isStable ? 'stable_performance' : 'first_session_or_variable',
+            'last_weight_kg' => $lastWeight,
+            'last_reps' => $lastReps,
+            'suggested_weight_kg' => $suggested,
+            'increment_pct' => $incrementPct * 100,
+            'reason' => $isStable ? 'stable_performance' : 'first_session_or_variable',
         ];
     }
 
@@ -77,13 +78,13 @@ class ProgressiveOverloadService
 
         return DB::transaction(function () use ($user, $exerciseId, $weightKg, $reps, $oneRm, $workoutLogId) {
             $pr = ExercisePersonalRecord::create([
-                'user_id'        => $user->id,
-                'exercise_id'    => $exerciseId,
+                'user_id' => $user->id,
+                'exercise_id' => $exerciseId,
                 'workout_log_id' => $workoutLogId,
-                'one_rm_kg'      => $oneRm,
-                'weight_kg'      => $weightKg,
-                'reps'           => $reps,
-                'achieved_at'    => now()->toDateString(),
+                'one_rm_kg' => $oneRm,
+                'weight_kg' => $weightKg,
+                'reps' => $reps,
+                'achieved_at' => now()->toDateString(),
             ]);
 
             $this->gamification->grantPrSetXp($user, $exerciseId);
@@ -95,7 +96,7 @@ class ProgressiveOverloadService
     /**
      * Returns the personal record history for an exercise.
      */
-    public function getHistory(User $user, string $exerciseId): \Illuminate\Database\Eloquent\Collection
+    public function getHistory(User $user, string $exerciseId): Collection
     {
         return ExercisePersonalRecord::where('user_id', $user->id)
             ->where('exercise_id', $exerciseId)

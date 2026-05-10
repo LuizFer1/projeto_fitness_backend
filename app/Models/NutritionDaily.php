@@ -20,9 +20,9 @@ class NutritionDaily extends Model
     ];
 
     protected $casts = [
-        'day'              => 'date',
-        'calories_goal'    => 'integer',
-        'dilution_active'  => 'boolean',
+        'day' => 'date',
+        'calories_goal' => 'integer',
+        'dilution_active' => 'boolean',
         'adjustment_ratio' => 'decimal:4',
     ];
 

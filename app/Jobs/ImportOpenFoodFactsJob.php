@@ -20,7 +20,8 @@ class ImportOpenFoodFactsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 3;
+    public int $tries = 3;
+
     public int $timeout = 60;
 
     private const PAGE_SIZE = 100;
@@ -33,15 +34,16 @@ class ImportOpenFoodFactsJob implements ShouldQueue
             $response = Http::timeout(30)
                 ->withHeaders(['User-Agent' => 'EvoFit/1.0 (contact@evofit.app)'])
                 ->get('https://br.openfoodfacts.org/cgi/search.pl', [
-                    'action'       => 'process',
-                    'json'         => '1',
-                    'page'         => $this->page,
-                    'page_size'    => self::PAGE_SIZE,
-                    'sort_by'      => 'unique_scans_n',
+                    'action' => 'process',
+                    'json' => '1',
+                    'page' => $this->page,
+                    'page_size' => self::PAGE_SIZE,
+                    'sort_by' => 'unique_scans_n',
                 ]);
 
-            if (!$response->ok()) {
+            if (! $response->ok()) {
                 Log::warning('OpenFoodFacts import failed', ['page' => $this->page, 'status' => $response->status()]);
+
                 return;
             }
 
@@ -50,9 +52,9 @@ class ImportOpenFoodFactsJob implements ShouldQueue
 
             foreach ($products as $product) {
                 $barcode = $product['code'] ?? null;
-                $name    = $product['product_name'] ?? $product['product_name_en'] ?? null;
+                $name = $product['product_name'] ?? $product['product_name_en'] ?? null;
 
-                if (!$barcode || !$name) {
+                if (! $barcode || ! $name) {
                     continue;
                 }
 
@@ -61,18 +63,18 @@ class ImportOpenFoodFactsJob implements ShouldQueue
                 Food::updateOrCreate(
                     ['barcode_ean' => $barcode],
                     [
-                        'name'               => mb_substr($name, 0, 150),
-                        'category'           => mb_substr($product['food_groups'] ?? '', 0, 80) ?: null,
-                        'calories_100g'      => $nutriments['energy-kcal_100g'] ?? $nutriments['energy_100g'] ?? 0,
-                        'protein_g'          => $nutriments['proteins_100g'] ?? 0,
-                        'carbs_g'            => $nutriments['carbohydrates_100g'] ?? 0,
-                        'fat_g'              => $nutriments['fat_100g'] ?? 0,
-                        'fiber_g'            => $nutriments['fiber_100g'] ?? null,
-                        'sodium_mg'          => isset($nutriments['sodium_100g']) ? $nutriments['sodium_100g'] * 1000 : null,
+                        'name' => mb_substr($name, 0, 150),
+                        'category' => mb_substr($product['food_groups'] ?? '', 0, 80) ?: null,
+                        'calories_100g' => $nutriments['energy-kcal_100g'] ?? $nutriments['energy_100g'] ?? 0,
+                        'protein_g' => $nutriments['proteins_100g'] ?? 0,
+                        'carbs_g' => $nutriments['carbohydrates_100g'] ?? 0,
+                        'fat_g' => $nutriments['fat_100g'] ?? 0,
+                        'fiber_g' => $nutriments['fiber_100g'] ?? null,
+                        'sodium_mg' => isset($nutriments['sodium_100g']) ? $nutriments['sodium_100g'] * 1000 : null,
                         'standard_portion_g' => 100,
-                        'is_active'          => true,
-                        'source'             => 'openfoodfacts',
-                        'external_id'        => (string) $barcode,
+                        'is_active' => true,
+                        'source' => 'openfoodfacts',
+                        'external_id' => (string) $barcode,
                     ]
                 );
 

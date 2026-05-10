@@ -16,7 +16,7 @@ class ExternalOauthToken extends Model
 
     protected $casts = [
         'expires_at' => 'datetime',
-        'scopes'     => 'array',
+        'scopes' => 'array',
     ];
 
     protected $hidden = ['access_token', 'refresh_token'];

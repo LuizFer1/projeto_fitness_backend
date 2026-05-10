@@ -12,10 +12,10 @@ class BiweeklyReport extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'period_start'  => 'date',
-        'period_end'    => 'date',
-        'summary_data'  => 'array',
-        'generated_at'  => 'datetime',
+        'period_start' => 'date',
+        'period_end' => 'date',
+        'summary_data' => 'array',
+        'generated_at' => 'datetime',
     ];
 
     public function user()

@@ -20,12 +20,12 @@ class RankDropNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type'              => 'rank_drop',
-            'period'            => $this->period,
+            'type' => 'rank_drop',
+            'period' => $this->period,
             'previous_position' => $this->previousPosition,
-            'current_position'  => $this->currentPosition,
-            'title'             => 'Você caiu no ranking!',
-            'body'              => "Você saiu da posição #{$this->previousPosition} para #{$this->currentPosition} no ranking {$this->period}. Treine para recuperar sua posição!",
+            'current_position' => $this->currentPosition,
+            'title' => 'Você caiu no ranking!',
+            'body' => "Você saiu da posição #{$this->previousPosition} para #{$this->currentPosition} no ranking {$this->period}. Treine para recuperar sua posição!",
         ];
     }
 }

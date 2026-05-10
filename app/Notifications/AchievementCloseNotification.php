@@ -20,12 +20,12 @@ class AchievementCloseNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type'             => 'achievement_close',
+            'type' => 'achievement_close',
             'achievement_slug' => $this->achievement->slug,
             'achievement_name' => $this->achievement->name,
             'progress_percent' => $this->progressPercent,
-            'title'            => 'Você está quase lá!',
-            'body'             => "Você está {$this->progressPercent}% do caminho para a conquista: {$this->achievement->name}",
+            'title' => 'Você está quase lá!',
+            'body' => "Você está {$this->progressPercent}% do caminho para a conquista: {$this->achievement->name}",
         ];
     }
 }

@@ -31,27 +31,27 @@ class GenerateVictoryAssetJob implements ShouldQueue
         CardioVictoryAssetService $cardioService
     ): void {
         $asset = VictoryAsset::findOrFail($this->victoryAssetId);
-        $log   = WorkoutLog::findOrFail($this->workoutLogId);
+        $log = WorkoutLog::findOrFail($this->workoutLogId);
 
         $asset->update(['status' => 'processing']);
 
         try {
             $isCardio = in_array($log->modality, ['cardio']) || ($log->distance_m > 0);
-            $s3Key    = $isCardio
+            $s3Key = $isCardio
                 ? $cardioService->generate($asset->user, $log)
                 : $strengthService->generate($asset->user, $log);
 
             $publicUrl = Storage::disk('s3')->url($s3Key);
 
             $asset->update([
-                'status'       => 'ready',
-                's3_key'       => $s3Key,
-                'public_url'   => $publicUrl,
+                'status' => 'ready',
+                's3_key' => $s3Key,
+                'public_url' => $publicUrl,
                 'generated_at' => now(),
             ]);
         } catch (\Throwable $e) {
             $asset->update([
-                'status'        => 'failed',
+                'status' => 'failed',
                 'error_message' => substr($e->getMessage(), 0, 500),
             ]);
             throw $e;

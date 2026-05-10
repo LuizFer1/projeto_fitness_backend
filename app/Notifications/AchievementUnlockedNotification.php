@@ -17,13 +17,13 @@ class AchievementUnlockedNotification extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'type'            => 'achievement_unlocked',
+            'type' => 'achievement_unlocked',
             'achievement_slug' => $this->achievement->slug,
             'achievement_name' => $this->achievement->name,
-            'tier'             => $this->achievement->tier ?? 'bronze',
-            'xp_reward'        => $this->achievement->xp_reward ?? 0,
-            'title'            => 'Conquista desbloqueada!',
-            'body'             => "Você desbloqueou: {$this->achievement->name}",
+            'tier' => $this->achievement->tier ?? 'bronze',
+            'xp_reward' => $this->achievement->xp_reward ?? 0,
+            'title' => 'Conquista desbloqueada!',
+            'body' => "Você desbloqueou: {$this->achievement->name}",
         ];
     }
 }

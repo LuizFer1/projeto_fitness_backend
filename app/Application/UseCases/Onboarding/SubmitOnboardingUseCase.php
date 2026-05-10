@@ -12,8 +12,11 @@ use Illuminate\Validation\ValidationException;
 class SubmitOnboardingUseCase
 {
     private OnboardingRepositoryInterface $onboardingRepository;
+
     private NutritionRepositoryInterface $nutritionRepository;
+
     private CalculateDailyCaloriesUseCase $calculateCaloriesUseCase;
+
     private LoggerInterface $logger;
 
     public function __construct(
@@ -31,9 +34,6 @@ class SubmitOnboardingUseCase
     /**
      * Orchestrates the onboarding process.
      *
-     * @param string $userUuid
-     * @param array $data
-     * @return UserOnboarding
      * @throws ValidationException
      */
     public function execute(string $userUuid, array $data): UserOnboarding
@@ -54,7 +54,7 @@ class SubmitOnboardingUseCase
 
         $onboardingData = array_merge($data, [
             'completed' => true,
-            'bmr'       => $bmr,
+            'bmr' => $bmr,
         ]);
 
         return DB::transaction(function () use ($userUuid, $onboardingData, $tdee) {

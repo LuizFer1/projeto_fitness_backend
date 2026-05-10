@@ -11,12 +11,12 @@ class RedisRankingService
 {
     public function weeklyKey(): string
     {
-        return 'ranking:weekly:' . Carbon::now()->format('o-\WW');
+        return 'ranking:weekly:'.Carbon::now()->format('o-\WW');
     }
 
     public function monthlyKey(): string
     {
-        return 'ranking:monthly:' . Carbon::now()->format('Y-m');
+        return 'ranking:monthly:'.Carbon::now()->format('Y-m');
     }
 
     public function alltimeKey(): string
@@ -27,9 +27,9 @@ class RedisRankingService
     public function keyForPeriod(string $period): string
     {
         return match ($period) {
-            'weekly'   => $this->weeklyKey(),
-            'monthly'  => $this->monthlyKey(),
-            default    => $this->alltimeKey(),
+            'weekly' => $this->weeklyKey(),
+            'monthly' => $this->monthlyKey(),
+            default => $this->alltimeKey(),
         };
     }
 
@@ -45,9 +45,9 @@ class RedisRankingService
 
         try {
             $pipe = Redis::pipeline();
-            $wk   = $this->weeklyKey();
-            $mo   = $this->monthlyKey();
-            $at   = $this->alltimeKey();
+            $wk = $this->weeklyKey();
+            $mo = $this->monthlyKey();
+            $at = $this->alltimeKey();
 
             $pipe->zincrby($wk, $delta, $userId);
             $pipe->zincrby($mo, $delta, $userId);
@@ -76,6 +76,7 @@ class RedisRankingService
             foreach ($raw as $userId => $score) {
                 $result[] = ['user_id' => (string) $userId, 'score' => (int) $score];
             }
+
             return $result;
         } catch (\Throwable) {
             return [];
@@ -89,6 +90,7 @@ class RedisRankingService
     {
         try {
             $rank = Redis::zrevrank($key, $userId);
+
             return $rank !== null ? (int) $rank + 1 : null;
         } catch (\Throwable) {
             return null;
@@ -102,6 +104,7 @@ class RedisRankingService
     {
         try {
             $score = Redis::zscore($key, $userId);
+
             return $score !== null ? (int) $score : null;
         } catch (\Throwable) {
             return null;
@@ -127,7 +130,7 @@ class RedisRankingService
             $pipe->del($at);
 
             foreach ($rows as $row) {
-                if ($row->current_week_xp  > 0) {
+                if ($row->current_week_xp > 0) {
                     $pipe->zadd($wk, [$row->user_id => (int) $row->current_week_xp]);
                 }
                 if ($row->current_month_xp > 0) {

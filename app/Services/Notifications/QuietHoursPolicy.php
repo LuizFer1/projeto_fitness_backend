@@ -13,8 +13,8 @@ class QuietHoursPolicy
     public function isQuiet(Carbon $now, string $start, string $end): bool
     {
         $startH = (int) explode(':', $start)[0];
-        $endH   = (int) explode(':', $end)[0];
-        $hour   = $now->hour;
+        $endH = (int) explode(':', $end)[0];
+        $hour = $now->hour;
 
         if ($startH > $endH) {
             // Overnight window: quiet from startH through midnight and until endH

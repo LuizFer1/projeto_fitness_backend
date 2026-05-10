@@ -7,7 +7,7 @@ class CalculateDailyCaloriesUseCase
     public function execute(array $data): array
     {
         $formula = $data['tdee_formula'] ?? 'mifflin';
-        $bmr     = $this->calculateBmr($data, $formula);
+        $bmr = $this->calculateBmr($data, $formula);
 
         if ($bmr === null) {
             return ['bmr' => null, 'tdee' => null];
@@ -20,9 +20,9 @@ class CalculateDailyCaloriesUseCase
         $tdee = (int) round($bmr * $factor);
 
         return [
-            'bmr'    => (int) round($bmr),
-            'tdee'   => $tdee,
-            'formula'         => $formula,
+            'bmr' => (int) round($bmr),
+            'tdee' => $tdee,
+            'formula' => $formula,
             'activity_factor' => round($factor, 2),
         ];
     }
@@ -37,11 +37,11 @@ class CalculateDailyCaloriesUseCase
 
         $weight = (float) $data['weight_kg'];
         $height = (float) $data['height_cm'];
-        $age    = (int) $data['age'];
+        $age = (int) $data['age'];
 
         return match ($formula) {
             'harris' => $this->harrisBenedict($data['gender'], $weight, $height, $age),
-            default  => $this->mifflinStJeor($data['gender'], $weight, $height, $age),
+            default => $this->mifflinStJeor($data['gender'], $weight, $height, $age),
         };
     }
 
@@ -76,7 +76,7 @@ class CalculateDailyCaloriesUseCase
             $workouts >= 6 => 1.725,
             $workouts >= 3 => 1.55,
             $workouts >= 1 => 1.375,
-            default        => 1.2,
+            default => 1.2,
         };
     }
 }

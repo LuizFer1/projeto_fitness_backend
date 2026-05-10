@@ -12,13 +12,15 @@ class AuditLog extends Model
     protected $table = 'audit_log';
 
     public $timestamps = false;
+
     public $incrementing = false;
+
     protected $keyType = 'string';
 
     protected $guarded = [];
 
     protected $casts = [
-        'payload'    => 'array',
+        'payload' => 'array',
         'created_at' => 'datetime',
     ];
 
@@ -32,7 +34,7 @@ class AuditLog extends Model
         return false;
     }
 
-    public function delete(): bool|null
+    public function delete(): ?bool
     {
         return false;
     }

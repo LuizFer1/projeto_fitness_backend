@@ -25,7 +25,8 @@ class VerifyAchievementsRetroactivelyJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;
+    public int $tries = 1;
+
     public int $timeout = 600; // 10 min max
 
     public function handle(GamificationService $gamification): void
@@ -38,8 +39,7 @@ class VerifyAchievementsRetroactivelyJob implements ShouldQueue
             return;
         }
 
-        $users = User::whereHas('gamification', fn ($q) =>
-            $q->where('xp_total', '>=', config('gamification.levels.5.min_xp', 10000))
+        $users = User::whereHas('gamification', fn ($q) => $q->where('xp_total', '>=', config('gamification.levels.5.min_xp', 10000))
         )->cursor();
 
         foreach ($users as $user) {
@@ -54,7 +54,7 @@ class VerifyAchievementsRetroactivelyJob implements ShouldQueue
     private function verifyForUser(User $user, GamificationService $gamification): void
     {
         $gam = $user->gamification;
-        if (!$gam) {
+        if (! $gam) {
             return;
         }
 

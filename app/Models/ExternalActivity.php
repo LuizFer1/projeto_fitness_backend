@@ -19,7 +19,7 @@ class ExternalActivity extends Model
 
     protected $casts = [
         'payload_json' => 'array',
-        'synced_at'    => 'datetime',
+        'synced_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

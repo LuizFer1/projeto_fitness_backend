@@ -18,7 +18,7 @@ class WaterLog extends Model
 
     protected $casts = [
         'liters' => 'decimal:2',
-        'date'   => 'date',
+        'date' => 'date',
     ];
 
     public function user()

@@ -20,7 +20,7 @@ class RegisterCardioSessionUseCase
     public function execute(User $user, array $data): WorkoutLog
     {
         // Dedup check for external sources (RNF-08)
-        if (!empty($data['external_source']) && $data['external_source'] !== 'manual' && !empty($data['external_id'])) {
+        if (! empty($data['external_source']) && $data['external_source'] !== 'manual' && ! empty($data['external_id'])) {
             $existing = WorkoutLog::where('external_source', $data['external_source'])
                 ->where('external_id', $data['external_id'])
                 ->first();
@@ -32,22 +32,22 @@ class RegisterCardioSessionUseCase
 
         return DB::transaction(function () use ($user, $data) {
             $log = WorkoutLog::create([
-                'user_id'             => $user->id,
-                'date'                => $data['date'] ?? now()->toDateString(),
-                'modality'            => 'cardio',
-                'duration_min'        => $data['duration_min'] ?? null,
-                'calories_burned'     => $data['calories_burned'] ?? null,
-                'distance_m'          => $data['distance_m'] ?? null,
+                'user_id' => $user->id,
+                'date' => $data['date'] ?? now()->toDateString(),
+                'modality' => 'cardio',
+                'duration_min' => $data['duration_min'] ?? null,
+                'calories_burned' => $data['calories_burned'] ?? null,
+                'distance_m' => $data['distance_m'] ?? null,
                 'pace_seconds_per_km' => $data['pace_seconds_per_km'] ?? null,
-                'avg_hr'              => $data['avg_hr'] ?? null,
-                'max_hr'              => $data['max_hr'] ?? null,
-                'elevation_gain_m'    => $data['elevation_gain_m'] ?? null,
-                'route_polyline'      => $data['route_polyline'] ?? null,
-                'route_geojson_path'  => $data['route_geojson_path'] ?? null,
-                'external_source'     => $data['external_source'] ?? 'manual',
-                'external_id'         => $data['external_id'] ?? null,
-                'mood'                => $data['mood'] ?? 'neutral',
-                'observations'        => $data['observations'] ?? null,
+                'avg_hr' => $data['avg_hr'] ?? null,
+                'max_hr' => $data['max_hr'] ?? null,
+                'elevation_gain_m' => $data['elevation_gain_m'] ?? null,
+                'route_polyline' => $data['route_polyline'] ?? null,
+                'route_geojson_path' => $data['route_geojson_path'] ?? null,
+                'external_source' => $data['external_source'] ?? 'manual',
+                'external_id' => $data['external_id'] ?? null,
+                'mood' => $data['mood'] ?? 'neutral',
+                'observations' => $data['observations'] ?? null,
             ]);
 
             $this->gamification->grantCardioCompletedXp($user, $log->id);
