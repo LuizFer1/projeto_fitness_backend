@@ -5,11 +5,11 @@ namespace App\Services;
 use App\Models\Achievement;
 use App\Models\DailyActivityLimit;
 use App\Models\MealLog;
+use App\Models\User;
 use App\Models\UserAchievement;
 use App\Models\UserGamification;
 use App\Models\WorkoutLog;
 use App\Models\XpTransaction;
-use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -30,7 +30,8 @@ class GamificationService
 
     // ── Legacy constants (kept for backward compat with old grants) ───
     private const PENALTY_CALORIES = 15;
-    private const PENALTY_WORKOUT  = 50;
+
+    private const PENALTY_WORKOUT = 50;
 
     // ================================================================
     //  LEGACY GRANTS (backward-compatible)
@@ -49,6 +50,7 @@ class GamificationService
             $tx = $this->creditXpFromConfig($user, 'daily_login', 'Login diário', $today);
             $limit->update(['login_xp_granted' => true]);
             $this->touchActivity($user, $today);
+
             return $tx;
         });
     }
@@ -66,6 +68,7 @@ class GamificationService
             $tx = $this->creditXpFromConfig($user, 'meal_logged', 'Registro de refeição', $today);
             $limit->update(['meal_xp_granted' => true]);
             $this->touchActivity($user, $today);
+
             return $tx;
         });
     }
@@ -87,6 +90,7 @@ class GamificationService
             $limit->increment('workout_count');
             $this->gamification($user)->increment('total_workouts');
             $this->touchActivity($user, $today);
+
             return $tx;
         });
     }
@@ -104,6 +108,7 @@ class GamificationService
             $tx = $this->creditXpFromConfig($user, 'weight_logged', 'Registro de peso', $today);
             $limit->update(['weight_logged' => true]);
             $this->touchActivity($user, $today);
+
             return $tx;
         });
     }
@@ -124,6 +129,7 @@ class GamificationService
         return DB::transaction(function () use ($user, $date, $limit) {
             $tx = $this->creditXpFromConfig($user, 'clean_diet_day', 'Dia limpo de dieta', $date);
             $limit->update(['clean_diet_xp_granted' => true]);
+
             return $tx;
         });
     }
@@ -140,6 +146,7 @@ class GamificationService
         return DB::transaction(function () use ($user, $date, $limit) {
             $tx = $this->creditXpFromConfig($user, 'protein_goal_met', 'Meta de proteína atingida', $date);
             $limit->update(['protein_xp_granted' => true]);
+
             return $tx;
         });
     }
@@ -156,6 +163,7 @@ class GamificationService
         return DB::transaction(function () use ($user, $date, $limit) {
             $tx = $this->creditXpFromConfig($user, 'water_goal_met', 'Meta de água atingida', $date);
             $limit->update(['water_xp_granted' => true]);
+
             return $tx;
         });
     }
@@ -178,6 +186,7 @@ class GamificationService
             $limit->update(['cardio_xp_granted' => true]);
             $this->gamification($user)->increment('total_workouts');
             $this->touchActivity($user, $today);
+
             return $tx;
         });
     }
@@ -195,6 +204,7 @@ class GamificationService
         return DB::transaction(function () use ($user, $today, $limit) {
             $tx = $this->creditXpFromConfig($user, 'progress_photo', 'Foto de progresso registrada', $today);
             $limit->update(['photo_xp_granted' => true]);
+
             return $tx;
         });
     }
@@ -202,7 +212,7 @@ class GamificationService
     /** +15 XP (up to 30/day) for sharing a victory asset. */
     public function grantAssetSharedXp(User $user, string $refId): ?XpTransaction
     {
-        $today  = $this->userToday($user);
+        $today = $this->userToday($user);
         $config = config('gamification.events.asset_shared');
 
         // Count today's asset shares
@@ -232,6 +242,7 @@ class GamificationService
                 $exerciseId, 'exercises'
             );
             $this->awardBadge($user, 'pr_broken');
+
             return $tx;
         });
     }
@@ -242,16 +253,16 @@ class GamificationService
 
     public function processEndOfDay(User $user, string $dateString): void
     {
-        $date    = Carbon::parse($dateString);
-        $gam     = $this->gamification($user);
+        $date = Carbon::parse($dateString);
+        $gam = $this->gamification($user);
         $isoWeek = $date->format('o-\WW');
 
         $hadActivity = DailyActivityLimit::where('user_id', $user->id)
             ->where('date', $dateString)
             ->where(function ($q) {
                 $q->where('login_xp_granted', true)
-                  ->orWhere('meal_xp_granted', true)
-                  ->orWhere('workout_count', '>', 0);
+                    ->orWhere('meal_xp_granted', true)
+                    ->orWhere('workout_count', '>', 0);
             })
             ->exists();
 
@@ -259,8 +270,8 @@ class GamificationService
             $newStreak = $gam->current_streak + 1;
             $gam->update([
                 'current_streak' => $newStreak,
-                'max_streak'     => max($gam->max_streak, $newStreak),
-                'last_activity'  => $dateString,
+                'max_streak' => max($gam->max_streak, $newStreak),
+                'last_activity' => $dateString,
             ]);
 
             if ($newStreak > 0 && $newStreak % 7 === 0) {
@@ -272,7 +283,7 @@ class GamificationService
         } else {
             $usedSafetyThisWeek = ($gam->last_week_safety_day_used === $isoWeek);
 
-            if (!$usedSafetyThisWeek) {
+            if (! $usedSafetyThisWeek) {
                 $gam->update(['last_week_safety_day_used' => $isoWeek]);
                 Log::info("Gamification: Safety day consumed for user {$user->id} on {$dateString}");
             } else {
@@ -286,8 +297,8 @@ class GamificationService
 
     public function processEndOfWeek(User $user, string $sundayDateString): void
     {
-        $sunday  = Carbon::parse($sundayDateString);
-        $monday  = $sunday->copy()->startOfWeek(Carbon::MONDAY);
+        $sunday = Carbon::parse($sundayDateString);
+        $monday = $sunday->copy()->startOfWeek(Carbon::MONDAY);
         $isoWeek = $sunday->format('o-\WW');
 
         $weekWorkouts = WorkoutLog::where('user_id', $user->id)
@@ -322,7 +333,7 @@ class GamificationService
     public function checkLevelUp(User $user): bool
     {
         $gam = $this->gamification($user);
-        $xp  = $gam->xp_total;
+        $xp = $gam->xp_total;
 
         $newLevel = 1;
         foreach (self::LEVEL_THRESHOLDS as $level => $minXp) {
@@ -335,17 +346,18 @@ class GamificationService
             return false;
         }
 
-        $nextXp  = self::LEVEL_THRESHOLDS[$newLevel + 1] ?? null;
+        $nextXp = self::LEVEL_THRESHOLDS[$newLevel + 1] ?? null;
         $xpToNext = $nextXp ? ($nextXp - $xp) : 0;
 
         $gam->update([
             'current_level' => $newLevel,
-            'xp_to_next'    => max(0, $xpToNext),
+            'xp_to_next' => max(0, $xpToNext),
         ]);
 
         $this->checkLevelBadges($user, $newLevel);
 
         Log::info("Gamification: User {$user->id} leveled up to {$newLevel}");
+
         return true;
     }
 
@@ -356,7 +368,7 @@ class GamificationService
     public function awardBadge(User $user, string $slug): ?UserAchievement
     {
         $achievement = Achievement::where('slug', $slug)->where('is_active', true)->first();
-        if (!$achievement) {
+        if (! $achievement) {
             return null;
         }
 
@@ -370,10 +382,10 @@ class GamificationService
 
         return DB::transaction(function () use ($user, $achievement) {
             $ua = UserAchievement::create([
-                'user_id'        => $user->id,
+                'user_id' => $user->id,
                 'achievement_id' => $achievement->id,
-                'xp_received'    => $achievement->xp_reward,
-                'is_notified'    => false,
+                'xp_received' => $achievement->xp_reward,
+                'is_notified' => false,
             ]);
 
             if ($achievement->xp_reward > 0) {
@@ -391,7 +403,7 @@ class GamificationService
 
     public function checkWorkoutBadges(User $user): void
     {
-        $gam       = $this->gamification($user);
+        $gam = $this->gamification($user);
         $milestones = [10 => 'treinos_10', 50 => 'treinos_50', 100 => 'treinos_100'];
 
         foreach ($milestones as $count => $slug) {
@@ -414,21 +426,21 @@ class GamificationService
         string $date, ?string $refId = null, ?string $refTable = null,
         ?string $typeOverride = null
     ): XpTransaction {
-        $cfg    = config("gamification.events.{$eventKey}", []);
-        $base   = $cfg['base']        ?? 10;
-        $maxMult = $cfg['max_mult']   ?? 1.0;
-        $fullAt  = $cfg['full_at_days'] ?? 1;
-        $cap     = $cfg['cap']        ?? $base;
+        $cfg = config("gamification.events.{$eventKey}", []);
+        $base = $cfg['base'] ?? 10;
+        $maxMult = $cfg['max_mult'] ?? 1.0;
+        $fullAt = $cfg['full_at_days'] ?? 1;
+        $cap = $cfg['cap'] ?? $base;
 
-        $streak     = $this->gamification($user)->current_streak;
+        $streak = $this->gamification($user)->current_streak;
         $multiplier = $this->calcEventMultiplier($streak, $maxMult, $fullAt);
-        $amount     = (int) min(round($base * $multiplier), $cap);
+        $amount = (int) min(round($base * $multiplier), $cap);
 
-        $bonusPct = $multiplier > 1.0 ? ' (streak +' . round(($multiplier - 1) * 100) . '%)' : '';
+        $bonusPct = $multiplier > 1.0 ? ' (streak +'.round(($multiplier - 1) * 100).'%)' : '';
 
         return $this->creditXp(
             $user, $typeOverride ?? $eventKey, $amount,
-            $description . $bonusPct,
+            $description.$bonusPct,
             $date, $refId, $refTable
         );
     }
@@ -446,14 +458,14 @@ class GamificationService
         $gam->refresh();
 
         $tx = XpTransaction::create([
-            'user_id'            => $user->id,
-            'type'               => $type,
-            'xp_gained'          => $amount,
-            'description'        => $description,
-            'ref_id'             => $refId,
-            'ref_table'          => $refTable,
-            'date'               => $date,
-            'xp_total_snapshot'  => $gam->xp_total,
+            'user_id' => $user->id,
+            'type' => $type,
+            'xp_gained' => $amount,
+            'description' => $description,
+            'ref_id' => $refId,
+            'ref_table' => $refTable,
+            'date' => $date,
+            'xp_total_snapshot' => $gam->xp_total,
         ]);
 
         $this->checkLevelUp($user);
@@ -477,12 +489,12 @@ class GamificationService
         $gam->refresh();
 
         return XpTransaction::create([
-            'user_id'            => $user->id,
-            'type'               => $type,
-            'xp_gained'          => -$actual,
-            'description'        => $description,
-            'date'               => $date,
-            'xp_total_snapshot'  => $gam->xp_total,
+            'user_id' => $user->id,
+            'type' => $type,
+            'xp_gained' => -$actual,
+            'description' => $description,
+            'date' => $date,
+            'xp_total_snapshot' => $gam->xp_total,
         ]);
     }
 
@@ -496,6 +508,7 @@ class GamificationService
             return 1.0;
         }
         $ratio = min($streak / $fullAt, 1.0);
+
         return 1.0 + $ratio * ($maxMult - 1.0);
     }
 
@@ -511,7 +524,7 @@ class GamificationService
         }
 
         $goal = $user->goal;
-        if (!$goal || !$goal->goal_calories_day) {
+        if (! $goal || ! $goal->goal_calories_day) {
             return;
         }
 
@@ -564,9 +577,9 @@ class GamificationService
     {
         // Legacy slugs preserved; new SRS slugs mapped below
         $milestones = [
-            7   => ['streak_7',    'clean_week'],
-            30  => ['streak_30',   'armored_month'],
-            90  => ['streak_90'],
+            7 => ['streak_7',    'clean_week'],
+            30 => ['streak_30',   'armored_month'],
+            90 => ['streak_90'],
             365 => ['evofit_legendary'],
         ];
 
@@ -597,14 +610,24 @@ class GamificationService
     private function touchActivity(User $user, string $date): void
     {
         $gam = $this->gamification($user);
-        if (!$gam->last_activity || $gam->last_activity->toDateString() < $date) {
+        if (! $gam->last_activity || $gam->last_activity->toDateString() < $date) {
             $gam->update(['last_activity' => $date]);
         }
     }
 
     private function gamification(User $user): UserGamification
     {
-        return $user->gamification ?? UserGamification::create(['user_id' => $user->id]);
+        if ($user->gamification) {
+            return $user->gamification;
+        }
+
+        // Eloquent's `create()` returns a model populated only with the attributes
+        // we passed — DB-level column defaults (current_streak=0, xp_total=0, …)
+        // are NOT hydrated unless we refresh, so callers would otherwise read null
+        // from typed columns and explode in calcEventMultiplier(int $streak, …).
+        $gam = UserGamification::create(['user_id' => $user->id]);
+
+        return $gam->refresh();
     }
 
     private function userToday(User $user): string
