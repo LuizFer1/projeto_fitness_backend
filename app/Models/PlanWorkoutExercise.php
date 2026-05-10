@@ -23,4 +23,9 @@ class PlanWorkoutExercise extends Model
     {
         return $this->belongsTo(Exercise::class);
     }
+
+    public function comments()
+    {
+        return $this->hasMany(PlanWorkoutExerciseComment::class, 'plan_workout_exercise_id');
+    }
 }

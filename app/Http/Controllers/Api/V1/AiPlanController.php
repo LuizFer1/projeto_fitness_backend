@@ -78,6 +78,189 @@ class AiPlanController extends Controller
         }
     }
 
+    #[OA\Post(
+        path: '/api/v1/plans/{plan_id}/refine',
+        summary: 'Refine an AI workout plan using the user comments',
+        description: 'Re-asks Groq with the existing sheet structure plus the user comments grouped by exercise (and an optional free-text note). Creates a new plan version (version+1, status=active) and marks the previous one as replaced.',
+        tags: ['AI Plans'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'plan_id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                type: 'object',
+                properties: [
+                    new OA\Property(property: 'note', type: 'string', nullable: true, example: 'Quero focar mais em peito esta semana.'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Plan refined; new active version created.'),
+            new OA\Response(response: 403, description: 'Plan does not belong to the authenticated user'),
+            new OA\Response(response: 404, description: 'Plan not found'),
+            new OA\Response(response: 502, description: 'AI service unavailable'),
+        ]
+    )]
+    public function refineWorkout(Request $request, string $id)
+    {
+        $validated = $request->validate([
+            'note' => 'nullable|string|max:1000',
+        ]);
+
+        $user = $request->user() ?? User::first();
+
+        $plan = AiPlan::where('user_id', $user->id)
+            ->where('id', $id)
+            ->where('type', 'workout')
+            ->with(['planWorkouts.exercises.exercise'])
+            ->firstOrFail();
+
+        // Collect user comments for the exercises in this plan.
+        $exerciseIds = $plan->planWorkouts
+            ->flatMap(fn ($w) => $w->exercises->pluck('id'))
+            ->all();
+
+        $comments = \App\Models\PlanWorkoutExerciseComment::query()
+            ->whereIn('plan_workout_exercise_id', $exerciseIds)
+            ->where('user_id', $user->id)
+            ->get();
+
+        $prompt = $this->buildRefinePrompt($plan, $comments, $validated['note'] ?? null);
+
+        try {
+            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'A IA está indisponível no momento. Tente novamente em instantes.',
+                'detail' => $e->getMessage(),
+            ], 502);
+        }
+
+        try {
+            $newPlan = DB::transaction(function () use ($plan, $user, $aiResponse, $prompt) {
+                $aiPlan = AiPlan::create([
+                    'user_id' => $user->id,
+                    'type' => $plan->type,
+                    'version' => $plan->version + 1,
+                    'status' => 'active',
+                    'content_json' => $aiResponse,
+                    'generation_reason' => 'Refined from plan '.$plan->id.' (v'.$plan->version.')',
+                    'context_prompt' => $prompt,
+                    'valid_from' => Carbon::today(),
+                    'valid_until' => Carbon::today()->addWeeks(8),
+                ]);
+
+                foreach ($aiResponse['workouts'] ?? [] as $workoutData) {
+                    $this->persistWorkoutDay($aiPlan, $workoutData);
+                }
+
+                // Mark the source plan as replaced.
+                $plan->update(['status' => 'replaced']);
+
+                return $aiPlan->load('planWorkouts.exercises.exercise');
+            });
+        } catch (\Throwable $e) {
+            return $this->failureResponse($e, 'Failed to persist refined plan');
+        }
+
+        return response()->json([
+            'message' => 'Plan refined successfully!',
+            'plan' => $newPlan,
+        ], 201);
+    }
+
+    /**
+     * Build a Groq prompt that asks for a refined plan, given the current sheet
+     * structure (as JSON) and the user's comments grouped by exercise, plus an
+     * optional free-text note.
+     */
+    private function buildRefinePrompt(AiPlan $plan, $comments, ?string $note): string
+    {
+        $current = [
+            'plan_name' => $plan->content_json['plan_name'] ?? null,
+            'plan_goal' => $plan->content_json['plan_goal'] ?? null,
+            'days_per_week' => $plan->content_json['days_per_week'] ?? null,
+            'workouts' => $plan->planWorkouts->map(function ($w) {
+                return [
+                    'day_of_week' => $w->day_of_week,
+                    'workout_name' => $w->workout_name,
+                    'workout_observations' => $w->ai_observations,
+                    'exercises' => $w->exercises->map(function ($ex) {
+                        return [
+                            'plan_workout_exercise_id' => $ex->id,
+                            'exercise_name' => $ex->exercise?->name,
+                            'sets' => $ex->rec_sets,
+                            'repetitions' => $ex->rec_reps,
+                            'rest_seconds' => $ex->rest_sec,
+                            'suggested_weight_kg' => $ex->rec_weight_kg,
+                            'ai_observations' => $ex->ai_notes,
+                        ];
+                    })->values(),
+                ];
+            })->values(),
+        ];
+
+        $byExercise = [];
+        foreach ($comments as $c) {
+            $exId = $c->plan_workout_exercise_id;
+            $exName = null;
+            foreach ($plan->planWorkouts as $w) {
+                foreach ($w->exercises as $ex) {
+                    if ($ex->id === $exId) {
+                        $exName = $ex->exercise?->name;
+                        break 2;
+                    }
+                }
+            }
+            $byExercise[$exId] ??= ['exercise_name' => $exName, 'comments' => []];
+            $byExercise[$exId]['comments'][] = [
+                'type' => $c->type,
+                'type_label' => $this->humanCommentType($c->type),
+                'text' => $c->text,
+            ];
+        }
+
+        $commentsBlock = empty($byExercise)
+            ? 'O usuário não registrou comentários específicos por exercício.'
+            : json_encode(array_values($byExercise), JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        $noteBlock = $note ? trim($note) : 'Nenhum.';
+
+        $sheetJson = json_encode($current, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+
+        return "Você é um Personal Trainer especialista em ajustar protocolos de treino.\n"
+            ."O usuário já tem o seguinte plano de treino atual (em JSON):\n\n"
+            ."<PLANO_ATUAL>\n{$sheetJson}\n</PLANO_ATUAL>\n\n"
+            ."O usuário registrou os seguintes comentários por exercício. Cada comentário tem um `type` que indica a intenção:\n"
+            ."- pain: o exercício causou dor/desconforto, deve ser substituído ou removido por uma alternativa segura.\n"
+            ."- broken: o equipamento necessário não está disponível; substitua por um exercício que use outro equipamento ou peso corporal.\n"
+            ."- heavy: a carga sugerida ficou pesada demais; reduza carga e/ou troque por uma variação mais acessível, mantendo o mesmo grupo muscular.\n"
+            ."- custom: texto livre — leia o `text` e ajuste de acordo.\n\n"
+            ."<COMENTARIOS_DO_USUARIO>\n{$commentsBlock}\n</COMENTARIOS_DO_USUARIO>\n\n"
+            ."Observação livre adicional do usuário: {$noteBlock}\n\n"
+            ."REGRAS:\n"
+            ."- Mantenha a mesma estrutura geral (mesmo número de dias quando possível, mesmos grupos musculares por dia).\n"
+            ."- Aplique os ajustes pedidos pelos comentários e pela observação livre.\n"
+            ."- Mantenha consistência com o nível e os objetivos originais do plano.\n"
+            ."- Todos os textos (nomes de treino, exercícios, observações) DEVEM estar em Português do Brasil.\n"
+            ."- Não inclua exercícios em inglês.\n\n"
+            ."Retorne EXCLUSIVAMENTE um JSON válido sem markdown, com a seguinte estrutura exata:\n"
+            ."{\"plan_name\": \"string\", \"plan_goal\": \"string\", \"days_per_week\": number, \"workouts\": [{\"day_of_week\": number, \"workout_name\": \"string\", \"workout_observations\": \"string\", \"exercises\": [{\"exercise_name\": \"string\", \"sets\": number, \"repetitions\": number, \"rest_seconds\": number, \"ai_observations\": \"string\", \"suggested_weight_kg\": number}]}]}\n";
+    }
+
+    private function humanCommentType(string $type): string
+    {
+        return match ($type) {
+            'pain' => 'Dor / lesão',
+            'broken' => 'Equipamento indisponível',
+            'heavy' => 'Carga muito pesada',
+            'custom' => 'Comentário livre',
+            default => $type,
+        };
+    }
+
     private function buildWorkoutPrompt(array $v): string
     {
         $locationRule = $v['location'] === 'home'

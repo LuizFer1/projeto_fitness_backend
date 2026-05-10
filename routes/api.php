@@ -39,6 +39,7 @@ use App\Http\Controllers\Api\V1\UserSearchController;
 use App\Http\Controllers\Api\V1\VictoryAssetController;
 use App\Http\Controllers\Api\V1\WaterLogController;
 use App\Http\Controllers\Api\V1\WorkoutLogController;
+use App\Http\Controllers\Api\V1\WorkoutPlanCommentController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\OnboardingController;
@@ -136,6 +137,13 @@ Route::group([], function () {
             // AI Plans (workout)
             Route::get('plans', [AiPlanController::class, 'index']);
             Route::post('plans/generate-workout', [AiPlanController::class, 'generateWorkout']);
+
+            // Per-exercise comments + plan refinement (must come BEFORE plans/{id} to avoid route collision)
+            Route::get('plans/{plan_id}/comments', [WorkoutPlanCommentController::class, 'index']);
+            Route::post('plans/{plan_id}/exercises/{plan_workout_exercise_id}/comments', [WorkoutPlanCommentController::class, 'store']);
+            Route::delete('plans/{plan_id}/comments/{comment_id}', [WorkoutPlanCommentController::class, 'destroy']);
+            Route::post('plans/{id}/refine', [AiPlanController::class, 'refineWorkout']);
+
             Route::get('plans/{id}', [AiPlanController::class, 'show']);
             Route::patch('plans/{id}/activate', [AiPlanController::class, 'activate']);
             Route::patch('plans/{id}/archive', [AiPlanController::class, 'archive']);
