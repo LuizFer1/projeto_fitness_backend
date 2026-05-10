@@ -13,9 +13,9 @@ class WorkoutLog extends Model
     protected $guarded = [];
 
     protected $casts = [
-        'date'           => 'date',
-        'muscles_trained'=> 'array',
-        'modality'       => 'string',
+        'date' => 'date',
+        'muscles_trained' => 'array',
+        'modality' => 'string',
     ];
 
     public function user()
@@ -26,5 +26,10 @@ class WorkoutLog extends Model
     public function workoutLogExercises()
     {
         return $this->hasMany(WorkoutExerciseLog::class, 'workout_log_id');
+    }
+
+    public function planWorkout()
+    {
+        return $this->belongsTo(PlanWorkout::class, 'plan_workout_id');
     }
 }
