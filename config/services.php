@@ -52,13 +52,13 @@ return [
     ],
 
     'googlefit' => [
-        'client_id'     => env('GOOGLE_FIT_CLIENT_ID'),
+        'client_id' => env('GOOGLE_FIT_CLIENT_ID'),
         'client_secret' => env('GOOGLE_FIT_CLIENT_SECRET'),
-        'redirect_uri'  => env('GOOGLE_FIT_REDIRECT_URI'),
+        'redirect_uri' => env('GOOGLE_FIT_REDIRECT_URI'),
     ],
 
     'garmin' => [
-        'client_id'     => env('GARMIN_CLIENT_ID'),
+        'client_id' => env('GARMIN_CLIENT_ID'),
         'client_secret' => env('GARMIN_CLIENT_SECRET'),
     ],
 
@@ -68,9 +68,9 @@ return [
     ],
 
     'apns' => [
-        'key_id'           => env('APNS_KEY_ID'),
-        'team_id'          => env('APNS_TEAM_ID'),
-        'bundle_id'        => env('APNS_BUNDLE_ID'),
+        'key_id' => env('APNS_KEY_ID'),
+        'team_id' => env('APNS_TEAM_ID'),
+        'bundle_id' => env('APNS_BUNDLE_ID'),
         'private_key_path' => env('APNS_PRIVATE_KEY_PATH'),
     ],
 

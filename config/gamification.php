@@ -20,19 +20,19 @@ return [
     |--------------------------------------------------------------------------
     */
     'events' => [
-        'clean_diet_day'   => ['base' => 60,  'max_mult' => 2.0, 'full_at_days' => 15, 'cap' => 120],
+        'clean_diet_day' => ['base' => 60,  'max_mult' => 2.0, 'full_at_days' => 15, 'cap' => 120],
         'protein_goal_met' => ['base' => 50,  'max_mult' => 1.5, 'full_at_days' => 7,  'cap' => 75],
-        'water_goal_met'   => ['base' => 30,  'max_mult' => 1.3, 'full_at_days' => 5,  'cap' => 39],
+        'water_goal_met' => ['base' => 30,  'max_mult' => 1.3, 'full_at_days' => 5,  'cap' => 39],
         'workout_strength' => ['base' => 100, 'max_mult' => 1.5, 'full_at_days' => 7,  'cap' => 150],
-        'workout_cardio'   => ['base' => 80,  'max_mult' => 1.4, 'full_at_days' => 7,  'cap' => 112],
-        'progress_photo'   => ['base' => 20,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 20],
-        'asset_shared'     => ['base' => 15,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 30],
-        'pr_set'           => ['base' => 200, 'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 200, 'unique' => true],
+        'workout_cardio' => ['base' => 80,  'max_mult' => 1.4, 'full_at_days' => 7,  'cap' => 112],
+        'progress_photo' => ['base' => 20,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 20],
+        'asset_shared' => ['base' => 15,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 30],
+        'pr_set' => ['base' => 200, 'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 200, 'unique' => true],
 
         // Legacy events (kept for back-compat with existing XP grants)
-        'daily_login'      => ['base' => 10,  'max_mult' => 1.5, 'full_at_days' => 35, 'cap' => 15],
-        'meal_logged'      => ['base' => 20,  'max_mult' => 1.5, 'full_at_days' => 35, 'cap' => 30],
-        'weight_logged'    => ['base' => 15,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 15],
+        'daily_login' => ['base' => 10,  'max_mult' => 1.5, 'full_at_days' => 35, 'cap' => 15],
+        'meal_logged' => ['base' => 20,  'max_mult' => 1.5, 'full_at_days' => 35, 'cap' => 30],
+        'weight_logged' => ['base' => 15,  'max_mult' => 1.0, 'full_at_days' => 1,  'cap' => 15],
     ],
 
     /*
@@ -70,9 +70,9 @@ return [
     |--------------------------------------------------------------------------
     */
     'tier_unlock_level' => [
-        'bronze'   => 3,
-        'silver'   => 4,
-        'gold'     => 5,
+        'bronze' => 3,
+        'silver' => 4,
+        'gold' => 5,
         'platinum' => 6,
     ],
 ];

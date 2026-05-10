@@ -11,38 +11,38 @@ use App\Http\Controllers\Api\V1\BodyMeasurementController;
 use App\Http\Controllers\Api\V1\CardioWorkoutController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeviceController;
+use App\Http\Controllers\Api\V1\ExerciseCatalogController;
 use App\Http\Controllers\Api\V1\FollowController;
+use App\Http\Controllers\Api\V1\NetworkGraphController;
 use App\Http\Controllers\Api\V1\FoodController;
-use App\Http\Controllers\Api\V1\IntegrationController;
-use App\Http\Controllers\Api\V1\NotificationPreferenceController;
-use App\Http\Controllers\Api\V1\NutritionController;
-use App\Http\Controllers\Api\V1\NutritionExportController;
-use App\Http\Controllers\Api\V1\PrivacySettingsController;
-use App\Http\Controllers\Api\V1\TdeeConfigController;
-use App\Http\Controllers\Api\V1\VictoryAssetController;
-use App\Http\Controllers\Api\V1\PersonalRecordController;
-use App\Http\Controllers\Api\V1\ProgressPhotoController;
-use App\Http\Controllers\Api\V1\QuestController;
 use App\Http\Controllers\Api\V1\FriendController;
 use App\Http\Controllers\Api\V1\Gamification\AchievementController;
 use App\Http\Controllers\Api\V1\Gamification\LeaderboardController;
 use App\Http\Controllers\Api\V1\Gamification\XpHistoryController;
+use App\Http\Controllers\Api\V1\IntegrationController;
 use App\Http\Controllers\Api\V1\MealLogController;
+use App\Http\Controllers\Api\V1\NotificationPreferenceController;
+use App\Http\Controllers\Api\V1\NutritionController;
+use App\Http\Controllers\Api\V1\NutritionExportController;
+use App\Http\Controllers\Api\V1\PersonalRecordController;
 use App\Http\Controllers\Api\V1\PlanCatalogController;
 use App\Http\Controllers\Api\V1\PostController;
 use App\Http\Controllers\Api\V1\PrivacyController;
-use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\PrivacySettingsController;
+use App\Http\Controllers\Api\V1\ProgressPhotoController;
 use App\Http\Controllers\Api\V1\PublicProfile\PublicProfileController;
+use App\Http\Controllers\Api\V1\QuestController;
 use App\Http\Controllers\Api\V1\RankingController;
+use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\TdeeConfigController;
 use App\Http\Controllers\Api\V1\UserSearchController;
+use App\Http\Controllers\Api\V1\VictoryAssetController;
 use App\Http\Controllers\Api\V1\WaterLogController;
 use App\Http\Controllers\Api\V1\WorkoutLogController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\GoalController;
 use App\Http\Controllers\OnboardingController;
-use App\Models\Exercise;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('health', HealthCheckController::class);
@@ -98,32 +98,11 @@ Route::group([], function () {
             Route::post('follow-requests/{id}/accept', [FollowController::class, 'accept']);
             Route::post('follow-requests/{id}/reject', [FollowController::class, 'reject']);
 
-            // User profile by ID (for leaderboard modal)
-            Route::get('users/{userId}/profile', function (string $userId) {
-                $user = \App\Models\User::findOrFail($userId);
-                $gam = $user->gamification;
-                $achievements = $user->achievements()
-                    ->with('achievement')
-                    ->get()
-                    ->map(fn ($ua) => [
-                        'name' => $ua->achievement->name,
-                        'icon' => $ua->achievement->icon,
-                        'unlocked_at' => $ua->unlocked_at,
-                    ]);
+            // Network graph — viz of follows + interactions.
+            Route::get('network/graph', [NetworkGraphController::class, 'graph']);
 
-                return response()->json([
-                    'id'         => $user->id,
-                    'name'       => $user->name,
-                    'last_name'  => $user->last_name,
-                    'username'   => $user->username,
-                    'avatar_url' => $user->avatar_url,
-                    'bio'        => $user->bio,
-                    'level'      => $gam->current_level ?? 1,
-                    'xp_total'   => $gam->xp_total ?? 0,
-                    'streak'     => $gam->current_streak ?? 0,
-                    'badges'     => $achievements,
-                ]);
-            });
+            // User profile by ID (for leaderboard modal)
+            Route::get('users/{userId}/profile', [PublicProfileController::class, 'compactById']);
 
             // Friends
             Route::get('friends', [FriendController::class, 'index']);
@@ -144,19 +123,7 @@ Route::group([], function () {
             Route::delete('posts/{id}/comments/{commentId}', [PostController::class, 'destroyComment']);
 
             // Exercises catalog
-            Route::get('exercises', function (Request $request) {
-                $query = Exercise::where('is_active', true);
-                if ($request->filled('muscle_group')) {
-                    $query->where('muscle_group', $request->query('muscle_group'));
-                }
-                if ($request->filled('category')) {
-                    $query->where('category', $request->query('category'));
-                }
-                if ($request->filled('search')) {
-                    $query->where('name', 'like', '%' . $request->query('search') . '%');
-                }
-                return response()->json(['data' => $query->orderBy('name')->paginate(50)]);
-            });
+            Route::get('exercises', [ExerciseCatalogController::class, 'index']);
 
             // AI Plans (meal) — must be declared BEFORE plans/{id} to avoid collision
             Route::get('plans/meals', [AiMealPlanController::class, 'index']);

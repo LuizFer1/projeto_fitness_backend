@@ -1129,7 +1129,7 @@
                     "AI Plans"
                 ],
                 "summary": "Generate a personalized AI workout plan",
-                "description": "Sends user preferences to Gemini AI and receives a structured workout plan that is saved to the database.",
+                "description": "Sends user preferences to Groq AI and receives a structured workout plan that is saved to the database.",
                 "operationId": "2a4a8e0f25293ceacde33c8447714ec6",
                 "requestBody": {
                     "required": true,
@@ -1307,6 +1307,79 @@
                 }
             }
         },
+        "/api/v1/reports/biweekly": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Listar relatórios quinzenais",
+                "operationId": "8cb5d8b9302e6731d1171ba7d3cd2f42",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de relatórios"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/biweekly/{id}": {
+            "get": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Detalhes do relatório quinzenal",
+                "operationId": "c8f5a82a74e6b2f4754f56df7eb4b490",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Relatório com URL de download se pronto"
+                    },
+                    "404": {
+                        "description": "Relatório não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/reports/biweekly/generate": {
+            "post": {
+                "tags": [
+                    "Reports"
+                ],
+                "summary": "Gerar relatório quinzenal manualmente",
+                "operationId": "e02aff54c3d6c96471a4a43fccf7afef",
+                "responses": {
+                    "200": {
+                        "description": "Relatório já existe para este período"
+                    },
+                    "202": {
+                        "description": "Relatório enfileirado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/measurements": {
             "get": {
                 "tags": [
@@ -1458,6 +1531,79 @@
                 ]
             }
         },
+        "/api/v1/workouts/cardio": {
+            "post": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Registrar sessão de cárdio",
+                "description": "Aceita dados manuais ou importados de HealthKit, Google Fit ou Garmin. Idempotente via Idempotency-Key.",
+                "operationId": "0037a481d96a35d81ea190ec640e0451",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date"
+                                    },
+                                    "duration_min": {
+                                        "type": "integer"
+                                    },
+                                    "calories_burned": {
+                                        "type": "number"
+                                    },
+                                    "distance_m": {
+                                        "type": "integer"
+                                    },
+                                    "pace_seconds_per_km": {
+                                        "type": "integer"
+                                    },
+                                    "avg_hr": {
+                                        "type": "integer"
+                                    },
+                                    "max_hr": {
+                                        "type": "integer"
+                                    },
+                                    "route_polyline": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "external_source": {
+                                        "type": "string",
+                                        "enum": [
+                                            "manual",
+                                            "healthkit",
+                                            "googlefit",
+                                            "garmin"
+                                        ]
+                                    },
+                                    "external_id": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Sessão de cárdio registrada"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/dashboard": {
             "get": {
                 "tags": [
@@ -1518,6 +1664,392 @@
                     },
                     "401": {
                         "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/devices": {
+            "post": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Registrar dispositivo para push notifications",
+                "operationId": "37ab31ec574cd6af960a8c11bd54c1e7",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "platform",
+                                    "push_token"
+                                ],
+                                "properties": {
+                                    "platform": {
+                                        "type": "string",
+                                        "enum": [
+                                            "ios",
+                                            "android",
+                                            "web"
+                                        ]
+                                    },
+                                    "push_token": {
+                                        "type": "string"
+                                    },
+                                    "app_version": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "device_model": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Dispositivo registrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/devices/{uuid}": {
+            "delete": {
+                "tags": [
+                    "Devices"
+                ],
+                "summary": "Revogar dispositivo (push token)",
+                "operationId": "5f558d33ed63fb6204971949f5cdd279",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Dispositivo revogado"
+                    },
+                    "404": {
+                        "description": "Dispositivo não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/exercises": {
+            "get": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Catálogo paginado de exercícios",
+                "description": "Filtros opcionais por grupo muscular, categoria e termo de busca no nome.",
+                "operationId": "4aebe006eb3c8c52472e7759232bbb2c",
+                "parameters": [
+                    {
+                        "name": "muscle_group",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "category",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "search",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de exercícios"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}/follow": {
+            "post": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Seguir usuário",
+                "description": "Segue um usuário. Auto-aceito para perfis públicos; pendente para perfis privados.",
+                "operationId": "beb21a314c26f3d995947b6619464ab0",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Follow criado"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Já segue ou tentativa de seguir a si mesmo"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Deixar de seguir usuário",
+                "operationId": "a4c4b37aa662c1e112825270a785ba92",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Unfollow realizado"
+                    },
+                    "404": {
+                        "description": "Não estava seguindo"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/follow-requests": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Listar solicitações de follow pendentes",
+                "operationId": "1b109d6dba775b20a114a0ab243bec00",
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de solicitações"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/follow-requests/{id}/accept": {
+            "post": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Aceitar solicitação de follow",
+                "operationId": "15c508e1ebb7075f226f05d3225e8646",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação aceita"
+                    },
+                    "404": {
+                        "description": "Solicitação não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/follow-requests/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Rejeitar solicitação de follow",
+                "operationId": "7140cae103544b4bcd64267f7cb806cb",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Solicitação rejeitada"
+                    },
+                    "404": {
+                        "description": "Solicitação não encontrada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}/followers": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Listar seguidores do usuário",
+                "operationId": "ec4ac759baf9fdaadd9b4d651a003b4f",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de seguidores"
+                    },
+                    "403": {
+                        "description": "Perfil privado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{username}/following": {
+            "get": {
+                "tags": [
+                    "Follow"
+                ],
+                "summary": "Listar quem o usuário segue",
+                "operationId": "ff0be381ad52fec88c8012f11208ce12",
+                "parameters": [
+                    {
+                        "name": "username",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de seguidos"
+                    },
+                    "403": {
+                        "description": "Perfil privado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/foods/lookup": {
+            "get": {
+                "tags": [
+                    "Foods"
+                ],
+                "summary": "Buscar alimento por código de barras",
+                "description": "Busca no banco local primeiro; se não encontrar, consulta a OpenFoodFacts e persiste o resultado.",
+                "operationId": "509fc64a2842a3dd54baaecea1f0435c",
+                "parameters": [
+                    {
+                        "name": "barcode",
+                        "in": "query",
+                        "description": "Código EAN/barcode do produto",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Alimento encontrado"
+                    },
+                    "404": {
+                        "description": "Produto não encontrado"
+                    },
+                    "422": {
+                        "description": "Parâmetro barcode ausente"
                     }
                 },
                 "security": [
@@ -1982,8 +2514,16 @@
                 "responses": {
                     "201": {
                         "description": "Refeição salva com sucesso"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou falha de IA"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/meals/analyze-image": {
@@ -2022,8 +2562,300 @@
                 "responses": {
                     "201": {
                         "description": "Refeição computada e salva via foto"
+                    },
+                    "422": {
+                        "description": "Erro de validação ou falha de IA"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/notification-preferences": {
+            "get": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Consultar preferências de notificação",
+                "operationId": "ba76ade81f71695b4013911db9aedcba",
+                "responses": {
+                    "200": {
+                        "description": "Preferências de notificação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Notifications"
+                ],
+                "summary": "Atualizar preferências de notificação",
+                "operationId": "ff43516e0cd218855327a0697a85ce8c",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "streak_at_risk": {
+                                        "type": "boolean"
+                                    },
+                                    "rank_drop": {
+                                        "type": "boolean"
+                                    },
+                                    "achievement_close": {
+                                        "type": "boolean"
+                                    },
+                                    "achievement_unlocked": {
+                                        "type": "boolean"
+                                    },
+                                    "daily_summary": {
+                                        "type": "boolean"
+                                    },
+                                    "quiet_hours_start": {
+                                        "type": "string",
+                                        "example": "23:00"
+                                    },
+                                    "quiet_hours_end": {
+                                        "type": "string",
+                                        "example": "07:00"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Preferências atualizadas"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/nutrition/today": {
+            "get": {
+                "tags": [
+                    "Nutrition"
+                ],
+                "summary": "Resumo nutricional de hoje",
+                "description": "Retorna metas, consumido, delta calórico e ajustes de dieta pendentes para hoje.",
+                "operationId": "bc8ace20a24bd9756596713c0b06a98c",
+                "responses": {
+                    "200": {
+                        "description": "Resumo nutricional do dia"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/diet-adjustments": {
+            "get": {
+                "tags": [
+                    "Nutrition"
+                ],
+                "summary": "Listar ajustes de dieta do dia",
+                "operationId": "887da9c2e961f9cccc286c91c8a7744b",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Ajustes de dieta para a data informada"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/nutrition/export": {
+            "get": {
+                "tags": [
+                    "Nutrition"
+                ],
+                "summary": "Exportar histórico nutricional",
+                "description": "Retorna export pronto gerado hoje (se existir) ou enfileira novo e retorna 202.",
+                "operationId": "87b7fa70d2858fda4d96414176d980f4",
+                "parameters": [
+                    {
+                        "name": "period",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "7d",
+                                "30d",
+                                "90d"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "format",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "csv",
+                            "enum": [
+                                "csv",
+                                "pdf"
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Export pronto com URL de download"
+                    },
+                    "202": {
+                        "description": "Export enfileirado"
+                    },
+                    "422": {
+                        "description": "Parâmetros inválidos"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/nutrition/export/status/{id}": {
+            "get": {
+                "tags": [
+                    "Nutrition"
+                ],
+                "summary": "Consultar status do export nutricional",
+                "operationId": "0015edf0dccc5316a325850fd2e1372e",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status do export"
+                    },
+                    "404": {
+                        "description": "Export não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workouts/personal-records": {
+            "get": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Listar recordes pessoais (1RM por exercício)",
+                "operationId": "de4a95c112ffc441da77c682e19a587e",
+                "responses": {
+                    "200": {
+                        "description": "Lista de PRs"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workouts/exercises/{exercise_id}/history": {
+            "get": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Histórico de cargas de um exercício",
+                "operationId": "1f55f89687a292490d769454beea5991",
+                "parameters": [
+                    {
+                        "name": "exercise_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Evolução de 1RM"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workouts/exercises/{exercise_id}/suggest-load": {
+            "get": {
+                "tags": [
+                    "Workouts"
+                ],
+                "summary": "Sugestão de carga (sobrecarga progressiva)",
+                "operationId": "1713d9a7f56093f1fda740c55886650d",
+                "parameters": [
+                    {
+                        "name": "exercise_id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sugestão de carga para a próxima série"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/v1/plans/catalog": {
@@ -2393,6 +3225,74 @@
                 ]
             }
         },
+        "/api/v1/privacy-settings": {
+            "get": {
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Consultar configurações de privacidade por métrica",
+                "operationId": "e7c6ec206ace58c1e7602ddaed814593",
+                "responses": {
+                    "200": {
+                        "description": "Configurações de privacidade"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Privacy"
+                ],
+                "summary": "Atualizar configurações de privacidade por métrica",
+                "operationId": "0d69844bac83b8f8c503abdde7298ac0",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "share_weight": {
+                                        "type": "boolean"
+                                    },
+                                    "share_macros": {
+                                        "type": "boolean"
+                                    },
+                                    "share_one_rm": {
+                                        "type": "boolean"
+                                    },
+                                    "share_streak": {
+                                        "type": "boolean"
+                                    },
+                                    "share_achievements": {
+                                        "type": "boolean"
+                                    },
+                                    "share_workouts": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Configurações atualizadas"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/users/{username}": {
             "get": {
                 "tags": [
@@ -2483,6 +3383,40 @@
                 "responses": {
                     "200": {
                         "description": "Dados das metas"
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/users/{userId}/profile": {
+            "get": {
+                "tags": [
+                    "Users"
+                ],
+                "summary": "Perfil compacto por UUID",
+                "description": "Retorna dados do usuário e badges por UUID (usado pelo modal do leaderboard).",
+                "operationId": "578160ef89c62d5dcf2f86e32b8b99d1",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Perfil compacto encontrado"
                     },
                     "404": {
                         "description": "Usuário não encontrado"
@@ -2785,6 +3719,58 @@
                 ]
             }
         },
+        "/api/v1/onboarding/tdee-config": {
+            "put": {
+                "tags": [
+                    "Onboarding"
+                ],
+                "summary": "Atualizar fórmula e fator de atividade do TDEE",
+                "description": "Permite escolher entre Mifflin-St Jeor e Harris-Benedict, e/ou definir fator de atividade manual (1.2–1.9). Recalcula BMR e TDEE em seguida.",
+                "operationId": "7a66e5d666a93c8c4a166e88806cf505",
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "formula": {
+                                        "type": "string",
+                                        "example": "harris",
+                                        "enum": [
+                                            "mifflin",
+                                            "harris"
+                                        ]
+                                    },
+                                    "activity_factor": {
+                                        "type": "number",
+                                        "example": 1.55,
+                                        "nullable": true,
+                                        "maximum": 1.9,
+                                        "minimum": 1.2
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "TDEE recalculado"
+                    },
+                    "404": {
+                        "description": "Onboarding não encontrado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/users/search": {
             "get": {
                 "tags": [
@@ -2823,13 +3809,226 @@
                 ]
             }
         },
+        "/api/v1/workouts/{uuid}/victory-asset": {
+            "get": {
+                "tags": [
+                    "Victory Assets"
+                ],
+                "summary": "Consultar status do victory asset",
+                "operationId": "240dc77d195606546175cd8ed8c5f406",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status e URL do asset"
+                    },
+                    "404": {
+                        "description": "Asset não gerado ou treino não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Victory Assets"
+                ],
+                "summary": "Enfileirar geração de victory asset",
+                "description": "Gera assíncrona e persistentemente uma imagem de vitória para o treino.",
+                "operationId": "85d887b57b0cc8c504af0b5c17473f59",
+                "parameters": [
+                    {
+                        "name": "uuid",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Asset enfileirado"
+                    },
+                    "202": {
+                        "description": "Asset já em processamento ou pronto"
+                    },
+                    "404": {
+                        "description": "Treino não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/water-logs": {
+            "get": {
+                "tags": [
+                    "Water Logs"
+                ],
+                "summary": "Listar registros de hidratação",
+                "description": "Retorna os registros de consumo de água do usuário. Sem filtro, lista os mais recentes; com `date`, retorna apenas os do dia informado.",
+                "operationId": "24df889d68ad8d0f4f48a3285e240249",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "description": "Filtrar por dia específico (YYYY-MM-DD)",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "description": "Quantidade de registros (máx 365)",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 60
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de registros de hidratação + total do dia"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Water Logs"
+                ],
+                "summary": "Registrar consumo de água",
+                "description": "Cria um registro de consumo de água. Múltiplos registros por dia são permitidos (cada copo/garrafa). Endpoint idempotente via header Idempotency-Key.",
+                "operationId": "e95ddef5cf4dc0d4dac3a2437e743538",
+                "parameters": [
+                    {
+                        "name": "Idempotency-Key",
+                        "in": "header",
+                        "description": "Chave de idempotência (opcional)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "liters"
+                                ],
+                                "properties": {
+                                    "liters": {
+                                        "type": "number",
+                                        "example": 0.25
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-04-19"
+                                    },
+                                    "time": {
+                                        "type": "string",
+                                        "example": "14:30"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Registro criado + total do dia"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "422": {
+                        "description": "Erro de validação"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/water-logs/{id}": {
+            "delete": {
+                "tags": [
+                    "Water Logs"
+                ],
+                "summary": "Remover registro de hidratação",
+                "description": "Remove um registro de consumo de água do usuário.",
+                "operationId": "48b9654c46deba9a19d37b0058d90c7c",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do registro",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Registro removido"
+                    },
+                    "401": {
+                        "description": "Não autenticado"
+                    },
+                    "404": {
+                        "description": "Não encontrado"
+                    }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
+            }
+        },
         "/api/v1/workouts/finish": {
             "post": {
                 "tags": [
                     "Workouts"
                 ],
                 "summary": "Salva e analisa um treino finalizado",
-                "description": "Salva o log do treino, os exercícios realizados, e envia os dados para a IA (Gemini) calcular calorias gastas, músculos treinados e gerar um feedback motivacional.",
+                "description": "Salva o log do treino, os exercícios realizados, e envia os dados para a IA calcular calorias gastas, músculos treinados e gerar um feedback motivacional.",
                 "operationId": "b4c89b08fd7ce583d5962e421278492f",
                 "requestBody": {
                     "required": true,
@@ -2855,11 +4054,11 @@
                                     "plan_workout_id": {
                                         "type": "string",
                                         "format": "uuid",
-                                        "example": "uuid_here"
+                                        "nullable": true
                                     },
                                     "observations": {
                                         "type": "string",
-                                        "example": "Treino muito focado, mas ombro doeu um pouco."
+                                        "nullable": true
                                     },
                                     "exercises": {
                                         "type": "array",
@@ -2898,7 +4097,12 @@
                     "422": {
                         "description": "Erro de validação ou erro na integração com a IA"
                     }
-                }
+                },
+                "security": [
+                    {
+                        "sanctum": []
+                    }
+                ]
             }
         },
         "/api/register": {
@@ -3340,12 +4544,32 @@
             "description": "AI Plans"
         },
         {
+            "name": "Reports",
+            "description": "Reports"
+        },
+        {
             "name": "Measurements",
             "description": "Measurements"
         },
         {
+            "name": "Workouts",
+            "description": "Workouts"
+        },
+        {
             "name": "Dashboard",
             "description": "Dashboard"
+        },
+        {
+            "name": "Devices",
+            "description": "Devices"
+        },
+        {
+            "name": "Follow",
+            "description": "Follow"
+        },
+        {
+            "name": "Foods",
+            "description": "Foods"
         },
         {
             "name": "Friends",
@@ -3358,6 +4582,14 @@
         {
             "name": "Meals",
             "description": "Meals"
+        },
+        {
+            "name": "Notifications",
+            "description": "Notifications"
+        },
+        {
+            "name": "Nutrition",
+            "description": "Nutrition"
         },
         {
             "name": "Plans Catalog",
@@ -3388,8 +4620,16 @@
             "description": "Subscriptions"
         },
         {
-            "name": "Workouts",
-            "description": "Workouts"
+            "name": "Onboarding",
+            "description": "Onboarding"
+        },
+        {
+            "name": "Victory Assets",
+            "description": "Victory Assets"
+        },
+        {
+            "name": "Water Logs",
+            "description": "Water Logs"
         },
         {
             "name": "Auth",
@@ -3398,10 +4638,6 @@
         {
             "name": "Goals",
             "description": "Goals"
-        },
-        {
-            "name": "Onboarding",
-            "description": "Onboarding"
         }
     ]
 }
