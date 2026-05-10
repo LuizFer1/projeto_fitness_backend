@@ -32,7 +32,7 @@ class FriendController extends Controller
         $friendships = Friendship::accepted()
             ->where(function ($q) use ($user) {
                 $q->where('requester_id', $user->id)
-                  ->orWhere('addressee_id', $user->id);
+                    ->orWhere('addressee_id', $user->id);
             })
             ->with(['requester:id,name,last_name,username,avatar_url', 'addressee:id,name,last_name,username,avatar_url'])
             ->paginate(20);
@@ -141,6 +141,7 @@ class FriendController extends Controller
             if ($existing->status === 'blocked') {
                 return response()->json(['message' => 'Unable to send friend request.'], 422);
             }
+
             return response()->json(['message' => 'A friendship request already exists.'], 422);
         }
 

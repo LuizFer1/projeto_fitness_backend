@@ -11,6 +11,7 @@ use OpenApi\Attributes as OA;
 class BadgeController extends Controller
 {
     private const CATEGORIES = ['consistency', 'workout', 'water', 'nutrition', 'hardcore', 'special'];
+
     private const CONDITION_TYPES = ['streak_days', 'total_workouts', 'water_days', 'active_days', 'hardcore_weeks'];
 
     #[OA\Get(
@@ -65,16 +66,16 @@ class BadgeController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'slug'            => ['required', 'string', 'max:80', 'unique:achievements,slug'],
-            'name'            => ['required', 'string', 'max:120'],
-            'description'     => ['nullable', 'string'],
-            'icon'            => ['nullable', 'string', 'max:10'],
-            'category'        => ['required', Rule::in(self::CATEGORIES)],
-            'xp_reward'       => ['integer', 'min:0'],
-            'condition_type'  => ['required', Rule::in(self::CONDITION_TYPES)],
+            'slug' => ['required', 'string', 'max:80', 'unique:achievements,slug'],
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string'],
+            'icon' => ['nullable', 'string', 'max:10'],
+            'category' => ['required', Rule::in(self::CATEGORIES)],
+            'xp_reward' => ['integer', 'min:0'],
+            'condition_type' => ['required', Rule::in(self::CONDITION_TYPES)],
             'condition_value' => ['required', 'integer', 'min:1'],
-            'is_hidden'       => ['boolean'],
-            'is_active'       => ['boolean'],
+            'is_hidden' => ['boolean'],
+            'is_active' => ['boolean'],
         ]);
 
         $badge = Achievement::create($data);
@@ -122,16 +123,16 @@ class BadgeController extends Controller
         $badge = Achievement::findOrFail($id);
 
         $data = $request->validate([
-            'slug'            => ['sometimes', 'string', 'max:80', Rule::unique('achievements', 'slug')->ignore($badge->id)],
-            'name'            => ['sometimes', 'string', 'max:120'],
-            'description'     => ['sometimes', 'nullable', 'string'],
-            'icon'            => ['sometimes', 'nullable', 'string', 'max:10'],
-            'category'        => ['sometimes', Rule::in(self::CATEGORIES)],
-            'xp_reward'       => ['sometimes', 'integer', 'min:0'],
-            'condition_type'  => ['sometimes', Rule::in(self::CONDITION_TYPES)],
+            'slug' => ['sometimes', 'string', 'max:80', Rule::unique('achievements', 'slug')->ignore($badge->id)],
+            'name' => ['sometimes', 'string', 'max:120'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'icon' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'category' => ['sometimes', Rule::in(self::CATEGORIES)],
+            'xp_reward' => ['sometimes', 'integer', 'min:0'],
+            'condition_type' => ['sometimes', Rule::in(self::CONDITION_TYPES)],
             'condition_value' => ['sometimes', 'integer', 'min:1'],
-            'is_hidden'       => ['sometimes', 'boolean'],
-            'is_active'       => ['sometimes', 'boolean'],
+            'is_hidden' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $badge->update($data);

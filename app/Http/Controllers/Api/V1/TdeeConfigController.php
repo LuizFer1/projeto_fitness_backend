@@ -36,7 +36,7 @@ class TdeeConfigController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'formula'         => ['sometimes', 'in:mifflin,harris'],
+            'formula' => ['sometimes', 'in:mifflin,harris'],
             'activity_factor' => ['sometimes', 'nullable', 'numeric', 'min:1.2', 'max:1.9'],
         ]);
 
@@ -44,7 +44,7 @@ class TdeeConfigController extends Controller
 
         $onboarding = UserOnboarding::where('user_id', $user->id)->first();
 
-        if (!$onboarding) {
+        if (! $onboarding) {
             return response()->json(['message' => 'Onboarding não encontrado. Complete o onboarding primeiro.'], 404);
         }
 
@@ -62,7 +62,7 @@ class TdeeConfigController extends Controller
 
         // Recalculate with updated values
         $input = array_merge($onboarding->toArray(), [
-            'tdee_formula'    => $onboarding->tdee_formula ?? 'mifflin',
+            'tdee_formula' => $onboarding->tdee_formula ?? 'mifflin',
             'activity_factor' => $onboarding->activity_factor,
         ]);
 
@@ -74,10 +74,10 @@ class TdeeConfigController extends Controller
         }
 
         return response()->json([
-            'formula'         => $result['formula'],
+            'formula' => $result['formula'],
             'activity_factor' => $result['activity_factor'],
-            'bmr'             => $result['bmr'],
-            'tdee'            => $result['tdee'],
+            'bmr' => $result['bmr'],
+            'tdee' => $result['tdee'],
         ]);
     }
 }

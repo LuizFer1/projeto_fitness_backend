@@ -18,6 +18,7 @@ use OpenApi\Attributes as OA;
 class PrivacyController extends Controller
 {
     public function __construct(private AuditLogger $audit) {}
+
     #[OA\Get(
         path: '/api/v1/privacy/my-data',
         summary: 'Exportar meus dados',

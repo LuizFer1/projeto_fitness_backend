@@ -35,20 +35,20 @@ class DeviceController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'platform'     => 'required|in:ios,android,web',
-            'push_token'   => 'required|string|max:500',
-            'app_version'  => 'nullable|string|max:20',
+            'platform' => 'required|in:ios,android,web',
+            'push_token' => 'required|string|max:500',
+            'app_version' => 'nullable|string|max:20',
             'device_model' => 'nullable|string|max:100',
         ]);
 
-        $user   = $request->user();
+        $user = $request->user();
         $device = UserDevice::updateOrCreate(
             ['user_id' => $user->id, 'push_token' => $validated['push_token']],
             array_merge($validated, ['last_seen_at' => now(), 'revoked_at' => null])
         );
 
         return response()->json([
-            'message'   => 'Dispositivo registrado.',
+            'message' => 'Dispositivo registrado.',
             'device_id' => $device->id,
         ], 201);
     }
@@ -66,7 +66,7 @@ class DeviceController extends Controller
     )]
     public function destroy(Request $request, string $uuid): JsonResponse
     {
-        $user   = $request->user();
+        $user = $request->user();
         $device = UserDevice::where('user_id', $user->id)->findOrFail($uuid);
 
         $device->update(['revoked_at' => now()]);

@@ -25,6 +25,7 @@ class QuestController extends Controller
     public function index(Request $request): JsonResponse
     {
         $quests = Quest::where('is_active', true)->get();
+
         return response()->json(['data' => $quests]);
     }
 
@@ -55,22 +56,22 @@ class QuestController extends Controller
         $userQuest = $this->findUserQuest($userId, $quest->id, $refPeriod);
 
         return [
-            'quest'        => $quest,
-            'status'       => $userQuest?->status ?? 'not_started',
-            'progress'     => $userQuest?->current_progress ?? 0,
-            'target'       => $userQuest?->target_progress ?? $quest->condition_value,
-            'xp_received'  => $userQuest?->xp_received ?? 0,
+            'quest' => $quest,
+            'status' => $userQuest?->status ?? 'not_started',
+            'progress' => $userQuest?->current_progress ?? 0,
+            'target' => $userQuest?->target_progress ?? $quest->condition_value,
+            'xp_received' => $userQuest?->xp_received ?? 0,
             'completed_at' => $userQuest?->completed_at,
-            'ref_period'   => $refPeriod,
+            'ref_period' => $refPeriod,
         ];
     }
 
     private function resolveRefPeriod(?string $periodicity): ?string
     {
         return match ($periodicity) {
-            'weekly'  => now()->format('o-\WW'),
+            'weekly' => now()->format('o-\WW'),
             'monthly' => now()->format('Y-m'),
-            default   => null,
+            default => null,
         };
     }
 

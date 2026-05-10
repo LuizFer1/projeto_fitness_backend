@@ -83,7 +83,7 @@ class PostController extends Controller
         $friendIds = Friendship::accepted()
             ->where(function ($q) use ($user) {
                 $q->where('requester_id', $user->id)
-                  ->orWhere('addressee_id', $user->id);
+                    ->orWhere('addressee_id', $user->id);
             })
             ->get()
             ->map(fn ($f) => $f->requester_id === $user->id ? $f->addressee_id : $f->requester_id)
@@ -98,22 +98,22 @@ class PostController extends Controller
         $socialIds = array_unique(array_merge($friendIds, $followingIds));
 
         $posts = Post::where(function ($q) use ($user, $socialIds, $friendIds) {
-                // Always see own posts
-                $q->where('user_id', $user->id)
-                  // Friends/followers: see public posts from non-private profiles,
-                  // or friends_only posts where the author is a friend
-                  ->orWhere(function ($q2) use ($socialIds, $friendIds) {
-                      $q2->whereIn('user_id', $socialIds)
-                         ->whereHas('user', fn ($u) => $u->where('profile_visibility', 'public'))
-                         ->where(function ($vq) use ($friendIds) {
-                             $vq->where('visibility', 'public')
+            // Always see own posts
+            $q->where('user_id', $user->id)
+              // Friends/followers: see public posts from non-private profiles,
+              // or friends_only posts where the author is a friend
+                ->orWhere(function ($q2) use ($socialIds, $friendIds) {
+                    $q2->whereIn('user_id', $socialIds)
+                        ->whereHas('user', fn ($u) => $u->where('profile_visibility', 'public'))
+                        ->where(function ($vq) use ($friendIds) {
+                            $vq->where('visibility', 'public')
                                 ->orWhere(function ($fq) use ($friendIds) {
                                     $fq->where('visibility', 'friends_only')
-                                       ->whereIn('user_id', $friendIds);
+                                        ->whereIn('user_id', $friendIds);
                                 });
-                         });
-                  });
-            })
+                        });
+                });
+        })
             ->with('user:id,name,last_name,username,avatar_url')
             ->withCount(['likes', 'comments'])
             ->orderBy('created_at', 'desc')
@@ -146,9 +146,9 @@ class PostController extends Controller
         $user = request()->user();
 
         $post = Post::with([
-                'user:id,name,last_name,username,avatar_url',
-                'comments' => fn ($q) => $q->with('user:id,name,last_name,username,avatar_url')->orderBy('created_at', 'asc'),
-            ])
+            'user:id,name,last_name,username,avatar_url',
+            'comments' => fn ($q) => $q->with('user:id,name,last_name,username,avatar_url')->orderBy('created_at', 'asc'),
+        ])
             ->withCount(['likes', 'comments'])
             ->findOrFail($id);
 

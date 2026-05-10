@@ -12,6 +12,7 @@ use OpenApi\Attributes as OA;
 class PrivacySettingsController extends Controller
 {
     public function __construct(private AuditLogger $audit) {}
+
     #[OA\Get(
         path: '/api/v1/privacy-settings',
         summary: 'Consultar configurações de privacidade por métrica',
@@ -23,7 +24,7 @@ class PrivacySettingsController extends Controller
     )]
     public function show(Request $request): JsonResponse
     {
-        $user     = $request->user();
+        $user = $request->user();
         $settings = UserPrivacySetting::forUser($user);
 
         return response()->json(['data' => $this->format($settings)]);
@@ -54,15 +55,15 @@ class PrivacySettingsController extends Controller
     public function update(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'share_weight'       => ['sometimes', 'boolean'],
-            'share_macros'       => ['sometimes', 'boolean'],
-            'share_one_rm'       => ['sometimes', 'boolean'],
-            'share_streak'       => ['sometimes', 'boolean'],
+            'share_weight' => ['sometimes', 'boolean'],
+            'share_macros' => ['sometimes', 'boolean'],
+            'share_one_rm' => ['sometimes', 'boolean'],
+            'share_streak' => ['sometimes', 'boolean'],
             'share_achievements' => ['sometimes', 'boolean'],
-            'share_workouts'     => ['sometimes', 'boolean'],
+            'share_workouts' => ['sometimes', 'boolean'],
         ]);
 
-        $user     = $request->user();
+        $user = $request->user();
         $settings = UserPrivacySetting::forUser($user);
         $settings->update($data);
 
@@ -74,12 +75,12 @@ class PrivacySettingsController extends Controller
     private function format(UserPrivacySetting $s): array
     {
         return [
-            'share_weight'       => $s->share_weight,
-            'share_macros'       => $s->share_macros,
-            'share_one_rm'       => $s->share_one_rm,
-            'share_streak'       => $s->share_streak,
+            'share_weight' => $s->share_weight,
+            'share_macros' => $s->share_macros,
+            'share_one_rm' => $s->share_one_rm,
+            'share_streak' => $s->share_streak,
             'share_achievements' => $s->share_achievements,
-            'share_workouts'     => $s->share_workouts,
+            'share_workouts' => $s->share_workouts,
         ];
     }
 }

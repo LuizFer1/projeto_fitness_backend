@@ -44,7 +44,7 @@ class PersonalRecordController extends Controller
     )]
     public function history(Request $request, string $exerciseId): JsonResponse
     {
-        $user    = $request->user();
+        $user = $request->user();
         $history = $this->overload->getHistory($user, $exerciseId);
 
         return response()->json(['history' => $history]);
@@ -60,7 +60,7 @@ class PersonalRecordController extends Controller
     )]
     public function suggestLoad(Request $request, string $exerciseId): JsonResponse
     {
-        $user       = $request->user();
+        $user = $request->user();
         $suggestion = $this->overload->suggestNextLoad($user, $exerciseId);
 
         return response()->json($suggestion);

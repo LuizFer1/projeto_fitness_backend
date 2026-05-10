@@ -3,36 +3,22 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\Workout\ProgressiveOverloadService;
-use Illuminate\Http\Request;
-use App\Models\WorkoutLog;
-use App\Models\WorkoutExerciseLog;
-use App\Services\GroqService;
-use App\Services\GamificationService;
-use Carbon\Carbon;
+use App\Http\Requests\Workouts\FinishWorkoutRequest;
+use App\Http\Resources\WorkoutLogResource;
+use App\Services\Workout\WorkoutFinishService;
+use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 
 class WorkoutLogController extends Controller
 {
-    private $groqService;
-    private $gamificationService;
-    private ProgressiveOverloadService $overload;
-
-    public function __construct(
-        GroqService $groqService,
-        GamificationService $gamificationService,
-        ProgressiveOverloadService $overload
-    ) {
-        $this->groqService         = $groqService;
-        $this->gamificationService = $gamificationService;
-        $this->overload            = $overload;
-    }
+    public function __construct(private WorkoutFinishService $finishService) {}
 
     #[OA\Post(
         path: '/api/v1/workouts/finish',
         summary: 'Salva e analisa um treino finalizado',
         description: 'Salva o log do treino, os exercícios realizados, e envia os dados para a IA calcular calorias gastas, músculos treinados e gerar um feedback motivacional.',
         tags: ['Workouts'],
+        security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -41,8 +27,8 @@ class WorkoutLogController extends Controller
                     new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-03-15'),
                     new OA\Property(property: 'time_start', type: 'string', format: 'time', example: '14:00:00'),
                     new OA\Property(property: 'time_end', type: 'string', format: 'time', example: '15:30:00'),
-                    new OA\Property(property: 'plan_workout_id', type: 'string', format: 'uuid', example: 'uuid_here'),
-                    new OA\Property(property: 'observations', type: 'string', example: 'Treino muito focado, mas ombro doeu um pouco.'),
+                    new OA\Property(property: 'plan_workout_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'observations', type: 'string', nullable: true),
                     new OA\Property(
                         property: 'exercises',
                         type: 'array',
@@ -64,98 +50,17 @@ class WorkoutLogController extends Controller
             new OA\Response(response: 422, description: 'Erro de validação ou erro na integração com a IA'),
         ]
     )]
-    public function finish(Request $request)
+    public function finish(FinishWorkoutRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'date' => 'required|date',
-            'time_start' => 'required|date_format:H:i:s',
-            'time_end' => 'required|date_format:H:i:s',
-            'plan_workout_id' => 'nullable|uuid|exists:plan_workouts,id',
-            'observations' => 'nullable|string',
-            'exercises' => 'required|array|min:1',
-            'exercises.*.exercise_id' => 'required|uuid|exists:exercises,id',
-            'exercises.*.sets' => 'required|integer',
-            'exercises.*.reps' => 'required|integer',
-            'exercises.*.weight_kg' => 'required|numeric',
-        ]);
-
-        $user = $request->user() ?? \App\Models\User::first();
-        $durationMin = $this->computeDuration($validated['time_start'], $validated['time_end']);
-        $prompt = $this->buildAnalysisPrompt($validated);
-
         try {
-            $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
-            $workoutLog = $this->persistWorkout($user, $validated, $aiResponse, $durationMin);
-            $this->persistExercises($workoutLog->id, $validated['exercises']);
-
-            $this->gamificationService->grantWorkoutCompletedXp($user, $workoutLog->id);
-            $this->gamificationService->checkWorkoutBadges($user);
-
-            // Check for personal records on each exercise (SRS RF-08)
-            foreach ($validated['exercises'] as $ex) {
-                $this->overload->recordPotentialPR(
-                    $user,
-                    $ex['exercise_id'],
-                    (float) $ex['weight_kg'],
-                    (int) $ex['reps'],
-                    $workoutLog->id
-                );
-            }
-
-            return response()->json([
-                'message' => 'Treino finalizado com sucesso!',
-                'log' => $workoutLog->load('workoutLogExercises') ?? $workoutLog,
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Falha ao processar treino com IA: ' . $e->getMessage()], 422);
+            $log = $this->finishService->finish($request->user(), $request->validated());
+        } catch (\Throwable $e) {
+            return response()->json(['error' => 'Falha ao processar treino com IA: '.$e->getMessage()], 422);
         }
-    }
 
-    private function computeDuration(string $start, string $end): int
-    {
-        return Carbon::createFromFormat('H:i:s', $end)
-            ->diffInMinutes(Carbon::createFromFormat('H:i:s', $start));
-    }
-
-    private function buildAnalysisPrompt(array $v): string
-    {
-        $exercisesJson = json_encode($v['exercises']);
-
-        return "Você é um Personal Trainer especialista e analista de dados esportivos. O usuário acabou de finalizar um treino.\n"
-            . "Analise os seguintes dados fornecidos:\n"
-            . "- Horário de início: {$v['time_start']}\n"
-            . "- Horário de término: {$v['time_end']}\n"
-            . "- Exercícios realizados (lista em json): {$exercisesJson}\n"
-            . "- Comentários do usuário sobre a execução/dificuldade: {$v['observations']}\n\n"
-            . "Sua tarefa é calcular e estimar as métricas deste treino.\n"
-            . "Você DEVE retornar a resposta EXCLUSIVAMENTE em um formato JSON válido, com nenhuma marcação markdown. Estrutura exigida:\n"
-            . "{\"informacoes_treino\": \"paragrafo motivacional/analise\", \"musculos_treinados\": [\"Peito\"], \"calorias_gastas_estimadas\": 450, \"tempo_medio_por_exercicio_minutos\": 4.5}";
-    }
-
-    private function persistWorkout($user, array $validated, array $aiResponse, int $durationMin): WorkoutLog
-    {
-        return WorkoutLog::create([
-            'user_id'         => $user->id,
-            'plan_workout_id' => $validated['plan_workout_id'] ?? null,
-            'date'            => $validated['date'],
-            'duration_min'    => $durationMin,
-            'calories_burned' => $aiResponse['calorias_gastas_estimadas'] ?? null,
-            'observations'    => $validated['observations'] ?? null,
-            'ai_feedback'     => $aiResponse['informacoes_treino'] ?? null,
-            'muscles_trained' => $aiResponse['musculos_treinados'] ?? [],
-        ]);
-    }
-
-    private function persistExercises($workoutLogId, array $exercises): void
-    {
-        foreach ($exercises as $ex) {
-            WorkoutExerciseLog::create([
-                'workout_log_id' => $workoutLogId,
-                'exercise_id'    => $ex['exercise_id'],
-                'sets'           => $ex['sets'],
-                'reps'           => $ex['reps'],
-                'weight_kg'      => $ex['weight_kg'],
-            ]);
-        }
+        return response()->json([
+            'message' => 'Treino finalizado com sucesso!',
+            'log' => (new WorkoutLogResource($log->load('workoutLogExercises')))->resolve(),
+        ], 201);
     }
 }

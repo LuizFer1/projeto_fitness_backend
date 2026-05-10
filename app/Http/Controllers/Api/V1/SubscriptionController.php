@@ -38,8 +38,8 @@ class SubscriptionController extends Controller
             return response()->json([
                 'data' => [
                     'plan_code' => 'free',
-                    'status'    => null,
-                    'message'   => 'Usuário no plano free implícito.',
+                    'status' => null,
+                    'message' => 'Usuário no plano free implícito.',
                 ],
             ]);
         }
@@ -77,8 +77,8 @@ class SubscriptionController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'plan_code'       => ['required', 'string', Rule::exists('plans', 'code')->where('is_active', true)],
-            'billing_period'  => ['required_unless:plan_code,free', 'nullable', Rule::in(['monthly', 'semiannual', 'annual'])],
+            'plan_code' => ['required', 'string', Rule::exists('plans', 'code')->where('is_active', true)],
+            'billing_period' => ['required_unless:plan_code,free', 'nullable', Rule::in(['monthly', 'semiannual', 'annual'])],
         ]);
 
         $user = $request->user();
@@ -111,20 +111,20 @@ class SubscriptionController extends Controller
         $status = $trialEndsAt ? Subscription::STATUS_TRIALING : Subscription::STATUS_ACTIVE;
 
         $currentPeriodEnd = match ($data['billing_period'] ?? null) {
-            'monthly'    => $now->addMonth(),
+            'monthly' => $now->addMonth(),
             'semiannual' => $now->addMonths(6),
-            'annual'     => $now->addYear(),
-            default      => null,
+            'annual' => $now->addYear(),
+            default => null,
         };
 
         $subscription = Subscription::create([
-            'user_id'             => $user->id,
-            'plan_id'             => $plan->id,
-            'plan_price_id'       => $planPrice?->id,
-            'status'              => $status,
-            'started_at'          => $now,
-            'trial_ends_at'       => $trialEndsAt,
-            'current_period_end'  => $currentPeriodEnd,
+            'user_id' => $user->id,
+            'plan_id' => $plan->id,
+            'plan_price_id' => $planPrice?->id,
+            'status' => $status,
+            'started_at' => $now,
+            'trial_ends_at' => $trialEndsAt,
+            'current_period_end' => $currentPeriodEnd,
             'cancel_at_period_end' => false,
         ]);
 
@@ -215,18 +215,18 @@ class SubscriptionController extends Controller
     private function serialize(Subscription $s): array
     {
         return [
-            'id'                    => $s->id,
-            'plan_code'             => $s->plan->code,
-            'plan_name'             => $s->plan->name,
-            'billing_period'        => $s->planPrice?->billing_period,
-            'price_cents'           => $s->planPrice?->price_cents,
-            'currency'              => $s->planPrice?->currency,
-            'status'                => $s->status,
-            'started_at'            => $s->started_at,
-            'trial_ends_at'         => $s->trial_ends_at,
-            'current_period_end'    => $s->current_period_end,
-            'canceled_at'           => $s->canceled_at,
-            'cancel_at_period_end'  => $s->cancel_at_period_end,
+            'id' => $s->id,
+            'plan_code' => $s->plan->code,
+            'plan_name' => $s->plan->name,
+            'billing_period' => $s->planPrice?->billing_period,
+            'price_cents' => $s->planPrice?->price_cents,
+            'currency' => $s->planPrice?->currency,
+            'status' => $s->status,
+            'started_at' => $s->started_at,
+            'trial_ends_at' => $s->trial_ends_at,
+            'current_period_end' => $s->current_period_end,
+            'canceled_at' => $s->canceled_at,
+            'cancel_at_period_end' => $s->cancel_at_period_end,
         ];
     }
 }

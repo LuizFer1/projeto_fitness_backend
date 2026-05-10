@@ -65,17 +65,18 @@ class OnboardingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'gender'            => 'nullable|string|in:male,female,other,prefer_not_to_say',
-            'age'               => 'nullable|integer|min:10|max:120',
-            'height_cm'         => 'nullable|integer|min:100|max:250',
-            'weight_kg'         => 'nullable|numeric|min:30|max:300',
-            'body_fat_percent'  => 'nullable|numeric|min:3|max:60',
+            'gender' => 'nullable|string|in:male,female,other,prefer_not_to_say',
+            'age' => 'nullable|integer|min:10|max:120',
+            'height_cm' => 'nullable|integer|min:100|max:250',
+            'weight_kg' => 'nullable|numeric|min:30|max:300',
+            'body_fat_percent' => 'nullable|numeric|min:3|max:60',
             'workouts_per_week' => 'nullable|integer|min:0|max:7',
-            'work_style'        => 'nullable|string|in:white_collar,blue_collar,sedentary,moderate,active',
+            'work_style' => 'nullable|string|in:white_collar,blue_collar,sedentary,moderate,active',
         ]);
 
         try {
             $onboarding = $this->submitOnboardingUseCase->execute($request->user()->id, $data);
+
             return response()->json($onboarding, 201);
         } catch (ValidationException $e) {
             return response()->json([

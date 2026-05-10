@@ -3,14 +3,15 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\AiPlan;
 use App\Models\Exercise;
 use App\Models\PlanMeal;
 use App\Models\PlanWorkout;
 use App\Models\PlanWorkoutExercise;
+use App\Models\User;
 use App\Services\GroqService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
@@ -61,7 +62,7 @@ class AiPlanController extends Controller
             'location' => 'required|string|in:home,gym',
         ]);
 
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
         $prompt = $this->buildWorkoutPrompt($validated);
 
         try {
@@ -83,29 +84,29 @@ class AiPlanController extends Controller
             ? 'Home training: consider NO equipment (bodyweight only). Do not include machines, barbells, dumbbells, or cables.'
             : 'Gym training: you may include standard gym equipment and machines when appropriate.';
 
-        $muscles     = $v['muscles'] ?? 'balanced / full body';
+        $muscles = $v['muscles'] ?? 'balanced / full body';
         $limitations = $v['limitations'] ?? 'none';
 
         return "You are an experienced Master Personal Trainer and an Expert in Workout Protocol Creation.\n"
-            . "Create a complete workout plan for the user based on the following data:\n"
-            . "- Primary Goal: {$v['goal']}\n"
-            . "- Focus Muscles: {$muscles}\n"
-            . "- Experience Level: {$v['level']}\n"
-            . "- Training Days per Week: {$v['days_per_week']} days\n"
-            . "- Available Time per Workout: {$v['workout_time_minutes']} minutes\n"
-            . "- Physical Limitations / Injuries: {$limitations}\n"
-            . "- Training Location: {$v['location']} (home or gym)\n\n"
-            . "Given the available time is {$v['workout_time_minutes']} minutes, choose the number of exercises, sets, and repetitions wisely to ensure an effective workout within this time limit. "
-            . "Consider hypertrophy and appropriate progression for a {$v['level']} level. Adapt exercise selection to the training location.\n\n"
-            . "LOCATION CONSTRAINT:\n"
-            . "- {$locationRule}\n\n"
-            . "IMPORTANT LANGUAGE RULES:\n"
-            . "- All exercise names in \"exercise_name\" MUST be in Brazilian Portuguese.\n"
-            . "- All workout names and observations should also be written in Brazilian Portuguese.\n"
-            . "- Do NOT use English names for exercises.\n\n"
-            . "You MUST return the response EXCLUSIVELY in a valid JSON format, without markdown formatting. The structure MUST be exactly this:\n"
-            . "{\"plan_name\": \"string\", \"plan_goal\": \"string\", \"days_per_week\": number, \"workouts\": [{\"day_of_week\": number, \"workout_name\": \"string\", \"workout_observations\": \"string\", \"exercises\": [{\"exercise_name\": \"string\", \"sets\": number, \"repetitions\": number, \"rest_seconds\": number, \"ai_observations\": \"string\", \"suggested_weight_kg\": number}]}]}\n\n"
-            . "Note for \"day_of_week\": 0=Sunday, 1=Monday, 2=Tuesday, etc. If the plan is ABC (sequential, no fixed days), you can number them from 1 to N.";
+            ."Create a complete workout plan for the user based on the following data:\n"
+            ."- Primary Goal: {$v['goal']}\n"
+            ."- Focus Muscles: {$muscles}\n"
+            ."- Experience Level: {$v['level']}\n"
+            ."- Training Days per Week: {$v['days_per_week']} days\n"
+            ."- Available Time per Workout: {$v['workout_time_minutes']} minutes\n"
+            ."- Physical Limitations / Injuries: {$limitations}\n"
+            ."- Training Location: {$v['location']} (home or gym)\n\n"
+            ."Given the available time is {$v['workout_time_minutes']} minutes, choose the number of exercises, sets, and repetitions wisely to ensure an effective workout within this time limit. "
+            ."Consider hypertrophy and appropriate progression for a {$v['level']} level. Adapt exercise selection to the training location.\n\n"
+            ."LOCATION CONSTRAINT:\n"
+            ."- {$locationRule}\n\n"
+            ."IMPORTANT LANGUAGE RULES:\n"
+            ."- All exercise names in \"exercise_name\" MUST be in Brazilian Portuguese.\n"
+            ."- All workout names and observations should also be written in Brazilian Portuguese.\n"
+            ."- Do NOT use English names for exercises.\n\n"
+            ."You MUST return the response EXCLUSIVELY in a valid JSON format, without markdown formatting. The structure MUST be exactly this:\n"
+            ."{\"plan_name\": \"string\", \"plan_goal\": \"string\", \"days_per_week\": number, \"workouts\": [{\"day_of_week\": number, \"workout_name\": \"string\", \"workout_observations\": \"string\", \"exercises\": [{\"exercise_name\": \"string\", \"sets\": number, \"repetitions\": number, \"rest_seconds\": number, \"ai_observations\": \"string\", \"suggested_weight_kg\": number}]}]}\n\n"
+            .'Note for "day_of_week": 0=Sunday, 1=Monday, 2=Tuesday, etc. If the plan is ABC (sequential, no fixed days), you can number them from 1 to N.';
     }
 
     private function persistWorkoutPlan($user, array $validated, array $aiResponse, string $prompt): AiPlan
@@ -161,7 +162,7 @@ class AiPlanController extends Controller
 
     private function resolveCatalogExercise(string $name): Exercise
     {
-        $exercise = Exercise::where('name', 'LIKE', '%' . $name . '%')->first();
+        $exercise = Exercise::where('name', 'LIKE', '%'.$name.'%')->first();
 
         return $exercise ?? Exercise::create([
             'id' => (string) Str::uuid(),
@@ -179,7 +180,7 @@ class AiPlanController extends Controller
             $status = 422;
         }
 
-        return response()->json(['error' => $message . ': ' . $e->getMessage()], $status);
+        return response()->json(['error' => $message.': '.$e->getMessage()], $status);
     }
 
     #[OA\Get(
@@ -192,7 +193,7 @@ class AiPlanController extends Controller
     )]
     public function index(Request $request)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $query = AiPlan::where('user_id', $user->id);
         if ($request->filled('type')) {
@@ -221,7 +222,7 @@ class AiPlanController extends Controller
     )]
     public function show(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plan = AiPlan::where('user_id', $user->id)
             ->where('id', $id)
@@ -245,7 +246,7 @@ class AiPlanController extends Controller
     )]
     public function activate(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plan = AiPlan::where('user_id', $user->id)->where('id', $id)->firstOrFail();
 
@@ -275,7 +276,7 @@ class AiPlanController extends Controller
     )]
     public function archive(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plan = AiPlan::where('user_id', $user->id)->where('id', $id)->firstOrFail();
         $plan->update(['status' => 'archived']);
@@ -297,7 +298,7 @@ class AiPlanController extends Controller
     )]
     public function duplicate(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $original = AiPlan::where('user_id', $user->id)
             ->where('id', $id)
@@ -311,7 +312,7 @@ class AiPlanController extends Controller
                 'version' => $original->version + 1,
                 'status' => 'draft',
                 'content_json' => $original->content_json,
-                'generation_reason' => 'Duplicated from plan ' . $original->id,
+                'generation_reason' => 'Duplicated from plan '.$original->id,
                 'context_prompt' => $original->context_prompt,
                 'valid_from' => Carbon::today(),
                 'valid_until' => Carbon::today()->addWeeks(8),

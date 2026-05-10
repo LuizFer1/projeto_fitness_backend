@@ -50,11 +50,11 @@ class BiweeklyReportController extends Controller
         }
 
         return response()->json([
-            'id'           => $report->id,
+            'id' => $report->id,
             'period_start' => $report->period_start?->toDateString(),
-            'period_end'   => $report->period_end?->toDateString(),
-            'status'       => $report->status,
-            'summary'      => $report->summary_data,
+            'period_end' => $report->period_end?->toDateString(),
+            'status' => $report->status,
+            'summary' => $report->summary_data,
             'download_url' => $downloadUrl ?? $report->public_url,
             'generated_at' => $report->generated_at?->toIso8601String(),
         ]);
@@ -72,8 +72,8 @@ class BiweeklyReportController extends Controller
     )]
     public function generate(Request $request): JsonResponse
     {
-        $user  = $request->user();
-        $end   = now()->subDay()->toDateString();
+        $user = $request->user();
+        $end = now()->subDay()->toDateString();
         $start = now()->subDays(14)->toDateString();
 
         $existing = BiweeklyReport::where('user_id', $user->id)
@@ -82,17 +82,17 @@ class BiweeklyReportController extends Controller
 
         if ($existing) {
             return response()->json([
-                'id'     => $existing->id,
+                'id' => $existing->id,
                 'status' => $existing->status,
                 'message' => 'Relatório para este período já existe.',
             ], 200);
         }
 
         $report = BiweeklyReport::create([
-            'user_id'      => $user->id,
+            'user_id' => $user->id,
             'period_start' => $start,
-            'period_end'   => $end,
-            'status'       => 'pending',
+            'period_end' => $end,
+            'status' => 'pending',
         ]);
 
         GenerateBiweeklyReportJob::dispatch($report->id);

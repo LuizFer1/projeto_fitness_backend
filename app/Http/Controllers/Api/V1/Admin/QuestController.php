@@ -11,7 +11,9 @@ use OpenApi\Attributes as OA;
 class QuestController extends Controller
 {
     private const TYPES = ['basic', 'special', 'event'];
+
     private const PERIODICITIES = ['once', 'weekly', 'monthly', 'recurring'];
+
     private const CONDITION_TYPES = ['streak_days', 'workouts_period', 'water_days', 'meals_logged', 'weight_logged'];
 
     #[OA\Get(
@@ -66,16 +68,16 @@ class QuestController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'slug'            => ['required', 'string', 'max:80', 'unique:quests,slug'],
-            'name'            => ['required', 'string', 'max:120'],
-            'description'     => ['nullable', 'string'],
-            'icon'            => ['nullable', 'string', 'max:10'],
-            'type'            => ['required', Rule::in(self::TYPES)],
-            'periodicity'     => ['required', Rule::in(self::PERIODICITIES)],
-            'condition_type'  => ['required', Rule::in(self::CONDITION_TYPES)],
+            'slug' => ['required', 'string', 'max:80', 'unique:quests,slug'],
+            'name' => ['required', 'string', 'max:120'],
+            'description' => ['nullable', 'string'],
+            'icon' => ['nullable', 'string', 'max:10'],
+            'type' => ['required', Rule::in(self::TYPES)],
+            'periodicity' => ['required', Rule::in(self::PERIODICITIES)],
+            'condition_type' => ['required', Rule::in(self::CONDITION_TYPES)],
             'condition_value' => ['required', 'integer', 'min:1'],
-            'xp_reward'       => ['integer', 'min:0'],
-            'is_active'       => ['boolean'],
+            'xp_reward' => ['integer', 'min:0'],
+            'is_active' => ['boolean'],
         ]);
 
         $quest = Quest::create($data);
@@ -123,16 +125,16 @@ class QuestController extends Controller
         $quest = Quest::findOrFail($id);
 
         $data = $request->validate([
-            'slug'            => ['sometimes', 'string', 'max:80', Rule::unique('quests', 'slug')->ignore($quest->id)],
-            'name'            => ['sometimes', 'string', 'max:120'],
-            'description'     => ['sometimes', 'nullable', 'string'],
-            'icon'            => ['sometimes', 'nullable', 'string', 'max:10'],
-            'type'            => ['sometimes', Rule::in(self::TYPES)],
-            'periodicity'     => ['sometimes', Rule::in(self::PERIODICITIES)],
-            'condition_type'  => ['sometimes', Rule::in(self::CONDITION_TYPES)],
+            'slug' => ['sometimes', 'string', 'max:80', Rule::unique('quests', 'slug')->ignore($quest->id)],
+            'name' => ['sometimes', 'string', 'max:120'],
+            'description' => ['sometimes', 'nullable', 'string'],
+            'icon' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'type' => ['sometimes', Rule::in(self::TYPES)],
+            'periodicity' => ['sometimes', Rule::in(self::PERIODICITIES)],
+            'condition_type' => ['sometimes', Rule::in(self::CONDITION_TYPES)],
             'condition_value' => ['sometimes', 'integer', 'min:1'],
-            'xp_reward'       => ['sometimes', 'integer', 'min:0'],
-            'is_active'       => ['sometimes', 'boolean'],
+            'xp_reward' => ['sometimes', 'integer', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
         ]);
 
         $quest->update($data);

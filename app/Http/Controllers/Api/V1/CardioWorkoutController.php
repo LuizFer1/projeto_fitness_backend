@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Application\UseCases\Workout\RegisterCardioSessionUseCase;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Workouts\StoreCardioWorkoutRequest;
+use App\Http\Resources\WorkoutLogResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class CardioWorkoutController extends Controller
@@ -39,29 +40,13 @@ class CardioWorkoutController extends Controller
             new OA\Response(response: 422, description: 'Erro de validação'),
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreCardioWorkoutRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'date'                => 'nullable|date',
-            'duration_min'        => 'nullable|integer|min:1',
-            'calories_burned'     => 'nullable|numeric|min:0',
-            'distance_m'          => 'nullable|integer|min:0',
-            'pace_seconds_per_km' => 'nullable|integer|min:0',
-            'avg_hr'              => 'nullable|integer|min:30|max:300',
-            'max_hr'              => 'nullable|integer|min:30|max:300',
-            'elevation_gain_m'    => 'nullable|integer',
-            'route_polyline'      => 'nullable|string',
-            'mood'                => 'nullable|in:great,good,neutral,tired,bad',
-            'observations'        => 'nullable|string|max:1000',
-            'external_source'     => 'nullable|in:manual,healthkit,googlefit,garmin',
-            'external_id'         => 'nullable|string|max:120',
-        ]);
-
-        $log = $this->useCase->execute($request->user(), $validated);
+        $log = $this->useCase->execute($request->user(), $request->validated());
 
         return response()->json([
-            'message'     => 'Treino de cárdio registrado com sucesso.',
-            'workout_log' => $log,
+            'message' => 'Treino de cárdio registrado com sucesso.',
+            'workout_log' => new WorkoutLogResource($log),
         ], 201);
     }
 }

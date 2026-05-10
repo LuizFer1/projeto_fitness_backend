@@ -49,13 +49,13 @@ class NotificationPreferenceController extends Controller
     public function update(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'streak_at_risk'       => 'nullable|boolean',
-            'rank_drop'            => 'nullable|boolean',
-            'achievement_close'    => 'nullable|boolean',
+            'streak_at_risk' => 'nullable|boolean',
+            'rank_drop' => 'nullable|boolean',
+            'achievement_close' => 'nullable|boolean',
             'achievement_unlocked' => 'nullable|boolean',
-            'daily_summary'        => 'nullable|boolean',
-            'quiet_hours_start'    => 'nullable|date_format:H:i',
-            'quiet_hours_end'      => 'nullable|date_format:H:i',
+            'daily_summary' => 'nullable|boolean',
+            'quiet_hours_start' => 'nullable|date_format:H:i',
+            'quiet_hours_end' => 'nullable|date_format:H:i',
         ]);
 
         $prefs = NotificationPreference::updateOrCreate(

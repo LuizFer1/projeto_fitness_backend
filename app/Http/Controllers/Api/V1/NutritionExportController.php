@@ -38,11 +38,11 @@ class NutritionExportController extends Controller
 
         $period = $request->query('period', '7d');
         $format = $request->query('format', 'csv');
-        $user   = $request->user();
+        $user = $request->user();
 
-        $days      = (int) $period;
-        $dateTo    = Carbon::today()->toDateString();
-        $dateFrom  = Carbon::today()->subDays($days)->toDateString();
+        $days = (int) $period;
+        $dateTo = Carbon::today()->toDateString();
+        $dateFrom = Carbon::today()->subDays($days)->toDateString();
 
         // Return a ready export generated today if it exists
         $existing = NutritionExport::where('user_id', $user->id)
@@ -59,28 +59,28 @@ class NutritionExportController extends Controller
                 : $existing->download_url;
 
             return response()->json([
-                'id'           => $existing->id,
-                'status'       => 'ready',
+                'id' => $existing->id,
+                'status' => 'ready',
                 'download_url' => $url,
-                'period'       => $period,
-                'format'       => $format,
+                'period' => $period,
+                'format' => $format,
                 'generated_at' => $existing->generated_at?->toIso8601String(),
             ]);
         }
 
         $export = NutritionExport::create([
-            'user_id'   => $user->id,
-            'period'    => $period,
-            'format'    => $format,
-            'status'    => 'pending',
+            'user_id' => $user->id,
+            'period' => $period,
+            'format' => $format,
+            'status' => 'pending',
             'date_from' => $dateFrom,
-            'date_to'   => $dateTo,
+            'date_to' => $dateTo,
         ]);
 
         NutritionExportJob::dispatch($export->id);
 
         return response()->json([
-            'id'     => $export->id,
+            'id' => $export->id,
             'status' => 'pending',
             'message' => 'Export em processamento. Consulte o status em /v1/nutrition/export/status/{id}.',
         ], 202);
@@ -109,10 +109,10 @@ class NutritionExportController extends Controller
         }
 
         return response()->json([
-            'id'           => $export->id,
-            'status'       => $export->status,
-            'period'       => $export->period,
-            'format'       => $export->format,
+            'id' => $export->id,
+            'status' => $export->status,
+            'period' => $export->period,
+            'format' => $export->format,
             'download_url' => $url ?? $export->download_url,
             'generated_at' => $export->generated_at?->toIso8601String(),
         ]);

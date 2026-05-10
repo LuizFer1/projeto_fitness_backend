@@ -28,7 +28,7 @@ class FollowController extends Controller
     )]
     public function follow(Request $request, User $username): JsonResponse
     {
-        $me     = $request->user();
+        $me = $request->user();
         $target = $username; // resolved by Route::bind('username')
 
         if ($me->id === $target->id) {
@@ -41,17 +41,17 @@ class FollowController extends Controller
         }
 
         $isPrivate = $target->profile_visibility === 'private';
-        $status    = $isPrivate ? 'pending' : 'accepted';
+        $status = $isPrivate ? 'pending' : 'accepted';
 
         $follow = Follower::create([
             'follower_id' => $me->id,
             'followee_id' => $target->id,
-            'status'      => $status,
+            'status' => $status,
             'accepted_at' => $isPrivate ? null : now(),
         ]);
 
         return response()->json([
-            'id'     => $follow->id,
+            'id' => $follow->id,
             'status' => $status,
         ], 201);
     }
@@ -71,14 +71,14 @@ class FollowController extends Controller
     )]
     public function unfollow(Request $request, User $username): JsonResponse
     {
-        $me     = $request->user();
+        $me = $request->user();
         $target = $username;
 
         $deleted = Follower::where('follower_id', $me->id)
             ->where('followee_id', $target->id)
             ->delete();
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'Você não está seguindo este usuário.'], 404);
         }
 
@@ -152,7 +152,7 @@ class FollowController extends Controller
             ->where('status', 'pending')
             ->delete();
 
-        if (!$deleted) {
+        if (! $deleted) {
             return response()->json(['message' => 'Solicitação não encontrada.'], 404);
         }
 
@@ -183,7 +183,7 @@ class FollowController extends Controller
                 ->where('followee_id', $target->id)
                 ->exists();
 
-            if (!$isFollowing && $viewer->id !== $target->id) {
+            if (! $isFollowing && $viewer->id !== $target->id) {
                 return response()->json(['message' => 'Perfil privado.'], 403);
             }
         }
@@ -221,7 +221,7 @@ class FollowController extends Controller
                 ->where('followee_id', $target->id)
                 ->exists();
 
-            if (!$isFollowing && $viewer->id !== $target->id) {
+            if (! $isFollowing && $viewer->id !== $target->id) {
                 return response()->json(['message' => 'Perfil privado.'], 403);
             }
         }

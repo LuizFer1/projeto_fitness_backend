@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\AiPlan;
+use App\Models\User;
 use App\Services\GroqService;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
@@ -23,14 +24,14 @@ class AiMealPlanController extends Controller
     private const DEFAULT_DISCLAIMER = 'Este plano alimentar é sugestivo e não substitui orientação de um nutricionista profissional.';
 
     private const PROMPT_DEFAULTS = [
-        'restrictions'     => 'none',
+        'restrictions' => 'none',
         'food_preferences' => 'no preference',
-        'food_dislikes'    => 'none',
+        'food_dislikes' => 'none',
         'routine_schedule' => 'not specified',
-        'weight_kg'        => 'not specified',
-        'height_cm'        => 'not specified',
-        'age'              => 'not specified',
-        'activity_level'   => 'moderate',
+        'weight_kg' => 'not specified',
+        'height_cm' => 'not specified',
+        'age' => 'not specified',
+        'activity_level' => 'moderate',
     ];
 
     private function formatPlanForList(AiPlan $plan): array
@@ -38,16 +39,16 @@ class AiMealPlanController extends Controller
         $c = $plan->content_json ?? [];
 
         return [
-            'id'           => $plan->id,
-            'status'       => $plan->status,
-            'goal'         => $c['plan_goal'] ?? null,
-            'total_kcal'   => $c['total_kcal'] ?? null,
-            'locked'       => false,
-            'image'        => null,
+            'id' => $plan->id,
+            'status' => $plan->status,
+            'goal' => $c['plan_goal'] ?? null,
+            'total_kcal' => $c['total_kcal'] ?? null,
+            'locked' => false,
+            'image' => null,
             'content_json' => [
-                'plan_goal'  => $c['plan_goal'] ?? null,
+                'plan_goal' => $c['plan_goal'] ?? null,
                 'total_kcal' => $c['total_kcal'] ?? null,
-                'macros'     => $c['macros'] ?? null,
+                'macros' => $c['macros'] ?? null,
             ],
         ];
     }
@@ -57,16 +58,16 @@ class AiMealPlanController extends Controller
         $c = $plan->content_json ?? [];
 
         return [
-            'id'           => $plan->id,
-            'status'       => $plan->status,
-            'created_at'   => $plan->created_at,
+            'id' => $plan->id,
+            'status' => $plan->status,
+            'created_at' => $plan->created_at,
             'content_json' => [
-                'plan_goal'   => $c['plan_goal'] ?? null,
+                'plan_goal' => $c['plan_goal'] ?? null,
                 'description' => $c['description'] ?? null,
-                'total_kcal'  => $c['total_kcal'] ?? null,
-                'macros'      => $c['macros'] ?? null,
-                'meals'       => $this->normalizeMeals($c['meals'] ?? []),
-                'disclaimer'  => $c['disclaimer'] ?? self::DEFAULT_DISCLAIMER,
+                'total_kcal' => $c['total_kcal'] ?? null,
+                'macros' => $c['macros'] ?? null,
+                'meals' => $this->normalizeMeals($c['meals'] ?? []),
+                'disclaimer' => $c['disclaimer'] ?? self::DEFAULT_DISCLAIMER,
             ],
         ];
     }
@@ -95,47 +96,47 @@ class AiMealPlanController extends Controller
         $v = array_merge(self::PROMPT_DEFAULTS, array_filter($validated, fn ($x) => $x !== null && $x !== ''));
 
         return "You are an expert Sports Nutritionist specialized in creating personalized meal plans.\n"
-            . "Create a complete daily meal plan for the user based on the following data:\n"
-            . "- Primary Goal: {$validated['goal']}\n"
-            . "- Dietary Restrictions / Allergies: {$v['restrictions']}\n"
-            . "- Food Preferences (likes): {$v['food_preferences']}\n"
-            . "- Food Dislikes: {$v['food_dislikes']}\n"
-            . "- Meals per Day: {$validated['meals_per_day']}\n"
-            . "- Daily Routine / Schedule: {$v['routine_schedule']}\n"
-            . "- Weight: {$v['weight_kg']} kg\n"
-            . "- Height: {$v['height_cm']} cm\n"
-            . "- Age: {$v['age']}\n"
-            . "- Activity Level: {$v['activity_level']}\n\n"
-            . "Based on this data, calculate an appropriate daily calorie target and macro distribution.\n"
-            . "Then create {$validated['meals_per_day']} meals distributed throughout the day with suggested times.\n"
-            . "For each meal, list the food items (ingredients) with their quantities and individual macro/calorie counts.\n\n"
-            . "IMPORTANT LANGUAGE RULES:\n"
-            . "- All meal names, ingredient names, and descriptions MUST be in Brazilian Portuguese.\n"
-            . "- Do NOT use English names.\n\n"
-            . "IMPORTANT DISCLAIMER: Always include a note that this plan is suggestive and does NOT replace professional nutritionist guidance.\n\n"
-            . "You MUST return the response EXCLUSIVELY in a valid JSON object. The structure MUST be exactly this:\n"
-            . $this->promptJsonSchema();
+            ."Create a complete daily meal plan for the user based on the following data:\n"
+            ."- Primary Goal: {$validated['goal']}\n"
+            ."- Dietary Restrictions / Allergies: {$v['restrictions']}\n"
+            ."- Food Preferences (likes): {$v['food_preferences']}\n"
+            ."- Food Dislikes: {$v['food_dislikes']}\n"
+            ."- Meals per Day: {$validated['meals_per_day']}\n"
+            ."- Daily Routine / Schedule: {$v['routine_schedule']}\n"
+            ."- Weight: {$v['weight_kg']} kg\n"
+            ."- Height: {$v['height_cm']} cm\n"
+            ."- Age: {$v['age']}\n"
+            ."- Activity Level: {$v['activity_level']}\n\n"
+            ."Based on this data, calculate an appropriate daily calorie target and macro distribution.\n"
+            ."Then create {$validated['meals_per_day']} meals distributed throughout the day with suggested times.\n"
+            ."For each meal, list the food items (ingredients) with their quantities and individual macro/calorie counts.\n\n"
+            ."IMPORTANT LANGUAGE RULES:\n"
+            ."- All meal names, ingredient names, and descriptions MUST be in Brazilian Portuguese.\n"
+            ."- Do NOT use English names.\n\n"
+            ."IMPORTANT DISCLAIMER: Always include a note that this plan is suggestive and does NOT replace professional nutritionist guidance.\n\n"
+            ."You MUST return the response EXCLUSIVELY in a valid JSON object. The structure MUST be exactly this:\n"
+            .$this->promptJsonSchema();
     }
 
     private function promptJsonSchema(): string
     {
         return json_encode([
-            'plan_goal'   => 'string',
+            'plan_goal' => 'string',
             'description' => 'Uma breve descrição do plano alimentar',
-            'total_kcal'  => 'number',
-            'macros'      => ['p' => 'number (protein_g)', 'c' => 'number (carbs_g)', 'f' => 'number (fat_g)'],
-            'meals'       => [[
-                'time'        => '08:00',
-                'name'        => 'Café da Manhã Energético',
-                'type'        => 'breakfast (breakfast|lunch|snack|dinner)',
+            'total_kcal' => 'number',
+            'macros' => ['p' => 'number (protein_g)', 'c' => 'number (carbs_g)', 'f' => 'number (fat_g)'],
+            'meals' => [[
+                'time' => '08:00',
+                'name' => 'Café da Manhã Energético',
+                'type' => 'breakfast (breakfast|lunch|snack|dinner)',
                 'ingredients' => [[
-                    'name'   => 'Ovos mexidos',
+                    'name' => 'Ovos mexidos',
                     'amount' => '2 unidades',
-                    'kcal'   => 140,
+                    'kcal' => 140,
                     'macros' => ['p' => 12, 'c' => 2, 'f' => 10],
                 ]],
             ]],
-            'disclaimer'  => self::DEFAULT_DISCLAIMER,
+            'disclaimer' => self::DEFAULT_DISCLAIMER,
         ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
 
@@ -178,19 +179,19 @@ class AiMealPlanController extends Controller
     public function generateMealPlan(Request $request)
     {
         $validated = $request->validate([
-            'goal'             => 'required|string|max:100',
-            'restrictions'     => 'nullable|string|max:500',
+            'goal' => 'required|string|max:100',
+            'restrictions' => 'nullable|string|max:500',
             'food_preferences' => 'nullable|string|max:500',
-            'food_dislikes'    => 'nullable|string|max:500',
-            'meals_per_day'    => 'required|integer|min:2|max:8',
+            'food_dislikes' => 'nullable|string|max:500',
+            'meals_per_day' => 'required|integer|min:2|max:8',
             'routine_schedule' => 'nullable|string|max:500',
-            'weight_kg'        => 'nullable|numeric|min:30|max:300',
-            'height_cm'        => 'nullable|numeric|min:100|max:250',
-            'age'              => 'nullable|integer|min:10|max:100',
-            'activity_level'   => 'nullable|string|in:sedentary,light,moderate,active,very_active',
+            'weight_kg' => 'nullable|numeric|min:30|max:300',
+            'height_cm' => 'nullable|numeric|min:100|max:250',
+            'age' => 'nullable|integer|min:10|max:100',
+            'activity_level' => 'nullable|string|in:sedentary,light,moderate,active,very_active',
         ]);
 
-        $user  = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
         $prompt = $this->buildGeneratePrompt($validated);
 
         try {
@@ -198,15 +199,15 @@ class AiMealPlanController extends Controller
 
             DB::transaction(function () use ($user, $validated, $aiResponse, $prompt) {
                 AiPlan::create([
-                    'user_id'           => $user->id,
-                    'type'              => 'nutritional',
-                    'version'           => 1,
-                    'status'            => 'draft',
-                    'content_json'      => $aiResponse,
-                    'generation_reason' => "Goal: {$validated['goal']}, Meals/day: {$validated['meals_per_day']}, Restrictions: " . ($validated['restrictions'] ?? 'none'),
-                    'context_prompt'    => $prompt,
-                    'valid_from'        => Carbon::today(),
-                    'valid_until'       => Carbon::today()->addWeeks(4),
+                    'user_id' => $user->id,
+                    'type' => 'nutritional',
+                    'version' => 1,
+                    'status' => 'draft',
+                    'content_json' => $aiResponse,
+                    'generation_reason' => "Goal: {$validated['goal']}, Meals/day: {$validated['meals_per_day']}, Restrictions: ".($validated['restrictions'] ?? 'none'),
+                    'context_prompt' => $prompt,
+                    'valid_from' => Carbon::today(),
+                    'valid_until' => Carbon::today()->addWeeks(4),
                 ]);
             });
 
@@ -219,7 +220,8 @@ class AiMealPlanController extends Controller
             if ($status < 400 || $status > 599) {
                 $status = 422;
             }
-            return response()->json(['error' => 'Failed to generate meal plan: ' . $e->getMessage()], $status);
+
+            return response()->json(['error' => 'Failed to generate meal plan: '.$e->getMessage()], $status);
         }
     }
 
@@ -239,7 +241,7 @@ class AiMealPlanController extends Controller
     )]
     public function index(Request $request)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plans = AiPlan::where('user_id', $user->id)
             ->where('type', 'nutritional')
@@ -271,7 +273,7 @@ class AiMealPlanController extends Controller
     )]
     public function show(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plan = AiPlan::where('user_id', $user->id)
             ->where('id', $id)
@@ -301,7 +303,7 @@ class AiMealPlanController extends Controller
     )]
     public function activate(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         AiPlan::where('user_id', $user->id)
             ->where('type', 'nutritional')
@@ -338,7 +340,7 @@ class AiMealPlanController extends Controller
     )]
     public function archive(Request $request, string $id)
     {
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $plan = AiPlan::where('user_id', $user->id)
             ->where('id', $id)
@@ -385,7 +387,7 @@ class AiMealPlanController extends Controller
             'adjustment_note' => 'required|string|max:1000',
         ]);
 
-        $user = $request->user() ?? \App\Models\User::first();
+        $user = $request->user() ?? User::first();
 
         $original = AiPlan::where('user_id', $user->id)
             ->where('id', $id)
@@ -395,28 +397,28 @@ class AiMealPlanController extends Controller
         $originalContent = $original->content_json;
 
         $prompt = "You are an expert Sports Nutritionist. The user previously received the following meal plan:\n"
-            . json_encode($originalContent, JSON_UNESCAPED_UNICODE) . "\n\n"
-            . "The user is requesting the following adjustments:\n"
-            . $validated['adjustment_note'] . "\n\n"
-            . "Generate a NEW improved meal plan incorporating these changes.\n"
-            . "You MUST keep the EXACT same JSON structure as the original plan (plan_goal, description, total_kcal, macros with p/c/f, meals with ingredients, disclaimer).\n"
-            . "All text MUST be in Brazilian Portuguese.\n"
-            . "IMPORTANT: Include a disclaimer that this plan is suggestive and does NOT replace professional nutritionist guidance.\n\n"
-            . "You MUST return the response EXCLUSIVELY in a valid JSON object, without markdown formatting.";
+            .json_encode($originalContent, JSON_UNESCAPED_UNICODE)."\n\n"
+            ."The user is requesting the following adjustments:\n"
+            .$validated['adjustment_note']."\n\n"
+            ."Generate a NEW improved meal plan incorporating these changes.\n"
+            ."You MUST keep the EXACT same JSON structure as the original plan (plan_goal, description, total_kcal, macros with p/c/f, meals with ingredients, disclaimer).\n"
+            ."All text MUST be in Brazilian Portuguese.\n"
+            ."IMPORTANT: Include a disclaimer that this plan is suggestive and does NOT replace professional nutritionist guidance.\n\n"
+            .'You MUST return the response EXCLUSIVELY in a valid JSON object, without markdown formatting.';
 
         try {
             $aiResponse = $this->groqService->generateTextResponse(null, $prompt);
 
             AiPlan::create([
-                'user_id'           => $user->id,
-                'type'              => 'nutritional',
-                'version'           => $original->version + 1,
-                'status'            => 'draft',
-                'content_json'      => $aiResponse,
+                'user_id' => $user->id,
+                'type' => 'nutritional',
+                'version' => $original->version + 1,
+                'status' => 'draft',
+                'content_json' => $aiResponse,
                 'generation_reason' => "Regenerated from plan {$original->id}. Adjustment: {$validated['adjustment_note']}",
-                'context_prompt'    => $prompt,
-                'valid_from'        => Carbon::today(),
-                'valid_until'       => Carbon::today()->addWeeks(4),
+                'context_prompt' => $prompt,
+                'valid_from' => Carbon::today(),
+                'valid_until' => Carbon::today()->addWeeks(4),
             ]);
 
             return response()->json([
@@ -428,7 +430,8 @@ class AiMealPlanController extends Controller
             if ($status < 400 || $status > 599) {
                 $status = 422;
             }
-            return response()->json(['error' => 'Failed to regenerate meal plan: ' . $e->getMessage()], $status);
+
+            return response()->json(['error' => 'Failed to regenerate meal plan: '.$e->getMessage()], $status);
         }
     }
 }

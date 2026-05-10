@@ -33,7 +33,7 @@ class VictoryAssetController extends Controller
     public function enqueue(Request $request, string $uuid): JsonResponse
     {
         $user = $request->user();
-        $log  = WorkoutLog::where('id', $uuid)
+        $log = WorkoutLog::where('id', $uuid)
             ->where('user_id', $user->id)
             ->firstOrFail();
 
@@ -41,8 +41,8 @@ class VictoryAssetController extends Controller
 
         if ($existing && in_array($existing->status, ['pending', 'processing', 'ready'])) {
             return response()->json([
-                'status'  => $existing->status,
-                'url'     => $existing->public_url,
+                'status' => $existing->status,
+                'url' => $existing->public_url,
                 'message' => 'Asset já em processamento ou pronto.',
             ], 202);
         }
@@ -51,9 +51,9 @@ class VictoryAssetController extends Controller
 
         $asset = VictoryAsset::create([
             'workout_log_id' => $log->id,
-            'user_id'        => $user->id,
-            'type'           => $isCardio ? 'cardio' : 'strength',
-            'status'         => 'pending',
+            'user_id' => $user->id,
+            'type' => $isCardio ? 'cardio' : 'strength',
+            'status' => 'pending',
         ]);
 
         GenerateVictoryAssetJob::dispatch($asset->id, $log->id);
@@ -62,7 +62,7 @@ class VictoryAssetController extends Controller
         $this->gamification->grantAssetSharedXp($user, $log->id);
 
         return response()->json([
-            'id'     => $asset->id,
+            'id' => $asset->id,
             'status' => 'pending',
         ], 201);
     }
@@ -82,19 +82,19 @@ class VictoryAssetController extends Controller
     )]
     public function show(Request $request, string $uuid): JsonResponse
     {
-        $user  = $request->user();
-        $log   = WorkoutLog::where('id', $uuid)->where('user_id', $user->id)->firstOrFail();
+        $user = $request->user();
+        $log = WorkoutLog::where('id', $uuid)->where('user_id', $user->id)->firstOrFail();
         $asset = VictoryAsset::where('workout_log_id', $log->id)->latest()->first();
 
-        if (!$asset) {
+        if (! $asset) {
             return response()->json(['message' => 'Nenhum asset gerado para este treino.'], 404);
         }
 
         return response()->json([
-            'id'           => $asset->id,
-            'type'         => $asset->type,
-            'status'       => $asset->status,
-            'url'          => $asset->public_url,
+            'id' => $asset->id,
+            'type' => $asset->type,
+            'status' => $asset->status,
+            'url' => $asset->public_url,
             'generated_at' => $asset->generated_at?->toIso8601String(),
         ]);
     }

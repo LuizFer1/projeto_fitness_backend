@@ -24,36 +24,36 @@ class NutritionController extends Controller
     )]
     public function today(Request $request): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $daily = $this->dietEngine->getTodaySummary($user);
         $today = Carbon::now($user->timezone ?? 'UTC')->toDateString();
 
         $pendingAdjustments = DietAdjustment::where('user_id', $user->id)
-            ->where('target_date', $today)
+            ->whereDate('target_date', $today)
             ->whereNull('applied_at')
             ->get(['delta_kcal', 'delta_protein_g', 'delta_carbs_g', 'delta_fat_g', 'mode']);
 
         $compensationKcal = $pendingAdjustments->sum('delta_kcal');
 
         return response()->json([
-            'date'                 => $today,
+            'date' => $today,
             'goals' => [
-                'calories'  => $daily->calories_goal,
+                'calories' => $daily->calories_goal,
                 'protein_g' => $daily->protein_goal_g,
-                'carbs_g'   => $daily->carbs_goal_g,
-                'fat_g'     => $daily->fat_goal_g,
+                'carbs_g' => $daily->carbs_goal_g,
+                'fat_g' => $daily->fat_goal_g,
             ],
             'consumed' => [
-                'calories'  => $daily->calories_consumed,
+                'calories' => $daily->calories_consumed,
                 'protein_g' => $daily->protein_consumed_g,
-                'carbs_g'   => $daily->carbs_consumed_g,
-                'fat_g'     => $daily->fat_consumed_g,
+                'carbs_g' => $daily->carbs_consumed_g,
+                'fat_g' => $daily->fat_consumed_g,
             ],
-            'delta_kcal'          => $daily->delta_kcal,
-            'adjustment_ratio'    => (float) $daily->adjustment_ratio,
-            'dilution_active'     => $daily->dilution_active,
-            'compensation_kcal'   => $compensationKcal,
-            'remaining_calories'  => max(0, ($daily->calories_goal - $daily->calories_consumed) - $compensationKcal),
+            'delta_kcal' => $daily->delta_kcal,
+            'adjustment_ratio' => (float) $daily->adjustment_ratio,
+            'dilution_active' => $daily->dilution_active,
+            'compensation_kcal' => $compensationKcal,
+            'remaining_calories' => max(0, ($daily->calories_goal - $daily->calories_consumed) - $compensationKcal),
         ]);
     }
 
@@ -73,12 +73,12 @@ class NutritionController extends Controller
         $date = $request->query('date', Carbon::now($user->timezone ?? 'UTC')->toDateString());
 
         $adjustments = DietAdjustment::where('user_id', $user->id)
-            ->where('target_date', $date)
+            ->whereDate('target_date', $date)
             ->orderByDesc('created_at')
             ->get();
 
         return response()->json([
-            'date'        => $date,
+            'date' => $date,
             'adjustments' => $adjustments,
         ]);
     }

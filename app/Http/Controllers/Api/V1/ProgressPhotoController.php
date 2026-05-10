@@ -24,22 +24,22 @@ class ProgressPhotoController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'photo'     => 'required|file|mimes:jpeg,jpg,png,heic|max:20480',
-            'taken_at'  => 'nullable|date',
+            'photo' => 'required|file|mimes:jpeg,jpg,png,heic|max:20480',
+            'taken_at' => 'nullable|date',
             'weight_kg' => 'nullable|numeric|min:1|max:500',
-            'category'  => 'nullable|in:front,side,back,other',
-            'caption'   => 'nullable|string|max:500',
-            'notes'     => 'nullable|string|max:1000',
+            'category' => 'nullable|in:front,side,back,other',
+            'caption' => 'nullable|string|max:500',
+            'notes' => 'nullable|string|max:1000',
         ]);
 
-        $user  = $request->user();
+        $user = $request->user();
         $photo = $this->storage->store($user, $request->file('photo'), $validated);
 
         $this->gamification->grantProgressPhotoXp($user);
 
         return response()->json([
             'message' => 'Foto registrada com sucesso.',
-            'photo'   => $this->formatPhoto($photo, null),
+            'photo' => $this->formatPhoto($photo, null),
         ], 201);
     }
 
@@ -48,7 +48,7 @@ class ProgressPhotoController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $query = ProgressPhoto::where('user_id', $user->id)->orderByDesc('taken_at');
 
         if ($request->filled('from')) {
@@ -76,7 +76,7 @@ class ProgressPhotoController extends Controller
      */
     public function show(Request $request, string $uuid): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $photo = ProgressPhoto::where('user_id', $user->id)->findOrFail($uuid);
 
         $this->audit->log('progress_photo_viewed', $user->id, $photo->id, 'ProgressPhoto');
@@ -91,7 +91,7 @@ class ProgressPhotoController extends Controller
      */
     public function destroy(Request $request, string $uuid): JsonResponse
     {
-        $user  = $request->user();
+        $user = $request->user();
         $photo = ProgressPhoto::where('user_id', $user->id)->findOrFail($uuid);
 
         $this->storage->softDelete($photo);
@@ -102,13 +102,13 @@ class ProgressPhotoController extends Controller
     private function formatPhoto(ProgressPhoto $photo, ?string $url): array
     {
         return [
-            'id'        => $photo->id,
-            'taken_at'  => $photo->taken_at,
+            'id' => $photo->id,
+            'taken_at' => $photo->taken_at,
             'weight_kg' => $photo->weight_kg,
-            'category'  => $photo->category,
-            'caption'   => $photo->caption,
-            'notes'     => $photo->notes,
-            'url'       => $url,
+            'category' => $photo->category,
+            'caption' => $photo->caption,
+            'notes' => $photo->notes,
+            'url' => $url,
         ];
     }
 }

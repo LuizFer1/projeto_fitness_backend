@@ -11,9 +11,7 @@ use OpenApi\Attributes as OA;
 
 class BodyMeasurementController extends Controller
 {
-    public function __construct(private GamificationService $gamification)
-    {
-    }
+    public function __construct(private GamificationService $gamification) {}
 
     #[OA\Get(
         path: '/api/v1/measurements',
@@ -76,13 +74,13 @@ class BodyMeasurementController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'date'                   => 'nullable|date',
-            'weight_kg'              => 'required|numeric|min:30|max:300',
-            'body_fat_pct'           => 'nullable|numeric|min:3|max:60',
-            'muscle_mass_kg'         => 'nullable|numeric|min:10|max:200',
+            'date' => 'nullable|date',
+            'weight_kg' => 'required|numeric|min:30|max:300',
+            'body_fat_pct' => 'nullable|numeric|min:3|max:60',
+            'muscle_mass_kg' => 'nullable|numeric|min:10|max:200',
             'waist_circumference_cm' => 'nullable|numeric|min:30|max:250',
-            'hip_circumference_cm'   => 'nullable|numeric|min:30|max:250',
-            'arm_circumference_cm'   => 'nullable|numeric|min:10|max:100',
+            'hip_circumference_cm' => 'nullable|numeric|min:30|max:250',
+            'arm_circumference_cm' => 'nullable|numeric|min:10|max:100',
         ]);
 
         $user = $request->user();
@@ -104,7 +102,7 @@ class BodyMeasurementController extends Controller
 
         return response()->json([
             'measurement' => $measurement,
-            'xp_gained'   => $xp?->xp_gained ?? 0,
+            'xp_gained' => $xp?->xp_gained ?? 0,
         ], 201);
     }
 

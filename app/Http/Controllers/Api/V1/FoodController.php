@@ -42,7 +42,7 @@ class FoodController extends Controller
         // OpenFoodFacts fallback
         $food = $this->fetchFromOpenFoodFacts($barcode);
 
-        if (!$food) {
+        if (! $food) {
             return response()->json(['message' => 'Produto não encontrado.'], 404);
         }
 
@@ -56,34 +56,34 @@ class FoodController extends Controller
                 ->withHeaders(['User-Agent' => 'EvoFit/1.0 (contact@evofit.app)'])
                 ->get("https://world.openfoodfacts.org/api/v0/product/{$barcode}.json");
 
-            if (!$response->ok()) {
+            if (! $response->ok()) {
                 return null;
             }
 
-            $data    = $response->json();
-            $status  = $data['status'] ?? 0;
+            $data = $response->json();
+            $status = $data['status'] ?? 0;
             $product = $data['product'] ?? null;
 
-            if ($status !== 1 || !$product) {
+            if ($status !== 1 || ! $product) {
                 return null;
             }
 
             $nutriments = $product['nutriments'] ?? [];
 
             return Food::create([
-                'name'                => $product['product_name'] ?? $product['product_name_en'] ?? 'Produto sem nome',
-                'category'            => $product['food_groups'] ?? null,
-                'calories_100g'       => $nutriments['energy-kcal_100g'] ?? $nutriments['energy_100g'] ?? 0,
-                'protein_g'           => $nutriments['proteins_100g'] ?? 0,
-                'carbs_g'             => $nutriments['carbohydrates_100g'] ?? 0,
-                'fat_g'               => $nutriments['fat_100g'] ?? 0,
-                'fiber_g'             => $nutriments['fiber_100g'] ?? null,
-                'sodium_mg'           => isset($nutriments['sodium_100g']) ? $nutriments['sodium_100g'] * 1000 : null,
-                'standard_portion_g'  => 100,
-                'is_active'           => true,
-                'barcode_ean'         => $barcode,
-                'source'              => 'openfoodfacts',
-                'external_id'         => (string) ($product['code'] ?? $barcode),
+                'name' => $product['product_name'] ?? $product['product_name_en'] ?? 'Produto sem nome',
+                'category' => $product['food_groups'] ?? null,
+                'calories_100g' => $nutriments['energy-kcal_100g'] ?? $nutriments['energy_100g'] ?? 0,
+                'protein_g' => $nutriments['proteins_100g'] ?? 0,
+                'carbs_g' => $nutriments['carbohydrates_100g'] ?? 0,
+                'fat_g' => $nutriments['fat_100g'] ?? 0,
+                'fiber_g' => $nutriments['fiber_100g'] ?? null,
+                'sodium_mg' => isset($nutriments['sodium_100g']) ? $nutriments['sodium_100g'] * 1000 : null,
+                'standard_portion_g' => 100,
+                'is_active' => true,
+                'barcode_ean' => $barcode,
+                'source' => 'openfoodfacts',
+                'external_id' => (string) ($product['code'] ?? $barcode),
             ]);
         } catch (\Throwable) {
             return null;
@@ -93,17 +93,17 @@ class FoodController extends Controller
     private function format(Food $food): array
     {
         return [
-            'id'                 => $food->id,
-            'name'               => $food->name,
-            'category'           => $food->category,
-            'calories_100g'      => (float) $food->calories_100g,
-            'protein_g'          => (float) $food->protein_g,
-            'carbs_g'            => (float) $food->carbs_g,
-            'fat_g'              => (float) $food->fat_g,
-            'fiber_g'            => isset($food->fiber_g) ? (float) $food->fiber_g : null,
+            'id' => $food->id,
+            'name' => $food->name,
+            'category' => $food->category,
+            'calories_100g' => (float) $food->calories_100g,
+            'protein_g' => (float) $food->protein_g,
+            'carbs_g' => (float) $food->carbs_g,
+            'fat_g' => (float) $food->fat_g,
+            'fiber_g' => isset($food->fiber_g) ? (float) $food->fiber_g : null,
             'standard_portion_g' => (float) $food->standard_portion_g,
-            'barcode_ean'        => $food->barcode_ean,
-            'source'             => $food->source ?? 'manual',
+            'barcode_ean' => $food->barcode_ean,
+            'source' => $food->source ?? 'manual',
         ];
     }
 }
