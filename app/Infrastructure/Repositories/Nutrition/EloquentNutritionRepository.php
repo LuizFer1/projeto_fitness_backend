@@ -13,9 +13,9 @@ class EloquentNutritionRepository implements NutritionRepositoryInterface
             ['user_id' => $userUuid, 'day' => $date],
             ['calories_goal' => $tdee]
         );
-        
+
         $daily->update(['calories_goal' => $tdee]);
-        
+
         return $daily;
     }
 }

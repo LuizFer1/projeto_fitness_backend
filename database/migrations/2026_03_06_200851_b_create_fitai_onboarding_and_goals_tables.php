@@ -11,12 +11,12 @@ return new class extends Migration
         Schema::create('onboarding', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('gender', ['male','female','other','prefer_not_to_say']);
+            $table->enum('gender', ['male', 'female', 'other', 'prefer_not_to_say']);
             $table->unsignedTinyInteger('age');
             $table->decimal('height_cm', 5, 2);
             $table->decimal('weight_kg', 5, 2);
             $table->unsignedTinyInteger('exercise_frequency')->default(0)->comment('0-7 times per week');
-            $table->enum('work_style', ['sedentary','light','moderate','active','very_active']);
+            $table->enum('work_style', ['sedentary', 'light', 'moderate', 'active', 'very_active']);
             $table->decimal('body_fat_pct', 4, 1)->nullable();
             $table->decimal('bmr', 7, 2)->nullable()->comment('Basal metabolic rate');
             $table->timestamps();
@@ -27,7 +27,7 @@ return new class extends Migration
         Schema::create('user_goals', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('main_goal', ['weight_loss','hypertrophy','maintenance','health','conditioning']);
+            $table->enum('main_goal', ['weight_loss', 'hypertrophy', 'maintenance', 'health', 'conditioning'])->nullable();
             $table->unsignedInteger('goal_calories_day')->nullable();
             $table->unsignedInteger('goal_steps_day')->nullable();
             $table->decimal('goal_weight_kg', 5, 2)->nullable();

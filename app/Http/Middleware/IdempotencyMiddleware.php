@@ -7,13 +7,14 @@ use Carbon\CarbonImmutable;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class IdempotencyMiddleware
 {
     private const HEADER = 'Idempotency-Key';
+
     private const TTL_HOURS = 24;
+
     private const MAX_KEY_LENGTH = 100;
 
     public function handle(Request $request, Closure $next): Response
@@ -69,6 +70,7 @@ class IdempotencyMiddleware
     {
         if ($existing->expires_at->isPast()) {
             $existing->delete();
+
             return null;
         }
 
@@ -88,13 +90,13 @@ class IdempotencyMiddleware
     {
         try {
             return IdempotencyKey::create([
-                'key'          => $key,
-                'user_id'      => $userId,
-                'method'       => $request->method(),
-                'path'         => $request->path(),
+                'key' => $key,
+                'user_id' => $userId,
+                'method' => $request->method(),
+                'path' => $request->path(),
                 'request_hash' => $requestHash,
-                'status'       => IdempotencyKey::STATUS_PROCESSING,
-                'expires_at'   => CarbonImmutable::now()->addHours(self::TTL_HOURS),
+                'status' => IdempotencyKey::STATUS_PROCESSING,
+                'expires_at' => CarbonImmutable::now()->addHours(self::TTL_HOURS),
             ]);
         } catch (\Throwable $e) {
             return null;
@@ -105,10 +107,11 @@ class IdempotencyMiddleware
     {
         if ($response instanceof JsonResponse || $this->looksJson($response)) {
             $record->update([
-                'status'          => IdempotencyKey::STATUS_COMPLETED,
+                'status' => IdempotencyKey::STATUS_COMPLETED,
                 'response_status' => $response->getStatusCode(),
-                'response_body'   => $this->extractBody($response),
+                'response_body' => $this->extractBody($response),
             ]);
+
             return;
         }
 
@@ -126,8 +129,8 @@ class IdempotencyMiddleware
     {
         $payload = [
             'method' => $request->method(),
-            'path'   => $request->path(),
-            'body'   => $request->all(),
+            'path' => $request->path(),
+            'body' => $request->all(),
         ];
 
         return hash('sha256', json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
@@ -136,6 +139,7 @@ class IdempotencyMiddleware
     private function looksJson(Response $response): bool
     {
         $ct = $response->headers->get('Content-Type', '');
+
         return str_contains($ct, 'application/json');
     }
 
@@ -147,6 +151,7 @@ class IdempotencyMiddleware
         }
 
         $decoded = json_decode($content, true);
+
         return is_array($decoded) ? $decoded : null;
     }
 }

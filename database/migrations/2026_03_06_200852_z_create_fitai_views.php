@@ -11,7 +11,7 @@ return new class extends Migration
             return;
         }
 
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE VIEW vw_daily_summary AS
             SELECT
                 u.id                                AS user_id,
@@ -34,9 +34,9 @@ return new class extends Migration
             LEFT JOIN user_gamification ug ON ug.user_id = u.id
             GROUP BY u.id, u.name, dal.workout_count, dal.water_liters, dal.water_goal_reached,
                      dal.daily_xp_gained, ug.xp_total, ug.current_level, ug.current_streak;
-        ");
+        ');
 
-        DB::statement("
+        DB::statement('
             CREATE OR REPLACE VIEW vw_ranking_geral AS
             SELECT
                 ROW_NUMBER() OVER (ORDER BY ug.xp_total DESC) AS position,
@@ -52,12 +52,12 @@ return new class extends Migration
             JOIN users u            ON u.id = ug.user_id
             LEFT JOIN level_definitions ld ON ld.level_num = ug.current_level
             ORDER BY ug.xp_total DESC;
-        ");
+        ');
     }
 
     public function down(): void
     {
-        DB::statement("DROP VIEW IF EXISTS vw_ranking_geral;");
-        DB::statement("DROP VIEW IF EXISTS vw_daily_summary;");
+        DB::statement('DROP VIEW IF EXISTS vw_ranking_geral;');
+        DB::statement('DROP VIEW IF EXISTS vw_daily_summary;');
     }
 };

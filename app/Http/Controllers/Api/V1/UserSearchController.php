@@ -36,13 +36,13 @@ class UserSearchController extends Controller
         ]);
 
         $user = $request->user();
-        $term = '%' . $data['q'] . '%';
+        $term = '%'.$data['q'].'%';
 
         // Get IDs of users who have blocked the authenticated user or whom the authenticated user has blocked
         $blockedIds = Friendship::blocked()
             ->where(function ($q) use ($user) {
                 $q->where('requester_id', $user->id)
-                  ->orWhere('addressee_id', $user->id);
+                    ->orWhere('addressee_id', $user->id);
             })
             ->get()
             ->flatMap(fn ($f) => [$f->requester_id, $f->addressee_id])
@@ -53,7 +53,7 @@ class UserSearchController extends Controller
         $results = DB::table('users')
             ->where(function ($q) use ($term) {
                 $q->where('name', 'LIKE', $term)
-                  ->orWhere('username', 'LIKE', $term);
+                    ->orWhere('username', 'LIKE', $term);
             })
             ->where('id', '!=', $user->id)
             ->whereNotIn('id', $blockedIds)

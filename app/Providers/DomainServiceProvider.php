@@ -2,15 +2,15 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
 use App\Application\Contracts\LoggerInterface;
-use App\Infrastructure\Logging\AppLogger;
-use App\Domain\User\UserRepositoryInterface;
-use App\Infrastructure\Repositories\User\EloquentUserRepository;
-use App\Domain\Onboarding\OnboardingRepositoryInterface;
-use App\Infrastructure\Repositories\Onboarding\EloquentOnboardingRepository;
 use App\Domain\Nutrition\NutritionRepositoryInterface;
+use App\Domain\Onboarding\OnboardingRepositoryInterface;
+use App\Domain\User\UserRepositoryInterface;
+use App\Infrastructure\Logging\AppLogger;
 use App\Infrastructure\Repositories\Nutrition\EloquentNutritionRepository;
+use App\Infrastructure\Repositories\Onboarding\EloquentOnboardingRepository;
+use App\Infrastructure\Repositories\User\EloquentUserRepository;
+use Illuminate\Support\ServiceProvider;
 
 class DomainServiceProvider extends ServiceProvider
 {

@@ -13,12 +13,17 @@ class NutritionDaily extends Model
     protected $table = 'nutrition_daily';
 
     protected $fillable = [
-        'user_id', 'day', 'calories_goal',
+        'user_id', 'day',
+        'calories_goal', 'protein_goal_g', 'carbs_goal_g', 'fat_goal_g',
+        'calories_consumed', 'protein_consumed_g', 'carbs_consumed_g', 'fat_consumed_g',
+        'delta_kcal', 'adjustment_ratio', 'dilution_active',
     ];
 
     protected $casts = [
+        'day' => 'date',
         'calories_goal' => 'integer',
-        'day'           => 'date',
+        'dilution_active' => 'boolean',
+        'adjustment_ratio' => 'decimal:4',
     ];
 
     public function user()

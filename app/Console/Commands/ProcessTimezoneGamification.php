@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 class ProcessTimezoneGamification extends Command
 {
     protected $signature = 'gamification:process-timezone';
+
     protected $description = 'Processes daily/weekly gamification for users whose local midnight has passed (runs hourly)';
 
     public function handle(GamificationService $service): int
@@ -31,6 +32,7 @@ class ProcessTimezoneGamification extends Command
                 $localNow = $now->copy()->setTimezone($tz);
             } catch (\Exception $e) {
                 Log::warning("Gamification: Invalid timezone '{$tz}', skipping.");
+
                 continue;
             }
 
@@ -40,7 +42,7 @@ class ProcessTimezoneGamification extends Command
             }
 
             $yesterday = $localNow->copy()->subDay()->toDateString();
-            $isSunday  = $localNow->copy()->subDay()->dayOfWeekIso === 7; // yesterday was Sunday
+            $isSunday = $localNow->copy()->subDay()->dayOfWeekIso === 7; // yesterday was Sunday
 
             // Get users with this timezone that haven't been processed for yesterday
             $users = User::where('timezone', $tz)

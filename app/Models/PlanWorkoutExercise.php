@@ -11,6 +11,7 @@ class PlanWorkoutExercise extends Model
     use HasFactory, HasUuids;
 
     protected $guarded = [];
+
     public $timestamps = false;
 
     public function planWorkout()
@@ -21,5 +22,10 @@ class PlanWorkoutExercise extends Model
     public function exercise()
     {
         return $this->belongsTo(Exercise::class);
+    }
+
+    public function comments()
+    {
+        return $this->hasMany(PlanWorkoutExerciseComment::class, 'plan_workout_exercise_id');
     }
 }

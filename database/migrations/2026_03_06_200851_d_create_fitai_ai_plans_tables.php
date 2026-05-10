@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('ai_plans', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('type', ['nutritional','workout','complete']);
+            $table->enum('type', ['nutritional', 'workout', 'complete']);
             $table->smallInteger('version')->default(1);
-            $table->enum('status', ['draft','active','replaced','archived'])->default('draft');
+            $table->enum('status', ['draft', 'active', 'replaced', 'archived'])->default('draft');
             $table->json('content_json')->comment('Complete plan structure');
             $table->text('generation_reason')->nullable()->comment('Why this plan was generated/regenerated');
             $table->text('context_prompt')->nullable()->comment('Prompt sent to AI (for audit)');
@@ -55,7 +55,7 @@ return new class extends Migration
             $table->foreignUuid('ai_plan_id')->references('id')->on('ai_plans')->cascadeOnDelete();
             $table->foreignUuid('meal_id')->references('id')->on('meals')->restrictOnDelete();
             $table->tinyInteger('day_of_week')->nullable()->comment('NULL = all days');
-            $table->enum('meal_type', ['breakfast','snack','lunch','dinner','pre_workout','post_workout']);
+            $table->enum('meal_type', ['breakfast', 'snack', 'lunch', 'dinner', 'pre_workout', 'post_workout']);
             $table->time('suggested_time')->nullable();
             $table->text('ai_notes')->nullable();
 
@@ -65,7 +65,7 @@ return new class extends Migration
         Schema::create('ai_feedback_triggers', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->foreignUuid('user_id')->references('id')->on('users')->cascadeOnDelete();
-            $table->enum('event_type', ['exercise_pain','food_allergy','preference','goal_reached','low_adherence','injury','intolerance']);
+            $table->enum('event_type', ['exercise_pain', 'food_allergy', 'preference', 'goal_reached', 'low_adherence', 'injury', 'intolerance']);
             $table->uuid('ref_id')->nullable()->comment('ID of the record that triggered the event');
             $table->string('ref_table', 60)->nullable()->comment('Table of ref_id');
             $table->text('raw_note')->comment('Original text from user or system');

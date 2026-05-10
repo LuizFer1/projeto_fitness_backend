@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Hash;
 class RegisterUserUseCase
 {
     private UserRepositoryInterface $userRepository;
+
     private LoggerInterface $logger;
 
     public function __construct(
@@ -21,9 +22,6 @@ class RegisterUserUseCase
 
     /**
      * Executes the registration use case.
-     *
-     * @param array $data
-     * @return array
      */
     public function execute(array $data): array
     {
@@ -31,7 +29,7 @@ class RegisterUserUseCase
 
         // Encode password before saving
         $data['password_hash'] = Hash::make($data['password']);
-        
+
         // Remove plain text password from array to avoid attempting to insert it if it was passed
         unset($data['password']);
         // and password_confirmation if present
@@ -40,20 +38,23 @@ class RegisterUserUseCase
         $user = $this->userRepository->create($data);
         $user->refresh();
 
-        // Simulate creation of Gamification profile (the model might need to be created later)
+        // Create gamification profile. The User PK is a UUID stored on `id`,
+        // so `$user->id` is the value we want — `$user->uuid` is null (no such column).
         try {
-            $this->userRepository->createGamificationProfile($user->uuid);
+            $this->userRepository->createGamificationProfile($user->id);
         } catch (\Throwable $e) {
             $this->logger->warning('Failed to create gamification profile', [
-                'user_uuid' => $user->uuid,
-                'error' => $e->getMessage()
+                'user_uuid' => $user->id,
+                'error' => $e->getMessage(),
             ]);
         }
 
         // Create token (Sanctum)
         $token = $user->createToken('auth-token')->plainTextToken;
 
-        $this->logger->info('User registered successfully', ['user_uuid' => $user->uuid]);
+        $user->load(['onboarding', 'gamification']);
+
+        $this->logger->info('User registered successfully', ['user_uuid' => $user->id]);
 
         return [
             'user' => $user,

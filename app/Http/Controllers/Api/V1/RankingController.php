@@ -3,13 +3,11 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Models\UserGamification;
 use App\Models\UserAchievement;
+use App\Models\UserGamification;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use OpenApi\Attributes as OA;
 
 class RankingController extends Controller
@@ -39,11 +37,11 @@ class RankingController extends Controller
     public function index(Request $request): JsonResponse
     {
         $period = $request->query('period', 'weekly');
-        $user   = $request->user();
-        $limit  = (int) $request->query('limit', 20);
-        $limit  = min($limit, 100);
+        $user = $request->user();
+        $limit = (int) $request->query('limit', 20);
+        $limit = min($limit, 100);
 
-        if (!in_array($period, ['weekly', 'monthly', 'all_time'])) {
+        if (! in_array($period, ['weekly', 'monthly', 'all_time'])) {
             return response()->json(['error' => 'Período inválido. Use: weekly, monthly, all_time'], 422);
         }
 
@@ -57,7 +55,7 @@ class RankingController extends Controller
         $myPosition = $this->getUserPosition($user->id, $period);
 
         return response()->json([
-            'period'   => $period,
+            'period' => $period,
             'rankings' => $rankings,
             'my_position' => $myPosition,
         ]);
@@ -82,20 +80,20 @@ class RankingController extends Controller
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user();
-        $gam  = $user->gamification;
+        $gam = $user->gamification;
 
-        if (!$gam) {
+        if (! $gam) {
             return response()->json([
-                'xp_total'        => 0,
-                'current_level'   => 1,
-                'xp_to_next'      => 200,
-                'current_streak'  => 0,
-                'max_streak'      => 0,
+                'xp_total' => 0,
+                'current_level' => 1,
+                'xp_to_next' => 200,
+                'current_streak' => 0,
+                'max_streak' => 0,
                 'current_week_xp' => 0,
-                'current_month_xp'=> 0,
-                'total_workouts'  => 0,
-                'badges'          => [],
-                'new_badges'      => [],
+                'current_month_xp' => 0,
+                'total_workouts' => 0,
+                'badges' => [],
+                'new_badges' => [],
             ]);
         }
 
@@ -104,11 +102,11 @@ class RankingController extends Controller
             ->orderByDesc('unlocked_at')
             ->get()
             ->map(fn ($ua) => [
-                'slug'        => $ua->achievement->slug,
-                'name'        => $ua->achievement->name,
+                'slug' => $ua->achievement->slug,
+                'name' => $ua->achievement->name,
                 'description' => $ua->achievement->description,
-                'icon'        => $ua->achievement->icon,
-                'category'    => $ua->achievement->category,
+                'icon' => $ua->achievement->icon,
+                'category' => $ua->achievement->category,
                 'xp_received' => $ua->xp_received,
                 'unlocked_at' => $ua->unlocked_at,
             ]);
@@ -126,19 +124,19 @@ class RankingController extends Controller
         }
 
         return response()->json([
-            'xp_total'        => $gam->xp_total,
-            'current_level'   => $gam->current_level,
-            'xp_to_next'      => $gam->xp_to_next,
-            'current_streak'  => $gam->current_streak,
-            'max_streak'      => $gam->max_streak,
+            'xp_total' => $gam->xp_total,
+            'current_level' => $gam->current_level,
+            'xp_to_next' => $gam->xp_to_next,
+            'current_streak' => $gam->current_streak,
+            'max_streak' => $gam->max_streak,
             'current_week_xp' => $gam->current_week_xp,
-            'current_month_xp'=> $gam->current_month_xp,
-            'total_workouts'  => $gam->total_workouts,
-            'badges'          => $badges,
-            'new_badges'      => $unnotifiedBadges->map(fn ($ua) => [
+            'current_month_xp' => $gam->current_month_xp,
+            'total_workouts' => $gam->total_workouts,
+            'badges' => $badges,
+            'new_badges' => $unnotifiedBadges->map(fn ($ua) => [
                 'name' => $ua->achievement->name,
                 'icon' => $ua->achievement->icon,
-                'xp'   => $ua->xp_received,
+                'xp' => $ua->xp_received,
             ]),
         ]);
     }
@@ -148,30 +146,30 @@ class RankingController extends Controller
     private function buildRanking(string $period, int $limit): array
     {
         $column = match ($period) {
-            'weekly'   => 'current_week_xp',
-            'monthly'  => 'current_month_xp',
+            'weekly' => 'current_week_xp',
+            'monthly' => 'current_month_xp',
             'all_time' => 'xp_total',
         };
 
         return UserGamification::select([
-                'user_id',
-                $column . ' as period_xp',
-                'current_level',
-                'xp_total',
-            ])
+            'user_id',
+            $column.' as period_xp',
+            'current_level',
+            'xp_total',
+        ])
             ->with(['user:id,name,last_name,nickname,avatar_url'])
             ->orderByDesc($column)
             ->limit($limit)
             ->get()
             ->map(function ($row, $index) {
                 return [
-                    'position'      => $index + 1,
-                    'user_id'       => $row->user_id,
-                    'name'          => $row->user->nickname ?? ($row->user->name . ' ' . $row->user->last_name),
-                    'avatar_url'    => $row->user->avatar_url,
-                    'period_xp'     => $row->period_xp,
-                    'level'         => $row->current_level,
-                    'total_xp'      => $row->xp_total,
+                    'position' => $index + 1,
+                    'user_id' => $row->user_id,
+                    'name' => $row->user->nickname ?? ($row->user->name.' '.$row->user->last_name),
+                    'avatar_url' => $row->user->avatar_url,
+                    'period_xp' => $row->period_xp,
+                    'level' => $row->current_level,
+                    'total_xp' => $row->xp_total,
                 ];
             })
             ->toArray();
@@ -180,13 +178,13 @@ class RankingController extends Controller
     private function getUserPosition(string $userId, string $period): ?array
     {
         $column = match ($period) {
-            'weekly'   => 'current_week_xp',
-            'monthly'  => 'current_month_xp',
+            'weekly' => 'current_week_xp',
+            'monthly' => 'current_month_xp',
             'all_time' => 'xp_total',
         };
 
         $gam = UserGamification::where('user_id', $userId)->first();
-        if (!$gam) {
+        if (! $gam) {
             return null;
         }
 
@@ -195,10 +193,10 @@ class RankingController extends Controller
         $position = UserGamification::where($column, '>', $myXp)->count() + 1;
 
         return [
-            'position'  => $position,
+            'position' => $position,
             'period_xp' => $myXp,
-            'level'     => $gam->current_level,
-            'total_xp'  => $gam->xp_total,
+            'level' => $gam->current_level,
+            'total_xp' => $gam->xp_total,
         ];
     }
 }

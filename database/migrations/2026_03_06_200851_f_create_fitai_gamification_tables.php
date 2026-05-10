@@ -37,6 +37,10 @@ return new class extends Migration
                 'water_goal', 'weight_logged', 'streak_bonus',
                 'quest_completed', 'achievement_unlocked', 'meal_logged', 'manual_adjustment',
                 'daily_login', 'penalty_workout', 'penalty_calories',
+                // SRS v1.0 event types (added in migration 003 for MySQL upgrades)
+                'workout_strength', 'workout_cardio', 'clean_diet_day',
+                'protein_goal_met', 'water_goal_met', 'cardio_completed',
+                'pr_set', 'asset_shared', 'progress_photo',
             ]);
             $table->integer('xp_gained');
             $table->string('description', 200)->nullable();

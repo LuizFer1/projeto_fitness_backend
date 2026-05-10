@@ -46,7 +46,7 @@ class WaterLogController extends Controller
             ->sum('liters');
 
         return response()->json([
-            'data'        => $logs,
+            'data' => $logs,
             'today_total' => round((float) $todayTotal, 2),
         ]);
     }
@@ -82,8 +82,8 @@ class WaterLogController extends Controller
     {
         $data = $request->validate([
             'liters' => 'required|numeric|min:0.01|max:10',
-            'date'   => 'nullable|date',
-            'time'   => 'nullable|date_format:H:i',
+            'date' => 'nullable|date',
+            'time' => 'nullable|date_format:H:i',
         ]);
 
         $user = $request->user();
@@ -91,9 +91,9 @@ class WaterLogController extends Controller
 
         $log = WaterLog::create([
             'user_id' => $user->id,
-            'date'    => $date,
-            'liters'  => $data['liters'],
-            'time'    => $data['time'] ?? now()->format('H:i'),
+            'date' => $date,
+            'liters' => $data['liters'],
+            'time' => $data['time'] ?? now()->format('H:i'),
         ]);
 
         $dayTotal = WaterLog::where('user_id', $user->id)
@@ -101,7 +101,7 @@ class WaterLogController extends Controller
             ->sum('liters');
 
         return response()->json([
-            'log'       => $log,
+            'log' => $log,
             'day_total' => round((float) $dayTotal, 2),
         ], 201);
     }

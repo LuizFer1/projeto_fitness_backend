@@ -11,20 +11,21 @@ class UserOnboarding extends Model
     use HasFactory, HasUuids;
 
     protected $table = 'onboarding';
-    
+
     // public function uniqueIds(): array { return ['uuid']; } // Removed since we use auto-increment or id already managed by HasUuids
 
     protected $fillable = [
         'user_id', 'gender', 'age', 'height_cm', 'weight_kg',
-        'exercise_frequency', 'work_style', 'body_fat_pct', 'bmr'
+        'exercise_frequency', 'work_style', 'body_fat_pct', 'bmr',
+        'tdee_formula', 'activity_factor',
     ];
 
     protected $casts = [
-        'age'              => 'integer',
-        'height_cm'        => 'decimal:2',
-        'weight_kg'        => 'decimal:2',
-        'body_fat_pct'     => 'decimal:1',
-        'bmr'              => 'decimal:2',
+        'age' => 'integer',
+        'height_cm' => 'decimal:2',
+        'weight_kg' => 'decimal:2',
+        'body_fat_pct' => 'decimal:1',
+        'bmr' => 'decimal:2',
     ];
 
     public function user()

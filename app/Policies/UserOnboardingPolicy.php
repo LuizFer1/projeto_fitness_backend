@@ -4,7 +4,6 @@ namespace App\Policies;
 
 use App\Models\User;
 use App\Models\UserOnboarding;
-use Illuminate\Auth\Access\Response;
 
 class UserOnboardingPolicy
 {
@@ -44,7 +43,7 @@ class UserOnboardingPolicy
      * Determine whether the user can delete the model.
      */
     public function delete(User $user, UserOnboarding $userOnboarding): bool
-    {   
+    {
         return false;
     }
 

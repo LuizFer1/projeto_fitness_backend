@@ -21,4 +21,9 @@ class MealLog extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    public function meal()
+    {
+        return $this->belongsTo(Meal::class);
+    }
 }

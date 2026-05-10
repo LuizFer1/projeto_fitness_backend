@@ -9,9 +9,9 @@ class PlanFactory extends Factory
     public function definition(): array
     {
         return [
-            'code'       => fake()->unique()->randomElement(['free', 'plus', 'pro']),
-            'name'       => fake()->word(),
-            'is_active'  => true,
+            'code' => fake()->unique()->randomElement(['free', 'plus', 'pro']),
+            'name' => fake()->word(),
+            'is_active' => true,
             'trial_days' => fake()->randomElement([0, 30]),
         ];
     }

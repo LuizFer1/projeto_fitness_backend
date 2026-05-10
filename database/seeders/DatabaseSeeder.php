@@ -10,6 +10,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             GamificationSeeder::class,
+            AchievementSeeder::class,
             MissionSeeder::class,
             BadgeSeeder::class,
             PlanSeeder::class,

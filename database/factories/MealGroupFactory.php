@@ -22,9 +22,9 @@ class MealGroupFactory extends Factory
 
         return [
             'nutrition_day' => NutritionDaily::factory(),
-            'label'         => $group['label'],
-            'emoji'         => $group['emoji'],
-            'sort_order'    => self::$sortCounter++,
+            'label' => $group['label'],
+            'emoji' => $group['emoji'],
+            'sort_order' => self::$sortCounter++,
         ];
     }
 }

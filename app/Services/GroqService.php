@@ -2,21 +2,29 @@
 
 namespace App\Services;
 
+use Exception;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Http\Client\ConnectionException;
-use Exception;
 
 class GroqService
 {
     private $apiKey;
+
     private $baseUrl;
+
     private $defaultModel;
+
     private $fallbackModels;
+
     private $visionModel;
+
     private $verifySsl;
+
     private $timeoutSeconds;
+
     private $maxTokens;
+
     private $requireJsonResponse;
 
     public function __construct()
@@ -37,7 +45,7 @@ class GroqService
     }
 
     /**
-     * Sends a text prompt to the Gemini API and expects a JSON response.
+     * Sends a text prompt to the Groq API and expects a JSON response.
      */
     public function generateTextResponse(?string $model, string $prompt): ?array
     {
@@ -58,7 +66,7 @@ class GroqService
 
         Log::info('Groq Request (Text):', [
             'model' => $model,
-            'prompt_preview' => substr($prompt, 0, 100) . '...'
+            'prompt_preview' => substr($prompt, 0, 100).'...',
         ]);
 
         $response = $this->sendWithFallback($model, $messages, 'text');
@@ -67,7 +75,7 @@ class GroqService
     }
 
     /**
-     * Sends an image and a text prompt to the Gemini API and expects a JSON response.
+     * Sends an image and a text prompt to the Groq API and expects a JSON response.
      */
     public function generateVisionResponse(?string $model, string $prompt, string $imageBase64, string $mimeType = 'image/jpeg'): ?array
     {
@@ -91,7 +99,7 @@ class GroqService
 
         Log::info('Groq Request (Vision):', [
             'model' => $model,
-            'prompt_preview' => substr($prompt, 0, 100) . '...'
+            'prompt_preview' => substr($prompt, 0, 100).'...',
         ]);
 
         $response = $this->sendWithFallback($model, $messages, 'vision');
@@ -170,7 +178,6 @@ class GroqService
             ->post("{$this->baseUrl}/chat/completions", $payload);
     }
 
-
     /**
      * Helpers to parse the Gemini JSON response down to the actual payload we care about.
      */
@@ -181,8 +188,8 @@ class GroqService
         $textResponse = trim(str_replace(['```json', '```'], '', $content));
 
         $parsed = $this->parseJsonPayload($textResponse);
-        if (!is_array($parsed)) {
-            throw new Exception('Groq response is not valid JSON. Raw text: ' . substr($textResponse, 0, 500));
+        if (! is_array($parsed)) {
+            throw new Exception('Groq response is not valid JSON. Raw text: '.substr($textResponse, 0, 500));
         }
 
         return $parsed;
@@ -198,7 +205,7 @@ class GroqService
     private function extractContent(?array $decoded): string
     {
         $content = $decoded['choices'][0]['message']['content'] ?? null;
-        if (!is_string($content) || trim($content) === '') {
+        if (! is_string($content) || trim($content) === '') {
             Log::error('Unexpected Groq Response Structure', ['response' => $decoded]);
             throw new Exception('Could not parse response from Groq.');
         }

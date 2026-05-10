@@ -36,7 +36,7 @@ class PlanSeeder extends Seeder
                 'trial_days' => 30,
                 'prices' => [
                     ['billing_period' => 'monthly',    'price_cents' => 4990],
-                    ['billing_period' => 'semiannual' , 'price_cents' => 24990],
+                    ['billing_period' => 'semiannual', 'price_cents' => 24990],
                     ['billing_period' => 'annual',     'price_cents' => 44990],
                 ],
             ],

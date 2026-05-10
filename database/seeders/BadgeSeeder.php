@@ -2,8 +2,8 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use App\Models\Badge;
+use Illuminate\Database\Seeder;
 
 class BadgeSeeder extends Seeder
 {
@@ -38,7 +38,7 @@ class BadgeSeeder extends Seeder
             Badge::updateOrCreate(
                 ['code' => $badge['code']],
                 array_merge($badge, [
-                    'is_active'  => true,
+                    'is_active' => true,
                 ])
             );
         }

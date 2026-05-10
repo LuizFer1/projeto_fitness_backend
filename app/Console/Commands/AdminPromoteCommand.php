@@ -17,6 +17,7 @@ class AdminPromoteCommand extends Command
 
         if (! $user) {
             $this->error('Usuário não encontrado.');
+
             return self::FAILURE;
         }
 

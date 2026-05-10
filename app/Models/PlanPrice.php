@@ -13,7 +13,7 @@ class PlanPrice extends Model
 
     protected $casts = [
         'price_cents' => 'integer',
-        'is_active'   => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     public function plan()

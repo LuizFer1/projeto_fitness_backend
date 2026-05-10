@@ -11,10 +11,10 @@ class UserBadgeFactory extends Factory
     public function definition(): array
     {
         return [
-            'user_uuid'   => User::factory(),
-            'badge_uuid'  => Badge::factory(),
+            'user_uuid' => User::factory(),
+            'badge_uuid' => Badge::factory(),
             'earned_at' => fake()->dateTimeBetween('-90 days', 'now'),
-            'metadata'  => null,
+            'metadata' => null,
         ];
     }
 }

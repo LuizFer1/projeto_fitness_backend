@@ -4,6 +4,7 @@ namespace Tests\Feature\Idempotency;
 
 use App\Models\IdempotencyKey;
 use App\Models\Post;
+use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -154,6 +155,6 @@ class IdempotencyMiddlewareTest extends TestCase
             ])->assertCreated();
 
         $this->assertSame($first->json('data.id'), $second->json('data.id'));
-        $this->assertSame(1, \App\Models\Subscription::where('user_id', $user->id)->count());
+        $this->assertSame(1, Subscription::where('user_id', $user->id)->count());
     }
 }

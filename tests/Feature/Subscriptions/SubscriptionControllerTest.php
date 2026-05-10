@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Subscriptions;
 
+use App\Models\Plan;
 use App\Models\Subscription;
 use App\Models\User;
 use Database\Seeders\PlanSeeder;
@@ -127,7 +128,7 @@ class SubscriptionControllerTest extends TestCase
 
         $sub = Subscription::factory()->create([
             'user_id' => $user->id,
-            'plan_id' => \App\Models\Plan::where('code', 'plus')->first()->id,
+            'plan_id' => Plan::where('code', 'plus')->first()->id,
             'status' => 'active',
             'current_period_end' => now()->subDay(),
         ]);

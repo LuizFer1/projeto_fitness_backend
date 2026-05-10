@@ -3,8 +3,11 @@
 namespace App\Http\Controllers\Api\V1\PublicProfile;
 
 use App\Http\Controllers\Controller;
+use App\Models\Follower;
 use App\Models\User;
+use App\Models\UserPrivacySetting;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 
 class PublicProfileController extends Controller
@@ -23,18 +26,47 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function show(User $username): JsonResponse
+    public function show(Request $request, User $username): JsonResponse
     {
         $user = $username;
+        $viewer = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $gam = $user->gamification;
 
-        return response()->json([
+        $isPrivate = $user->profile_visibility === 'private';
+        $isSelf = $viewer && $viewer->id === $user->id;
+        $isFollowing = ! $isSelf && $viewer && Follower::accepted()
+            ->where('follower_id', $viewer->id)
+            ->where('followee_id', $user->id)
+            ->exists();
+
+        if ($isPrivate && ! $isSelf && ! $isFollowing) {
+            return response()->json([
+                'id' => $user->id,
+                'username' => $user->username,
+                'name' => $user->name,
+                'last_name' => $user->last_name,
+                'avatar_url' => $user->avatar_url,
+                'is_private' => true,
+            ]);
+        }
+
+        $profile = [
             'id' => $user->id,
             'username' => $user->username,
             'name' => $user->name,
             'last_name' => $user->last_name,
             'avatar_url' => $user->avatar_url,
             'bio' => $user->bio,
-        ]);
+            'level' => $gam?->current_level,
+            'is_private' => $isPrivate,
+        ];
+
+        if ($isSelf || $privacy->share_streak) {
+            $profile['streak'] = $gam?->current_streak;
+        }
+
+        return response()->json($profile);
     }
 
     #[OA\Get(
@@ -51,9 +83,16 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function achievements(User $username): JsonResponse
+    public function achievements(Request $request, User $username): JsonResponse
     {
         $user = $username;
+        $viewer = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $isSelf = $viewer && $viewer->id === $user->id;
+
+        if (! $isSelf && ! $privacy->share_achievements) {
+            return response()->json(['data' => [], 'hidden' => true]);
+        }
 
         $achievements = $user->achievements()
             ->with('achievement')
@@ -83,9 +122,16 @@ class PublicProfileController extends Controller
             new OA\Response(response: 404, description: 'Usuário não encontrado'),
         ]
     )]
-    public function goals(User $username): JsonResponse
+    public function goals(Request $request, User $username): JsonResponse
     {
         $user = $username;
+        $viewer = $request->user();
+        $privacy = UserPrivacySetting::forUser($user);
+        $isSelf = $viewer && $viewer->id === $user->id;
+
+        if (! $isSelf && ! $privacy->share_macros) {
+            return response()->json(['data' => null, 'hidden' => true]);
+        }
 
         $goal = $user->goal;
 
@@ -102,6 +148,49 @@ class PublicProfileController extends Controller
                 'goal_workouts_week' => $goal->goal_workouts_week,
                 'deadline' => $goal->deadline?->toDateString(),
             ],
+        ]);
+    }
+
+    /**
+     * Compact profile by user UUID, used by the leaderboard modal on the
+     * frontend. Returns level/xp/streak plus the user's badge list.
+     */
+    #[OA\Get(
+        path: '/api/v1/users/{userId}/profile',
+        summary: 'Perfil compacto por UUID',
+        description: 'Retorna dados do usuário e badges por UUID (usado pelo modal do leaderboard).',
+        tags: ['Users'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Perfil compacto encontrado'),
+            new OA\Response(response: 404, description: 'Usuário não encontrado'),
+        ]
+    )]
+    public function compactById(string $userId): JsonResponse
+    {
+        $user = User::with(['gamification', 'achievements.achievement'])->findOrFail($userId);
+        $gam = $user->gamification;
+
+        $badges = $user->achievements->map(fn ($ua) => [
+            'name' => $ua->achievement->name,
+            'icon' => $ua->achievement->icon,
+            'unlocked_at' => $ua->unlocked_at,
+        ]);
+
+        return response()->json([
+            'id' => $user->id,
+            'name' => $user->name,
+            'last_name' => $user->last_name,
+            'username' => $user->username,
+            'avatar_url' => $user->avatar_url,
+            'bio' => $user->bio,
+            'level' => $gam?->current_level ?? 1,
+            'xp_total' => $gam?->xp_total ?? 0,
+            'streak' => $gam?->current_streak ?? 0,
+            'badges' => $badges,
         ]);
     }
 }

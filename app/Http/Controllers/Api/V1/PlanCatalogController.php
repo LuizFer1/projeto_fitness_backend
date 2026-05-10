@@ -25,14 +25,14 @@ class PlanCatalogController extends Controller
             ->get()
             ->map(function (Plan $plan) {
                 return [
-                    'code'        => $plan->code,
-                    'name'        => $plan->name,
+                    'code' => $plan->code,
+                    'name' => $plan->name,
                     'description' => $plan->description,
-                    'trial_days'  => $plan->trial_days,
-                    'prices'      => $plan->activePrices->map(fn ($p) => [
+                    'trial_days' => $plan->trial_days,
+                    'prices' => $plan->activePrices->map(fn ($p) => [
                         'billing_period' => $p->billing_period,
-                        'price_cents'    => $p->price_cents,
-                        'currency'       => $p->currency,
+                        'price_cents' => $p->price_cents,
+                        'currency' => $p->currency,
                     ])->values(),
                 ];
             });

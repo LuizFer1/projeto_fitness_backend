@@ -20,14 +20,14 @@ class BodyMeasurement extends Model
     ];
 
     protected $casts = [
-        'date'                     => 'date',
-        'weight_kg'                => 'decimal:2',
-        'body_fat_pct'             => 'decimal:1',
-        'muscle_mass_kg'           => 'decimal:2',
-        'waist_circumference_cm'   => 'decimal:2',
-        'hip_circumference_cm'     => 'decimal:2',
-        'arm_circumference_cm'     => 'decimal:2',
-        'bmi'                      => 'decimal:2',
+        'date' => 'date',
+        'weight_kg' => 'decimal:2',
+        'body_fat_pct' => 'decimal:1',
+        'muscle_mass_kg' => 'decimal:2',
+        'waist_circumference_cm' => 'decimal:2',
+        'hip_circumference_cm' => 'decimal:2',
+        'arm_circumference_cm' => 'decimal:2',
+        'bmi' => 'decimal:2',
     ];
 
     public function user()

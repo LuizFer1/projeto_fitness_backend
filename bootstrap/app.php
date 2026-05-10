@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\IdempotencyMiddleware;
+use App\Http\Middleware\RequestIdMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
@@ -18,11 +21,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\App\Http\Middleware\RequestIdMiddleware::class);
+        $middleware->append(RequestIdMiddleware::class);
         $middleware->alias([
-            'admin'      => \App\Http\Middleware\EnsureAdmin::class,
-            'idempotent' => \App\Http\Middleware\IdempotencyMiddleware::class,
+            'admin' => EnsureAdmin::class,
+            'idempotent' => IdempotencyMiddleware::class,
         ]);
+        $middleware->redirectGuestsTo(fn () => null);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(fn (Request $request) => $request->is('api/*') || $request->expectsJson());
@@ -101,7 +105,7 @@ return Application::configure(basePath: dirname(__DIR__))
             );
         });
 
-        $exceptions->render(function (\Throwable $e, Request $request) {
+        $exceptions->render(function (Throwable $e, Request $request) {
             if (! $request->is('api/*') && ! $request->expectsJson()) {
                 return null;
             }
