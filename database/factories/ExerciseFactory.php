@@ -15,12 +15,12 @@ class ExerciseFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'         => fake()->unique()->words(2, true),
+            'name' => fake()->unique()->words(2, true),
             'muscle_group' => fake()->randomElement(['chest', 'back', 'legs', 'shoulder']),
-            'category'     => 'strength',
-            'difficulty'   => 'beginner',
-            'equipment'    => 'bodyweight',
-            'is_active'    => true,
+            'category' => 'strength',
+            'difficulty' => 'beginner',
+            'equipment' => 'bodyweight',
+            'is_active' => true,
         ];
     }
 }

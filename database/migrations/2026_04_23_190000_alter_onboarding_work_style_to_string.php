@@ -10,7 +10,8 @@ return new class extends Migration
     public function up(): void
     {
         if (DB::getDriverName() === 'mysql') {
-            DB::statement("ALTER TABLE `onboarding` MODIFY `work_style` VARCHAR(32) NOT NULL");
+            DB::statement('ALTER TABLE `onboarding` MODIFY `work_style` VARCHAR(32) NOT NULL');
+
             return;
         }
 
@@ -23,6 +24,7 @@ return new class extends Migration
     {
         if (DB::getDriverName() === 'mysql') {
             DB::statement("ALTER TABLE `onboarding` MODIFY `work_style` ENUM('sedentary','light','moderate','active','very_active') NOT NULL");
+
             return;
         }
 

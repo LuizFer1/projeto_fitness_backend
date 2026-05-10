@@ -16,7 +16,7 @@ return new class extends Migration
             $table->integer('duration_min')->nullable();
             $table->decimal('calories_burned', 7, 2)->nullable();
             $table->integer('steps')->nullable();
-            $table->enum('mood', ['great','good','neutral','tired','bad'])->nullable();
+            $table->enum('mood', ['great', 'good', 'neutral', 'tired', 'bad'])->nullable();
             $table->text('observations')->nullable();
             $table->timestamp('created_at')->useCurrent();
 
@@ -48,7 +48,7 @@ return new class extends Migration
             $table->foreignUuid('meal_id')->nullable()->references('id')->on('meals')->nullOnDelete();
             $table->date('date');
             $table->time('time')->nullable();
-            $table->enum('meal_type', ['breakfast','snack','lunch','dinner','pre_workout','post_workout']);
+            $table->enum('meal_type', ['breakfast', 'snack', 'lunch', 'dinner', 'pre_workout', 'post_workout']);
             $table->decimal('calories_consumed', 7, 2)->default(0);
             $table->decimal('protein_g', 6, 2)->default(0);
             $table->decimal('carbs_g', 6, 2)->default(0);

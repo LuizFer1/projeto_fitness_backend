@@ -22,12 +22,12 @@ class WorkoutFactory extends Factory
         ];
 
         return [
-            'user_uuid'    => User::factory(),
-            'name'         => fake()->randomElement($workouts),
+            'user_uuid' => User::factory(),
+            'name' => fake()->randomElement($workouts),
             'duration_min' => fake()->randomElement([30, 45, 60, 75, 90]),
-            'calories'     => fake()->numberBetween(150, 600),
-            'level'        => fake()->randomElement(['beginner', 'intermediate', 'advanced']),
-            'category'     => fake()->randomElement(['FORCA', 'CARDIO', 'MOBILIDADE', 'OUTRO']),
+            'calories' => fake()->numberBetween(150, 600),
+            'level' => fake()->randomElement(['beginner', 'intermediate', 'advanced']),
+            'category' => fake()->randomElement(['FORCA', 'CARDIO', 'MOBILIDADE', 'OUTRO']),
             'workout_date' => fake()->dateTimeBetween('-30 days', 'now')->format('Y-m-d'),
         ];
     }

@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('workout_logs', function (Blueprint $table) {
             $table->enum('modality', ['strength', 'cardio', 'mixed', 'mobility'])
-                  ->default('strength')->after('date');
+                ->default('strength')->after('date');
 
             // Cardio metrics
             $table->unsignedInteger('distance_m')->nullable()->comment('Total distance in metres');
@@ -25,22 +25,22 @@ return new class extends Migration
 
             // External sync dedup
             $table->enum('external_source', ['manual', 'healthkit', 'googlefit', 'garmin'])
-                  ->default('manual')->after('route_geojson_path');
+                ->default('manual')->after('route_geojson_path');
             $table->string('external_id', 120)->nullable()->after('external_source');
         });
 
         // Unique constraint for external dedup — only when external_id is set.
         // Partial unique indexes are not supported by all SQLite versions in Laravel,
         // so we use a composite nullable unique that's enforced at the app layer for SQLite.
-        if (\DB::connection()->getDriverName() !== 'sqlite') {
-            \DB::statement('ALTER TABLE workout_logs ADD UNIQUE KEY uq_external_activity (external_source, external_id)');
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE workout_logs ADD UNIQUE KEY uq_external_activity (external_source, external_id)');
         }
     }
 
     public function down(): void
     {
-        if (\DB::connection()->getDriverName() !== 'sqlite') {
-            \DB::statement('ALTER TABLE workout_logs DROP INDEX uq_external_activity');
+        if (DB::connection()->getDriverName() !== 'sqlite') {
+            DB::statement('ALTER TABLE workout_logs DROP INDEX uq_external_activity');
         }
 
         Schema::table('workout_logs', function (Blueprint $table) {

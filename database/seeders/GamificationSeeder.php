@@ -53,10 +53,10 @@ class GamificationSeeder extends Seeder
         DB::table('antifraud_limits')->updateOrInsert(
             ['id' => 1],
             [
-                'max_water_units'  => 20000,
+                'max_water_units' => 20000,
                 'max_workouts_day' => 3,
-                'max_weight_day'   => 1,
-                'updated_at'       => now(),
+                'max_weight_day' => 1,
+                'updated_at' => now(),
             ]
         );
     }

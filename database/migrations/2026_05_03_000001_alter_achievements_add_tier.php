@@ -11,8 +11,8 @@ return new class extends Migration
     {
         Schema::table('achievements', function (Blueprint $table) {
             $table->enum('tier', ['bronze', 'silver', 'gold', 'platinum'])
-                  ->default('bronze')
-                  ->after('category');
+                ->default('bronze')
+                ->after('category');
         });
 
         // Backfill existing achievements to bronze (already default, but explicit)

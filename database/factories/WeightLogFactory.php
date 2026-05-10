@@ -11,7 +11,7 @@ class WeightLogFactory extends Factory
     {
         return [
             'user_uuid' => User::factory(),
-            'day'       => fake()->dateTimeBetween('-60 days', 'now')->format('Y-m-d'),
+            'day' => fake()->dateTimeBetween('-60 days', 'now')->format('Y-m-d'),
             'weight_kg' => fake()->randomFloat(2, 50, 130),
         ];
     }

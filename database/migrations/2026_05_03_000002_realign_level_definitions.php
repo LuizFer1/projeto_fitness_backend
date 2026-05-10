@@ -13,12 +13,12 @@ return new class extends Migration
 
         DB::table('level_definitions')->insert(
             collect($levels)->map(fn ($lvl, $num) => [
-                'level_num'    => $num,
-                'title'        => $lvl['title'],
-                'min_xp'       => $lvl['min_xp'],
-                'max_xp'       => $lvl['max_xp'],
-                'hex_color'    => $lvl['hex_color'],
-                'icon'         => $lvl['icon'],
+                'level_num' => $num,
+                'title' => $lvl['title'],
+                'min_xp' => $lvl['min_xp'],
+                'max_xp' => $lvl['max_xp'],
+                'hex_color' => $lvl['hex_color'],
+                'icon' => $lvl['icon'],
                 'benefit_desc' => $lvl['benefit'],
             ])->values()->all()
         );

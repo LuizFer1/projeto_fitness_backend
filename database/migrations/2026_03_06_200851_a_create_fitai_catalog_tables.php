@@ -12,14 +12,14 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->string('name', 150);
             $table->string('muscle_group', 80)->nullable()->comment('Ex: shoulder, chest, back, legs');
-            $table->enum('category', ['strength','cardio','mobility','hiit','stretching','functional'])->default('strength');
-            $table->enum('difficulty', ['beginner','intermediate','advanced'])->default('beginner');
+            $table->enum('category', ['strength', 'cardio', 'mobility', 'hiit', 'stretching', 'functional'])->default('strength');
+            $table->enum('difficulty', ['beginner', 'intermediate', 'advanced'])->default('beginner');
             $table->string('equipment', 100)->nullable()->comment('Ex: dumbbells, barbell, bodyweight');
             $table->text('description')->nullable();
             $table->decimal('calories_per_min', 5, 2)->nullable()->comment('Estimated calories per minute');
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->index('muscle_group');
             $table->index('category');
         });
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->decimal('standard_portion_g', 6, 2)->nullable()->default(100);
             $table->boolean('is_active')->default(true);
             $table->timestamp('created_at')->useCurrent();
-            
+
             $table->index('name');
             $table->index('category');
         });
@@ -45,7 +45,7 @@ return new class extends Migration
         Schema::create('meals', function (Blueprint $table) {
             $table->uuid('id')->primary();
             $table->string('name', 150);
-            $table->enum('type', ['breakfast','snack','lunch','dinner','pre_workout','post_workout']);
+            $table->enum('type', ['breakfast', 'snack', 'lunch', 'dinner', 'pre_workout', 'post_workout']);
             $table->text('description')->nullable();
             $table->decimal('total_calories', 7, 2)->default(0);
             $table->decimal('total_protein_g', 6, 2)->default(0);
