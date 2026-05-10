@@ -17,15 +17,15 @@ class FoodControllerTest extends TestCase
         $user = User::factory()->create();
 
         Food::create([
-            'name'               => 'Whey Protein',
-            'calories_100g'      => 380.00,
-            'protein_g'          => 80.00,
-            'carbs_g'            => 5.00,
-            'fat_g'              => 4.00,
+            'name' => 'Whey Protein',
+            'calories_100g' => 380.00,
+            'protein_g' => 80.00,
+            'carbs_g' => 5.00,
+            'fat_g' => 4.00,
             'standard_portion_g' => 30.00,
-            'is_active'          => true,
-            'barcode_ean'        => '7891234567890',
-            'source'             => 'manual',
+            'is_active' => true,
+            'barcode_ean' => '7891234567890',
+            'source' => 'manual',
         ]);
 
         $response = $this->actingAs($user)
@@ -42,15 +42,15 @@ class FoodControllerTest extends TestCase
 
         Http::fake([
             'world.openfoodfacts.org/*' => Http::response([
-                'status'  => 1,
+                'status' => 1,
                 'product' => [
                     'product_name' => 'Produto OFF',
-                    'code'         => '1234567890123',
-                    'nutriments'   => [
-                        'energy-kcal_100g'    => 200,
-                        'proteins_100g'       => 10,
-                        'carbohydrates_100g'  => 30,
-                        'fat_100g'            => 5,
+                    'code' => '1234567890123',
+                    'nutriments' => [
+                        'energy-kcal_100g' => 200,
+                        'proteins_100g' => 10,
+                        'carbohydrates_100g' => 30,
+                        'fat_100g' => 5,
                     ],
                 ],
             ], 200),
@@ -65,7 +65,7 @@ class FoodControllerTest extends TestCase
 
         $this->assertDatabaseHas('foods', [
             'barcode_ean' => '1234567890123',
-            'source'      => 'openfoodfacts',
+            'source' => 'openfoodfacts',
         ]);
     }
 

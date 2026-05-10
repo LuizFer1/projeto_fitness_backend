@@ -26,8 +26,8 @@ class NutritionExportControllerTest extends TestCase
         Queue::assertPushed(NutritionExportJob::class);
         $this->assertDatabaseHas('nutrition_exports', [
             'user_id' => $user->id,
-            'period'  => '7d',
-            'status'  => 'pending',
+            'period' => '7d',
+            'status' => 'pending',
         ]);
     }
 
@@ -55,12 +55,12 @@ class NutritionExportControllerTest extends TestCase
         $user = User::factory()->create();
 
         $export = NutritionExport::create([
-            'user_id'      => $user->id,
-            'period'       => '30d',
-            'format'       => 'csv',
-            'status'       => 'ready',
-            'date_from'    => today()->subDays(30)->toDateString(),
-            'date_to'      => today()->toDateString(),
+            'user_id' => $user->id,
+            'period' => '30d',
+            'format' => 'csv',
+            'status' => 'ready',
+            'date_from' => today()->subDays(30)->toDateString(),
+            'date_to' => today()->toDateString(),
             'download_url' => 'https://example.com/file.csv',
             'generated_at' => now(),
         ]);
@@ -78,12 +78,12 @@ class NutritionExportControllerTest extends TestCase
         $user = User::factory()->create();
 
         $export = NutritionExport::create([
-            'user_id'   => $user->id,
-            'period'    => '7d',
-            'format'    => 'csv',
-            'status'    => 'pending',
+            'user_id' => $user->id,
+            'period' => '7d',
+            'format' => 'csv',
+            'status' => 'pending',
             'date_from' => today()->subDays(7)->toDateString(),
-            'date_to'   => today()->toDateString(),
+            'date_to' => today()->toDateString(),
         ]);
 
         $this->actingAs($user)
@@ -98,12 +98,12 @@ class NutritionExportControllerTest extends TestCase
         [$owner, $other] = User::factory()->count(2)->create()->all();
 
         $export = NutritionExport::create([
-            'user_id'   => $owner->id,
-            'period'    => '7d',
-            'format'    => 'csv',
-            'status'    => 'pending',
+            'user_id' => $owner->id,
+            'period' => '7d',
+            'format' => 'csv',
+            'status' => 'pending',
             'date_from' => today()->subDays(7)->toDateString(),
-            'date_to'   => today()->toDateString(),
+            'date_to' => today()->toDateString(),
         ]);
 
         $this->actingAs($other)

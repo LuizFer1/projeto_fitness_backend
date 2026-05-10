@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\BodyMeasurements;
 
-use App\Models\BodyMeasurement;
 use App\Models\User;
 use App\Models\UserGamification;
 use Illuminate\Foundation\Testing\RefreshDatabase;

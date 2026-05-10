@@ -19,25 +19,26 @@ class VictoryAssetControllerTest extends TestCase
     {
         $user = User::factory()->create();
         UserGamification::create([
-            'user_id'         => $user->id,
-            'current_streak'  => 0,
-            'xp_total'        => 0,
-            'current_level'   => 1,
+            'user_id' => $user->id,
+            'current_streak' => 0,
+            'xp_total' => 0,
+            'current_level' => 1,
             'current_week_xp' => 0,
-            'current_month_xp'=> 0,
-            'total_workouts'  => 0,
-            'total_water_days'=> 0,
-            'max_streak'      => 0,
-            'xp_to_next'      => 500,
+            'current_month_xp' => 0,
+            'total_workouts' => 0,
+            'total_water_days' => 0,
+            'max_streak' => 0,
+            'xp_to_next' => 500,
         ]);
+
         return $user;
     }
 
     private function createWorkoutLog(User $user, array $overrides = []): WorkoutLog
     {
         return WorkoutLog::create(array_merge([
-            'user_id'  => $user->id,
-            'date'     => today()->toDateString(),
+            'user_id' => $user->id,
+            'date' => today()->toDateString(),
             'modality' => 'strength',
         ], $overrides));
     }
@@ -46,7 +47,7 @@ class VictoryAssetControllerTest extends TestCase
     {
         Queue::fake();
         $user = $this->createUserWithGam();
-        $log  = $this->createWorkoutLog($user);
+        $log = $this->createWorkoutLog($user);
 
         $response = $this->actingAs($user)
             ->postJson("/api/v1/workouts/{$log->id}/victory-asset")
@@ -57,9 +58,9 @@ class VictoryAssetControllerTest extends TestCase
 
         $this->assertDatabaseHas('victory_assets', [
             'workout_log_id' => $log->id,
-            'user_id'        => $user->id,
-            'status'         => 'pending',
-            'type'           => 'strength',
+            'user_id' => $user->id,
+            'status' => 'pending',
+            'type' => 'strength',
         ]);
 
         Queue::assertPushed(GenerateVictoryAssetJob::class);
@@ -69,7 +70,7 @@ class VictoryAssetControllerTest extends TestCase
     {
         Queue::fake();
         $user = $this->createUserWithGam();
-        $log  = $this->createWorkoutLog($user, ['modality' => 'cardio']);
+        $log = $this->createWorkoutLog($user, ['modality' => 'cardio']);
 
         $response = $this->actingAs($user)
             ->postJson("/api/v1/workouts/{$log->id}/victory-asset")
@@ -77,7 +78,7 @@ class VictoryAssetControllerTest extends TestCase
 
         $this->assertDatabaseHas('victory_assets', [
             'workout_log_id' => $log->id,
-            'type'           => 'cardio',
+            'type' => 'cardio',
         ]);
     }
 
@@ -85,13 +86,13 @@ class VictoryAssetControllerTest extends TestCase
     {
         Queue::fake();
         $user = $this->createUserWithGam();
-        $log  = $this->createWorkoutLog($user);
+        $log = $this->createWorkoutLog($user);
 
         VictoryAsset::create([
             'workout_log_id' => $log->id,
-            'user_id'        => $user->id,
-            'type'           => 'strength',
-            'status'         => 'pending',
+            'user_id' => $user->id,
+            'type' => 'strength',
+            'status' => 'pending',
         ]);
 
         $this->actingAs($user)
@@ -103,15 +104,15 @@ class VictoryAssetControllerTest extends TestCase
 
     public function test_show_returns_asset_status(): void
     {
-        $user  = $this->createUserWithGam();
-        $log   = $this->createWorkoutLog($user);
+        $user = $this->createUserWithGam();
+        $log = $this->createWorkoutLog($user);
 
         VictoryAsset::create([
             'workout_log_id' => $log->id,
-            'user_id'        => $user->id,
-            'type'           => 'strength',
-            'status'         => 'ready',
-            'public_url'     => 'https://cdn.example.com/asset.png',
+            'user_id' => $user->id,
+            'type' => 'strength',
+            'status' => 'ready',
+            'public_url' => 'https://cdn.example.com/asset.png',
         ]);
 
         $response = $this->actingAs($user)
@@ -125,7 +126,7 @@ class VictoryAssetControllerTest extends TestCase
     public function test_show_returns_404_when_no_asset_exists(): void
     {
         $user = $this->createUserWithGam();
-        $log  = $this->createWorkoutLog($user);
+        $log = $this->createWorkoutLog($user);
 
         $this->actingAs($user)
             ->getJson("/api/v1/workouts/{$log->id}/victory-asset")

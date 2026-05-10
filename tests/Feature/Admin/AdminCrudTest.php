@@ -2,9 +2,6 @@
 
 namespace Tests\Feature\Admin;
 
-use App\Models\Achievement;
-use App\Models\Exercise;
-use App\Models\Quest;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

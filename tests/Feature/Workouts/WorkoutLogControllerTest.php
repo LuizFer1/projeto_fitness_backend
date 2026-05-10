@@ -5,6 +5,7 @@ namespace Tests\Feature\Workouts;
 use App\Models\Exercise;
 use App\Models\User;
 use App\Models\UserGamification;
+use App\Models\XpTransaction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -60,7 +61,7 @@ class WorkoutLogControllerTest extends TestCase
         $this->assertDatabaseHas('workout_logs', ['user_id' => $user->id, 'calories_burned' => 450]);
         $this->assertDatabaseHas('workout_exercise_logs', ['exercise_id' => $exercise->id, 'sets' => 3]);
 
-        $xpCount = \App\Models\XpTransaction::where('user_id', $user->id)->count();
+        $xpCount = XpTransaction::where('user_id', $user->id)->count();
         $this->assertGreaterThanOrEqual(1, $xpCount);
     }
 

@@ -34,13 +34,13 @@ class PrivacySettingsControllerTest extends TestCase
         $user = User::factory()->create();
 
         UserPrivacySetting::create([
-            'user_id'            => $user->id,
-            'share_weight'       => true,
-            'share_macros'       => true,
-            'share_one_rm'       => false,
-            'share_streak'       => true,
+            'user_id' => $user->id,
+            'share_weight' => true,
+            'share_macros' => true,
+            'share_one_rm' => false,
+            'share_streak' => true,
             'share_achievements' => true,
-            'share_workouts'     => false,
+            'share_workouts' => false,
         ]);
 
         $data = $this->actingAs($user)->getJson('/api/v1/privacy-settings')
@@ -69,7 +69,7 @@ class PrivacySettingsControllerTest extends TestCase
         $this->assertTrue($data['share_macros']);
 
         $this->assertDatabaseHas('user_privacy_settings', [
-            'user_id'      => $user->id,
+            'user_id' => $user->id,
             'share_weight' => true,
             'share_macros' => true,
         ]);
@@ -89,13 +89,13 @@ class PrivacySettingsControllerTest extends TestCase
         $user = User::factory()->create();
 
         UserPrivacySetting::create([
-            'user_id'            => $user->id,
-            'share_weight'       => true,
-            'share_macros'       => false,
-            'share_one_rm'       => true,
-            'share_streak'       => true,
+            'user_id' => $user->id,
+            'share_weight' => true,
+            'share_macros' => false,
+            'share_one_rm' => true,
+            'share_streak' => true,
             'share_achievements' => true,
-            'share_workouts'     => true,
+            'share_workouts' => true,
         ]);
 
         $data = $this->actingAs($user)

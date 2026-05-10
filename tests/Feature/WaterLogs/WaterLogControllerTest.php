@@ -17,8 +17,8 @@ class WaterLogControllerTest extends TestCase
 
         $first = $this->actingAs($user)->postJson('/api/v1/water-logs', [
             'liters' => 0.25,
-            'date'   => '2026-04-19',
-            'time'   => '08:00',
+            'date' => '2026-04-19',
+            'time' => '08:00',
         ])->assertCreated();
 
         $this->assertSame('0.25', $first->json('log.liters'));
@@ -26,7 +26,7 @@ class WaterLogControllerTest extends TestCase
 
         $second = $this->actingAs($user)->postJson('/api/v1/water-logs', [
             'liters' => 0.5,
-            'date'   => '2026-04-19',
+            'date' => '2026-04-19',
         ])->assertCreated();
 
         $this->assertEquals(0.75, $second->json('day_total'));
@@ -72,8 +72,8 @@ class WaterLogControllerTest extends TestCase
 
         $log = WaterLog::create([
             'user_id' => $owner->id,
-            'date'    => now()->toDateString(),
-            'liters'  => 0.5,
+            'date' => now()->toDateString(),
+            'liters' => 0.5,
         ]);
 
         $this->actingAs($stranger)->deleteJson("/api/v1/water-logs/{$log->id}")->assertNotFound();

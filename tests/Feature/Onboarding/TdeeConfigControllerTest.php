@@ -16,15 +16,15 @@ class TdeeConfigControllerTest extends TestCase
         $user = User::factory()->create();
 
         UserOnboarding::create(array_merge([
-            'user_id'          => $user->id,
-            'gender'           => 'male',
-            'age'              => 30,
-            'height_cm'        => 175.00,
-            'weight_kg'        => 80.00,
+            'user_id' => $user->id,
+            'gender' => 'male',
+            'age' => 30,
+            'height_cm' => 175.00,
+            'weight_kg' => 80.00,
             'exercise_frequency' => 3,
-            'work_style'       => 'sedentary',
-            'tdee_formula'     => 'mifflin',
-            'activity_factor'  => null,
+            'work_style' => 'sedentary',
+            'tdee_formula' => 'mifflin',
+            'activity_factor' => null,
         ], $overrides));
 
         return $user;
@@ -61,7 +61,7 @@ class TdeeConfigControllerTest extends TestCase
 
         $response = $this->actingAs($user)
             ->putJson('/api/v1/onboarding/tdee-config', [
-                'formula'         => 'harris',
+                'formula' => 'harris',
                 'activity_factor' => 1.55,
             ])
             ->assertOk();
